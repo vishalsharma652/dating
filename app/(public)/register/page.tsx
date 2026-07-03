@@ -1,0 +1,217 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    acceptTerms: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      nextErrors.name = 'Enter your full name to continue.';
+    }
+
+    if (!formData.phone.trim()) {
+      nextErrors.phone = 'Mobile number is required.';
+    } else if (!/^\d{10,15}$/.test(formData.phone.replace(/\D/g, ''))) {
+      nextErrors.phone = 'Enter a valid mobile number.';
+    }
+
+    if (formData.email && !emailPattern.test(formData.email.trim())) {
+      nextErrors.email = 'Enter a valid email address.';
+    }
+
+    if (!formData.password) {
+      nextErrors.password = 'Create a secure password.';
+    } else if (formData.password.length < 8) {
+      nextErrors.password = 'Password should be at least 8 characters.';
+    }
+
+    if (!formData.confirmPassword) {
+      nextErrors.confirmPassword = 'Confirm your password.';
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (!formData.acceptTerms) {
+      nextErrors.acceptTerms = 'You must accept the terms and privacy policy.';
+    }
+
+    return nextErrors;
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors = validate();
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length === 0) {
+      setLoading(true);
+      localStorage.setItem('onboardPhone', formData.phone);
+      localStorage.setItem('onboardName', formData.name);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      router.push('/verify-otp');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(236,72,153,0.08),_transparent_36%),radial-gradient(circle_at_bottom_right,_rgba(99,102,241,0.12),_transparent_30%)] p-4">
+      <Card className="w-full max-w-lg">
+        <div className="p-8">
+          <div className="mb-8 text-center">
+            <div className="inline-flex rounded-full bg-pink-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-pink-600 mb-4">
+              Premium onboarding
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create your Ember account</h1>
+            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+              Secure your profile with mobile verification and complete onboarding in a few steps.
+            </p>
+          </div>
+
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+            <div className="grid gap-4">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Full Name
+                <div className="relative mt-2">
+                  <User className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
+                  <Input
+                    placeholder="Aarav Patel"
+                    className="pl-12"
+                    value={formData.name}
+                    onChange={(event) => setFormData({ ...formData, name: event.target.value })}
+                  />
+                </div>
+              </label>
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Mobile Number
+                <div className="relative mt-2">
+                  <Phone className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
+                  <Input
+                    placeholder="9876543210"
+                    className="pl-12"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(event) => setFormData({ ...formData, phone: event.target.value.replace(/\D/g, '') })}
+                  />
+                </div>
+              </label>
+              {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Email (optional)
+                <div className="relative mt-2">
+                  <Mail className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
+                  <Input
+                    placeholder="you@example.com"
+                    className="pl-12"
+                    type="email"
+                    value={formData.email}
+                    onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+                  />
+                </div>
+              </label>
+              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Password
+                <div className="relative mt-2">
+                  <Lock className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
+                  <Input
+                    placeholder="Create password"
+                    className="pl-12 pr-12"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-3 text-zinc-400 transition hover:text-zinc-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </label>
+              {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Confirm Password
+                <div className="relative mt-2">
+                  <Lock className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
+                  <Input
+                    placeholder="Repeat password"
+                    className="pl-12"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={(event) => setFormData({ ...formData, confirmPassword: event.target.value })}
+                  />
+                </div>
+              </label>
+              {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
+            </div>
+
+            <label className="flex gap-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={formData.acceptTerms}
+                onChange={(event) => setFormData({ ...formData, acceptTerms: event.target.checked })}
+                className="mt-1 h-4 w-4 rounded border-zinc-300 text-pink-500 focus:ring-pink-500"
+              />
+              <span>
+                I agree to Ember&apos;s{' '}
+                <Link href="/legal/terms" className="font-semibold text-pink-500 hover:text-pink-600">
+                  Terms & Conditions
+                </Link>{' '}
+                and{' '}
+                <Link href="/legal/privacy" className="font-semibold text-pink-500 hover:text-pink-600">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+            {errors.acceptTerms && <p className="text-xs text-red-500">{errors.acceptTerms}</p>}
+
+            <Button type="submit" className="w-full h-12" disabled={loading}>
+              {loading ? 'Creating account…' : 'Create Account'}
+            </Button>
+          </form>
+
+          <div className="mt-6 rounded-3xl bg-zinc-100/80 p-4 text-sm text-zinc-600 dark:bg-zinc-900/80 dark:text-zinc-300">
+            <p className="font-semibold text-zinc-900 dark:text-white">What happens next?</p>
+            <p className="mt-1">We’ll verify your mobile number, confirm your age, and guide you through secure KYC and profile setup.</p>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-pink-500 hover:text-pink-600">
+              Login
+            </Link>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
