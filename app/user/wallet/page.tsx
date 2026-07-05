@@ -1,27 +1,41 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, TrendingUp, History, Plus } from 'lucide-react';
-import { currentUser } from '@/lib/mockData';
+import { TrendingUp, History, Plus } from 'lucide-react';
+import { userApi } from '@/lib/api';
 
 export default function WalletPage() {
+  const [wallet, setWallet] = useState({ coins: 0, earnings: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    userApi.wallet()
+      .then(setWallet)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load wallet'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-zinc-500">Loading wallet...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+
   return (
     <div className="p-4 md:p-8">
       <Container>
         <h1 className="text-3xl font-bold mb-8">Wallet</h1>
 
-        {/* Coins Balance */}
         <Card className="mb-6">
           <div className="p-8 text-center">
             <p className="text-zinc-600 dark:text-zinc-400 mb-2">Available Balance</p>
             <div className="flex items-center justify-center gap-2 mb-2">
               <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
-                {currentUser.coins}
+                {wallet.coins}
               </div>
-              <span className="text-2xl">💎</span>
+              <span className="text-2xl">Coins</span>
             </div>
             <p className="text-sm text-zinc-500 mb-6">Ember Coins</p>
             <Button size="lg" asChild>
@@ -34,7 +48,6 @@ export default function WalletPage() {
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Quick Links */}
           <Card>
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
@@ -61,22 +74,21 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          {/* Earnings Info */}
           <Card>
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Earnings</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-zinc-600 dark:text-zinc-400">Total Earned</span>
-                  <span className="font-semibold">₹{currentUser.earnings}</span>
+                  <span className="font-semibold">Rs {wallet.earnings}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-600 dark:text-zinc-400">This Month</span>
-                  <span className="font-semibold">₹1,250</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">Available</span>
+                  <span className="font-semibold">Rs {wallet.earnings}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-600 dark:text-zinc-400">Pending</span>
-                  <span className="font-semibold">₹500</span>
+                  <span className="font-semibold">Rs 0</span>
                 </div>
               </div>
             </div>

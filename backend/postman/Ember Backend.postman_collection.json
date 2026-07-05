@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "Ember Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\"name\":\"Aarav Patel\",\"phone\":\"9876543210\",\"email\":\"aarav@example.com\",\"password\":\"Password123\"}" }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\"email\":\"aarav@example.com\",\"password\":\"Password123\"}" }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/verify-otp",
+            "body": { "mode": "raw", "raw": "{\"phone\":\"9876543210\",\"otp\":\"123456\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/dashboard"
+          }
+        },
+        {
+          "name": "Profile Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/user/profile/setup",
+            "body": { "mode": "raw", "raw": "{\"name\":\"Aarav Patel\",\"age\":28,\"gender\":\"Male\",\"interestedIn\":\"Women\",\"city\":\"Mumbai\",\"occupation\":\"Product Designer\",\"education\":\"Bachelor's\",\"bio\":\"Coffee and hikes.\",\"photos\":[\"https://example.com/photo.jpg\"],\"languages\":[\"English\",\"Hindi\"],\"interests\":[\"Travel\"],\"lifestyle\":[\"Early Riser\"]}" }
+          }
+        },
+        {
+          "name": "Discover",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/discover"
+          }
+        },
+        {
+          "name": "Wallet Coin Packages",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/wallet/coins"
+          }
+        },
+        {
+          "name": "Request Withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/user/withdraw",
+            "body": { "mode": "raw", "raw": "{\"amount\":500,\"method\":\"upi\",\"bankName\":\"GPay\",\"accountNumber\":\"aarav@upi\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admin/login",
+            "body": { "mode": "raw", "raw": "{\"email\":\"admin@ember.local\",\"password\":\"Admin@12345\"}" }
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/dashboard"
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/categories",
+            "body": { "mode": "raw", "raw": "{\"name\":\"Premium\",\"slug\":\"premium\",\"description\":\"Premium app purchases\"}" }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/products",
+            "body": { "mode": "raw", "raw": "{\"name\":\"Glow Bundle\",\"slug\":\"glow-bundle\",\"price\":399,\"coins\":550}" }
+          }
+        }
+      ]
+    }
+  ]
+}

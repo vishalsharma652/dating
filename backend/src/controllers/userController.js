@@ -1,0 +1,135 @@
+const { body } = require('express-validator');
+const userModel = require('../models/userModel');
+const profileModel = require('../models/profileModel');
+const socialModel = require('../models/socialModel');
+const walletModel = require('../models/walletModel');
+const { ok, created } = require('../utils/apiResponse');
+const { AppError } = require('../utils/errors');
+
+const profileRules = [
+  body('name').optional().trim().notEmpty(),
+  body('age').optional().isInt({ min: 18 }),
+  body('bio').optional().isLength({ max: 180 }),
+  body('photos').optional().isArray()
+];
+
+async function dashboard(req, res) {
+  const profile = await profileModel.getForUser(req.user.id);
+  const matches = await socialModel.matches(req.user.id);
+  return ok(res, { user: req.user, profile, matches: matches.slice(0, 3) });
+}
+
+async function getProfile(req, res) {
+  const profile = await profileModel.getForUser(req.user.id);
+  return ok(res, { user: req.user, profile });
+}
+
+async function updateProfile(req, res) {
+  const userFields = {};
+  if (req.body.name) userFields.name = req.body.name;
+  const user = Object.keys(userFields).length ? await userModel.update(req.user.id, userFields) : req.user;
+  const profile = await profileModel.upsert(req.user.id, req.body);
+  return ok(res, { user, profile }, 'Profile updated');
+}
+
+async function ageVerify(req, res) {
+  const dob = new Date(req.body.dob);
+  const age = Math.floor((Date.now() - dob.getTime()) / 1000 / 60 / 60 / 24 / 365.25);
+  if (!req.body.dob || Number.isNaN(age) || age < 18) throw new AppError('You must be 18 years or older to join Ember', 422);
+  const user = await userModel.update(req.user.id, { dob: req.body.dob, age_verified: true });
+  return ok(res, { user, age }, 'Age verified');
+}
+
+async function submitKyc(req, res) {
+  const user = await userModel.update(req.user.id, { kyc_status: 'pending' });
+  return created(res, { user, files: req.files || [] }, 'KYC submitted for review');
+}
+
+async function discover(req, res) {
+  const profiles = await profileModel.discover(req.user.id, req.query);
+  return ok(res, { profiles });
+}
+
+async function reactToProfile(req, res) {
+  await socialModel.like(req.user.id, Number(req.params.id), req.body.action || 'like');
+  return ok(res, null, 'Profile action saved');
+}
+
+async function matches(req, res) {
+  return ok(res, { matches: await socialModel.matches(req.user.id) });
+}
+
+async function chats(req, res) {
+  return ok(res, { chats: await socialModel.chats(req.user.id) });
+}
+
+async function messages(req, res) {
+  const otherUserId = Number(req.params.userId);
+  const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
+  const otherUser = await socialModel.chatPartner(req.user.id, otherUserId);
+  return ok(res, { chat: { ...chat, otherUser }, messages: await socialModel.messages(chat.id) });
+}
+
+async function sendMessage(req, res) {
+  const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
+  const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
+  return created(res, { message }, 'Message sent');
+}
+
+async function wallet(req, res) {
+  return ok(res, { coins: req.user.coins, earnings: req.user.earnings });
+}
+
+async function transactions(req, res) {
+  return ok(res, { transactions: await walletModel.transactions(req.user.id) });
+}
+
+async function coinPackages(req, res) {
+  return ok(res, { packages: await walletModel.coinPackages() });
+}
+
+async function purchaseCoins(req, res) {
+  const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId));
+  if (!purchase) throw new AppError('Coin package not found', 404);
+  return created(res, purchase, 'Coin purchase completed');
+}
+
+async function createWithdrawal(req, res) {
+  if (Number(req.body.amount) < 500) throw new AppError('Minimum withdrawal amount is 500', 422);
+  return created(res, { withdrawal: await walletModel.createWithdrawal(req.user.id, req.body) }, 'Withdrawal requested');
+}
+
+async function withdrawals(req, res) {
+  return ok(res, { withdrawals: await walletModel.withdrawals(req.user.id) });
+}
+
+async function notifications(req, res) {
+  return ok(res, { notifications: [] });
+}
+
+async function settings(req, res) {
+  return ok(res, { settings: { notifications: true, profileVisible: true, language: 'English' } });
+}
+
+module.exports = {
+  profileRules,
+  dashboard,
+  getProfile,
+  updateProfile,
+  ageVerify,
+  submitKyc,
+  discover,
+  reactToProfile,
+  matches,
+  chats,
+  messages,
+  sendMessage,
+  wallet,
+  transactions,
+  coinPackages,
+  purchaseCoins,
+  createWithdrawal,
+  withdrawals,
+  notifications,
+  settings
+};

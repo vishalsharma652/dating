@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
 import { ArrowLeft, Camera, Sparkles, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
+import { userApi } from '@/lib/api';
 
 const genders = ['Female', 'Male', 'Nonbinary', 'Prefer not to say'];
 const interestsOptions = ['Travel', 'Fitness', 'Food', 'Music', 'Art', 'Wellness'];
@@ -18,6 +19,7 @@ export default function ProfileSetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -79,8 +81,20 @@ export default function ProfileSetupPage() {
     if (!stepValid) return;
     if (step === stepLabels.length) {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      router.push('/user/dashboard');
+      setError('');
+      try {
+        await userApi.updateProfile({
+          ...formData,
+          age: Number(formData.age),
+          location: formData.city,
+          photos: formData.photos.filter(Boolean),
+        });
+        router.push('/user/dashboard');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to save profile.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     setStep(step + 1);
@@ -119,6 +133,7 @@ export default function ProfileSetupPage() {
         </div>
 
         <Card className="p-6">
+          {error && <p className="mb-6 rounded-3xl bg-red-500/10 px-4 py-3 text-sm text-red-700">{error}</p>}
           <div className="space-y-10">
             {step === 1 && (
               <div className="space-y-6">
