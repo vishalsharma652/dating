@@ -11,7 +11,9 @@ async function authenticate(req, res, next) {
     const payload = verifyToken(token);
     const user = await userModel.findById(payload.id);
     if (!user || user.status !== 'active') throw new AppError('Invalid or inactive account', 401);
-    req.user = user;
+    await userModel.markOnline(user.id);
+    delete user.password_hash;
+    req.user = { ...user, online_status: 1, last_seen_at: new Date() };
     next();
   } catch (error) {
     next(error.statusCode ? error : new AppError('Invalid authentication token', 401));

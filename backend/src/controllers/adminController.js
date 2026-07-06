@@ -15,20 +15,43 @@ const loginRules = [
 async function ensureEnvAdmin() {
   let admin = await userModel.findByEmailOrPhone(env.adminEmail);
   if (!admin) {
+    const phone = await availableAdminPhone();
     admin = await userModel.create({
       name: 'Admin',
       email: env.adminEmail,
-      phone: '9999999999',
+      phone,
       password: env.adminPassword,
       role: 'admin'
     });
+  } else if (admin.role !== 'admin' || admin.status !== 'active') {
+    await userModel.update(admin.id, { role: 'admin', status: 'active' });
+    admin = await userModel.findById(admin.id);
   }
   return admin;
 }
 
+async function availableAdminPhone() {
+  const preferred = String(env.adminPhone || '9999999999');
+  if (!(await userModel.findByEmailOrPhone(preferred))) return preferred;
+
+  for (let index = 0; index < 100; index += 1) {
+    const phone = `99999999${String(index).padStart(2, '0')}`;
+    if (!(await userModel.findByEmailOrPhone(phone))) return phone;
+  }
+
+  throw new AppError('Unable to create default admin account. Set ADMIN_PHONE to an unused number.', 500);
+}
+
 async function login(req, res) {
   const admin = await ensureEnvAdmin();
-  if (req.body.email !== admin.email || !(await bcrypt.compare(req.body.password, admin.password_hash))) {
+  let passwordMatches = await bcrypt.compare(req.body.password, admin.password_hash);
+  if (!passwordMatches && req.body.email === env.adminEmail && req.body.password === env.adminPassword) {
+    const refreshedAdmin = await userModel.updatePassword(admin.id, env.adminPassword);
+    admin.password_hash = refreshedAdmin.password_hash;
+    passwordMatches = true;
+  }
+
+  if (req.body.email !== admin.email || !passwordMatches) {
     throw new AppError('Invalid admin credentials', 401);
   }
   const token = signToken(admin);

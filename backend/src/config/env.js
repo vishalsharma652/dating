@@ -11,6 +11,7 @@ module.exports = {
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   maxFileSizeMb: Number(process.env.MAX_FILE_SIZE_MB || 5),
   adminEmail: process.env.ADMIN_EMAIL || 'admin@ember.local',
+  adminPhone: process.env.ADMIN_PHONE || '9999999999',
   adminPassword: process.env.ADMIN_PASSWORD || 'Admin@12345',
   db: {
     host: process.env.DB_HOST || '127.0.0.1',

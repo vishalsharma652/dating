@@ -97,7 +97,7 @@ export const authApi = {
 };
 
 export const userApi = {
-  dashboard: () => apiRequest<{ user: any; profile: any; matches: any[] }>('/user/dashboard'),
+  dashboard: () => apiRequest<{ user: any; profile: any; matches: any[]; activeGirls: any[]; assignedGirl: any | null }>('/user/dashboard'),
   profile: () => apiRequest<{ user: any; profile: any }>('/user/profile'),
   updateProfile: (body: Record<string, unknown>) =>
     apiRequest<{ user: any; profile: any }>('/user/profile', {
@@ -132,10 +132,33 @@ export const userApi = {
   wallet: () => apiRequest<{ coins: number; earnings: number }>('/user/wallet'),
   transactions: () => apiRequest<{ transactions: any[] }>('/user/wallet/history'),
   coinPackages: () => apiRequest<{ packages: any[] }>('/user/wallet/coins'),
-  purchaseCoins: (packageId: number | string) =>
+  purchaseCoins: (
+    packageId: number | string,
+    payment?: { gateway?: 'razorpay' | 'cashfree' | 'phonepe'; paymentReference?: string }
+  ) =>
     apiRequest<{ package: any; coinsAdded: number }>('/user/wallet/coins/purchase', {
       method: 'POST',
-      body: JSON.stringify({ packageId: Number(packageId) }),
+      body: JSON.stringify({ packageId: Number(packageId), ...payment }),
+    }),
+  chatRequests: () => apiRequest<{ requests: any[] }>('/user/chat/requests'),
+  requestChat: (userId: number | string) =>
+    apiRequest<{ request: any }>(`/user/chat/${userId}/request`, { method: 'POST' }),
+  respondToChatRequest: (requestId: number | string, status: 'accepted' | 'rejected') =>
+    apiRequest<{ request: any }>(`/user/chat/requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  startChatSession: (userId: number | string) =>
+    apiRequest<{ session: any }>(`/user/chat/${userId}/session`, { method: 'POST' }),
+  chargeChatMinute: (sessionId: number | string) =>
+    apiRequest<{ charge: any }>(`/user/chat/sessions/${sessionId}/charge-minute`, { method: 'POST' }),
+  endChatSession: (sessionId: number | string) =>
+    apiRequest<{ session: any }>(`/user/chat/sessions/${sessionId}/end`, { method: 'PATCH' }),
+  bankAccounts: () => apiRequest<{ bankAccounts: any[] }>('/user/wallet/bank-accounts'),
+  saveBankAccount: (body: Record<string, unknown>) =>
+    apiRequest<{ bankAccount: any }>('/user/wallet/bank-accounts', {
+      method: 'POST',
+      body: JSON.stringify(body),
     }),
   withdrawals: () => apiRequest<{ withdrawals: any[] }>('/user/withdraw/history'),
   createWithdrawal: (body: Record<string, unknown>) =>

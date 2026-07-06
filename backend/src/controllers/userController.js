@@ -3,6 +3,7 @@ const userModel = require('../models/userModel');
 const profileModel = require('../models/profileModel');
 const socialModel = require('../models/socialModel');
 const walletModel = require('../models/walletModel');
+const settingsModel = require('../models/settingsModel');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
 
@@ -16,7 +17,14 @@ const profileRules = [
 async function dashboard(req, res) {
   const profile = await profileModel.getForUser(req.user.id);
   const matches = await socialModel.matches(req.user.id);
-  return ok(res, { user: req.user, profile, matches: matches.slice(0, 3) });
+  const activeGirls = await profileModel.activeGirls(req.user.id);
+  return ok(res, {
+    user: req.user,
+    profile,
+    matches: matches.slice(0, 3),
+    activeGirls,
+    assignedGirl: activeGirls[0] || null
+  });
 }
 
 async function getProfile(req, res) {
@@ -27,6 +35,7 @@ async function getProfile(req, res) {
 async function updateProfile(req, res) {
   const userFields = {};
   if (req.body.name) userFields.name = req.body.name;
+  if (req.body.gender) userFields.gender = req.body.gender;
   const user = Object.keys(userFields).length ? await userModel.update(req.user.id, userFields) : req.user;
   const profile = await profileModel.upsert(req.user.id, req.body);
   return ok(res, { user, profile }, 'Profile updated');
@@ -63,6 +72,21 @@ async function chats(req, res) {
   return ok(res, { chats: await socialModel.chats(req.user.id) });
 }
 
+async function requestChat(req, res) {
+  if (Number(req.params.userId) === Number(req.user.id)) throw new AppError('You cannot request a chat with yourself', 422);
+  return created(res, { request: await socialModel.createChatRequest(req.user.id, Number(req.params.userId)) }, 'Chat request sent');
+}
+
+async function respondToChatRequest(req, res) {
+  const request = await socialModel.respondToChatRequest(req.user.id, Number(req.params.requestId), req.body.status);
+  if (!request) throw new AppError('Chat request not found', 404);
+  return ok(res, { request }, 'Chat request updated');
+}
+
+async function chatRequests(req, res) {
+  return ok(res, { requests: await socialModel.chatRequests(req.user.id) });
+}
+
 async function messages(req, res) {
   const otherUserId = Number(req.params.userId);
   const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
@@ -74,6 +98,31 @@ async function sendMessage(req, res) {
   const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
   return created(res, { message }, 'Message sent');
+}
+
+async function startChatSession(req, res) {
+  const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
+  const otherUser = await userModel.findPublicById(Number(req.params.userId));
+  if (!otherUser) throw new AppError('Chat partner not found', 404);
+
+  const currentGender = String(req.user.gender || '').toLowerCase();
+  const otherGender = String(otherUser.gender || '').toLowerCase();
+  const payerUserId = currentGender === 'female' && otherGender !== 'female' ? otherUser.id : req.user.id;
+  const earnerUserId = payerUserId === req.user.id ? otherUser.id : req.user.id;
+  const session = await socialModel.startChatSession(chat.id, payerUserId, earnerUserId, await settingsModel.chatSettings());
+  return created(res, { session }, 'Chat session started');
+}
+
+async function chargeChatMinute(req, res) {
+  const charge = await socialModel.chargeChatMinute(Number(req.params.sessionId));
+  if (!charge) throw new AppError('Active chat session not found', 404);
+  return ok(res, { charge }, charge.charged ? 'Chat minute charged' : 'Chat session ended');
+}
+
+async function endChatSession(req, res) {
+  const session = await socialModel.endChatSession(Number(req.params.sessionId), req.user.id);
+  if (!session) throw new AppError('Chat session not found', 404);
+  return ok(res, { session }, 'Chat session ended');
 }
 
 async function wallet(req, res) {
@@ -89,9 +138,20 @@ async function coinPackages(req, res) {
 }
 
 async function purchaseCoins(req, res) {
-  const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId));
+  const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId), {
+    gateway: req.body.gateway,
+    reference: req.body.paymentReference
+  });
   if (!purchase) throw new AppError('Coin package not found', 404);
   return created(res, purchase, 'Coin purchase completed');
+}
+
+async function saveBankAccount(req, res) {
+  return created(res, { bankAccount: await walletModel.saveBankAccount(req.user.id, req.body) }, 'Bank account submitted for verification');
+}
+
+async function bankAccounts(req, res) {
+  return ok(res, { bankAccounts: await walletModel.bankAccounts(req.user.id) });
 }
 
 async function createWithdrawal(req, res) {
@@ -108,7 +168,14 @@ async function notifications(req, res) {
 }
 
 async function settings(req, res) {
-  return ok(res, { settings: { notifications: true, profileVisible: true, language: 'English' } });
+  return ok(res, {
+    settings: {
+      notifications: true,
+      profileVisible: true,
+      language: 'English',
+      ...(await settingsModel.chatSettings())
+    }
+  });
 }
 
 module.exports = {
@@ -122,12 +189,20 @@ module.exports = {
   reactToProfile,
   matches,
   chats,
+  requestChat,
+  respondToChatRequest,
+  chatRequests,
   messages,
   sendMessage,
+  startChatSession,
+  chargeChatMinute,
+  endChatSession,
   wallet,
   transactions,
   coinPackages,
   purchaseCoins,
+  saveBankAccount,
+  bankAccounts,
   createWithdrawal,
   withdrawals,
   notifications,

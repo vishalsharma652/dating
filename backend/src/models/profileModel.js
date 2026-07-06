@@ -75,6 +75,29 @@ async function discover(userId, { limit = 20 } = {}) {
   return rows.map((row) => ({ ...row, interests: parseJson(row.interests, []) }));
 }
 
+async function activeGirls(userId, { limit = 8 } = {}) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 8, 24));
+  const rows = await query(
+    `SELECT u.id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age,
+      p.city AS location, p.bio, COALESCE(pp.url, '') AS photo,
+      u.kyc_status = 'approved' AS verified, p.interests,
+      true AS online, u.last_seen_at AS lastSeenAt
+     FROM users u
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE u.id <> :userId
+       AND u.role = 'user'
+       AND u.status = 'active'
+       AND LOWER(COALESCE(u.gender, p.gender, '')) = 'female'
+       AND u.online_status = true
+       AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+     ORDER BY u.last_seen_at DESC, u.updated_at DESC
+     LIMIT ${safeLimit}`,
+    { userId }
+  );
+  return rows.map((row) => ({ ...row, interests: parseJson(row.interests, []) }));
+}
+
 function parseJson(value, fallback) {
   if (!value) return fallback;
   if (Array.isArray(value)) return value;
@@ -85,4 +108,4 @@ function parseJson(value, fallback) {
   }
 }
 
-module.exports = { getForUser, upsert, discover };
+module.exports = { getForUser, upsert, discover, activeGirls };

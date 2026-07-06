@@ -3,7 +3,7 @@ const { query } = require('../config/db');
 
 const publicFields = `
   id, name, email, phone, role, status, email_verified, phone_verified,
-  dob, age_verified, kyc_status, coins, earnings, created_at, updated_at
+  dob, age_verified, kyc_status, coins, earnings, gender, online_status, last_seen_at, created_at, updated_at
 `;
 
 async function create({ name, email = null, phone, password, role = 'user', phoneVerified = false }) {
@@ -50,7 +50,7 @@ async function list({ page = 1, limit = 20, search = '', role = null, status = n
 }
 
 async function update(id, fields) {
-  const allowed = ['name', 'email', 'phone', 'status', 'dob', 'age_verified', 'kyc_status', 'coins', 'earnings', 'phone_verified', 'email_verified'];
+  const allowed = ['name', 'email', 'phone', 'role', 'status', 'dob', 'age_verified', 'kyc_status', 'coins', 'earnings', 'gender', 'phone_verified', 'email_verified'];
   const entries = Object.entries(fields).filter(([key]) => allowed.includes(key));
   if (!entries.length) return findPublicById(id);
   const assignments = entries.map(([key]) => `${key} = :${key}`).join(', ');
@@ -58,8 +58,24 @@ async function update(id, fields) {
   return findPublicById(id);
 }
 
+async function updatePassword(id, password) {
+  const passwordHash = await bcrypt.hash(password, 12);
+  await query('UPDATE users SET password_hash = :passwordHash WHERE id = :id', { id, passwordHash });
+  return findById(id);
+}
+
+async function markOnline(id) {
+  await query('UPDATE users SET online_status = true, last_seen_at = CURRENT_TIMESTAMP WHERE id = :id', { id });
+  return findPublicById(id);
+}
+
+async function markOffline(id) {
+  await query('UPDATE users SET online_status = false WHERE id = :id', { id });
+  return findPublicById(id);
+}
+
 async function verifyPassword(user, password) {
   return bcrypt.compare(password, user.password_hash);
 }
 
-module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, update, verifyPassword };
+module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, update, updatePassword, markOnline, markOffline, verifyPassword };

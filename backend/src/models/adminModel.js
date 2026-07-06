@@ -1,4 +1,5 @@
-const { query } = require('../config/db');
+const { query, transaction } = require('../config/db');
+const settingsModel = require('./settingsModel');
 
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc FROM users');
@@ -181,10 +182,35 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
 }
 
 async function updateWithdrawal(id, { status }) {
-  await query(
-    'UPDATE withdrawals SET status = :status, completed_at = IF(:status = "completed", CURRENT_TIMESTAMP, completed_at) WHERE id = :id',
-    { id, status }
-  );
+  await transaction(async (connection) => {
+    const [rows] = await connection.execute('SELECT * FROM withdrawals WHERE id = :id LIMIT 1 FOR UPDATE', { id });
+    const withdrawal = rows[0];
+    if (!withdrawal) return;
+    if (withdrawal.status === status) return;
+
+    await connection.execute(
+      'UPDATE withdrawals SET status = :status, completed_at = IF(:status = "completed", CURRENT_TIMESTAMP, completed_at) WHERE id = :id',
+      { id, status }
+    );
+
+    if (status === 'rejected' && withdrawal.status === 'pending') {
+      await connection.execute('UPDATE users SET earnings = earnings + :amount WHERE id = :userId', {
+        amount: withdrawal.amount,
+        userId: withdrawal.user_id
+      });
+    }
+
+    await connection.execute(
+      `UPDATE wallet_transactions
+       SET status = CASE
+         WHEN :status = 'completed' THEN 'completed'
+         WHEN :status = 'rejected' THEN 'failed'
+         ELSE status
+       END
+       WHERE user_id = :userId AND type = 'withdrawal' AND description = :description`,
+      { status, userId: withdrawal.user_id, description: `Withdrawal #${id}` }
+    );
+  });
   return query('SELECT * FROM withdrawals WHERE id = :id', { id }).then((rows) => rows[0]);
 }
 
@@ -222,17 +248,11 @@ async function replaceProductImages(productId, images) {
 }
 
 async function settings() {
-  const rows = await query('SELECT setting_key, setting_value FROM settings ORDER BY setting_key ASC');
-  return Object.fromEntries(rows.map((row) => [row.setting_key, row.setting_value]));
+  return settingsModel.all();
 }
 
 async function upsertSetting(key, value) {
-  await query(
-    `INSERT INTO settings (setting_key, setting_value) VALUES (:key, :value)
-     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-    { key, value }
-  );
-  return { key, value };
+  return settingsModel.upsert(key, value);
 }
 
 module.exports = {

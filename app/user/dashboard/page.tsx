@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from 'react';
-import { Users, Heart, MessageCircle, TrendingUp } from 'lucide-react';
+import { Users, Heart, MessageCircle, TrendingUp, Circle } from 'lucide-react';
 import { StatCard } from '@/components/user/stat-card';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { userApi } from '@/lib/api';
 
 export default function DashboardPage() {
-  const [data, setData] = useState<{ user: any; profile: any; matches: any[] } | null>(null);
+  const [data, setData] = useState<{ user: any; profile: any; matches: any[]; activeGirls: any[]; assignedGirl: any | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -33,10 +33,12 @@ export default function DashboardPage() {
 
   const user = data?.user || {};
   const matches = data?.matches || [];
+  const activeGirls = data?.activeGirls || [];
+  const assignedGirl = data?.assignedGirl;
   const stats = [
     { label: 'Total Matches', value: matches.length, icon: Heart, change: `${matches.slice(0, 3).length} recent` },
     { label: 'New Messages', value: 0, icon: MessageCircle, change: 'Synced from chats' },
-    { label: 'Profile Views', value: 0, icon: Users, change: 'Coming soon' },
+    { label: 'Active Girls', value: activeGirls.length, icon: Users, change: assignedGirl ? 'One assigned now' : 'Waiting for online users' },
     { label: 'Coins Balance', value: user.coins || 0, icon: TrendingUp },
   ];
 
@@ -65,6 +67,63 @@ export default function DashboardPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
+            <Card className="mb-6">
+              <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800">
+                <h2 className="text-xl font-semibold">Active Girls</h2>
+              </div>
+              <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
+                {!assignedGirl && (
+                  <div className="p-6 text-center text-zinc-500">No girls are online right now.</div>
+                )}
+                {assignedGirl && (
+                  <div className="p-4 bg-green-50/80 dark:bg-green-950/20">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img
+                            src={assignedGirl.photo || '/placeholder.svg'}
+                            alt={assignedGirl.name}
+                            className="w-14 h-14 rounded-full object-cover"
+                          />
+                          <Circle className="absolute -right-1 bottom-0 fill-green-500 text-green-500" size={14} />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{assignedGirl.name}</p>
+                          <p className="text-sm text-zinc-500">Assigned active girl</p>
+                        </div>
+                      </div>
+                      <Button size="sm" asChild>
+                        <Link href={`/user/chat/${assignedGirl.id}`}>Start Chat</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {activeGirls.filter((girl) => girl.id !== assignedGirl?.id).slice(0, 4).map((girl) => (
+                  <div key={girl.id} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img
+                            src={girl.photo || '/placeholder.svg'}
+                            alt={girl.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <Circle className="absolute -right-1 bottom-0 fill-green-500 text-green-500" size={12} />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{girl.name}</p>
+                          <p className="text-sm text-zinc-500">Online now</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/user/chat/${girl.id}`}>Chat</Link>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             <Card>
               <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800">
                 <h2 className="text-xl font-semibold">Recent Matches</h2>

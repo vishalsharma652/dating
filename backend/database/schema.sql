@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
   kyc_status ENUM('not_submitted','pending','approved','rejected') NOT NULL DEFAULT 'not_submitted',
   coins INT NOT NULL DEFAULT 0,
   earnings DECIMAL(12,2) NOT NULL DEFAULT 0,
+  gender VARCHAR(40) NULL,
+  online_status BOOLEAN NOT NULL DEFAULT FALSE,
+  last_seen_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -85,8 +88,38 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id BIGINT UNSIGNED NOT NULL,
   body TEXT NOT NULL,
   type VARCHAR(30) NOT NULL DEFAULT 'text',
+  delivery_status ENUM('sent','delivered','read') NOT NULL DEFAULT 'sent',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_messages_chat FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS chat_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  requester_id BIGINT UNSIGNED NOT NULL,
+  receiver_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('pending','accepted','rejected','cancelled') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_chat_request (requester_id, receiver_id),
+  CONSTRAINT fk_chat_requests_requester FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_requests_receiver FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  chat_id BIGINT UNSIGNED NOT NULL,
+  payer_user_id BIGINT UNSIGNED NOT NULL,
+  earner_user_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('active','ended') NOT NULL DEFAULT 'active',
+  charge_per_minute INT NOT NULL DEFAULT 10,
+  earner_share INT NOT NULL DEFAULT 7,
+  platform_share INT NOT NULL DEFAULT 3,
+  charged_minutes INT NOT NULL DEFAULT 0,
+  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ended_at TIMESTAMP NULL,
+  CONSTRAINT fk_chat_sessions_chat FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_sessions_payer FOREIGN KEY (payer_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_sessions_earner FOREIGN KEY (earner_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS coin_packages (
@@ -103,14 +136,30 @@ CREATE TABLE IF NOT EXISTS coin_packages (
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  type ENUM('purchase','earning','withdrawal') NOT NULL,
+  type ENUM('purchase','earning','withdrawal','chat_charge','commission') NOT NULL,
   title VARCHAR(160) NOT NULL,
   description VARCHAR(255) NULL,
   amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   coins INT NOT NULL DEFAULT 0,
   status ENUM('pending','completed','failed') NOT NULL DEFAULT 'completed',
+  payment_gateway ENUM('razorpay','cashfree','phonepe') NULL,
+  payment_reference VARCHAR(190) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bank_accounts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  account_holder_name VARCHAR(160) NOT NULL,
+  bank_name VARCHAR(120) NULL,
+  account_number VARCHAR(80) NULL,
+  ifsc_code VARCHAR(20) NULL,
+  upi_id VARCHAR(120) NULL,
+  status ENUM('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_bank_accounts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS withdrawals (
@@ -180,11 +229,17 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
-('Starter Spark', 100, 99, 0, FALSE),
-('Glow Bundle', 500, 399, 50, TRUE),
-('Elite Match', 1000, 799, 200, FALSE),
-('Premium Plus', 2500, 1799, 500, TRUE)
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+('Starter', 100, 100, 0, FALSE),
+('Value', 500, 450, 0, TRUE),
+('Premium', 1000, 800, 0, FALSE)
+ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE;
+
+INSERT INTO settings (setting_key, setting_value) VALUES
+('coin_rate_inr', '0.70'),
+('chat_charge_per_minute', '10'),
+('female_earning_per_minute', '7'),
+('platform_commission_per_minute', '3')
+ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 INSERT INTO categories (name, slug, description) VALUES
 ('Coin Packages', 'coin-packages', 'In-app coin bundles and premium purchases')

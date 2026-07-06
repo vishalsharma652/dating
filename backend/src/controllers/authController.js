@@ -62,8 +62,9 @@ async function login(req, res) {
   if (!user || !(await userModel.verifyPassword(user, req.body.password))) {
     throw new AppError('Invalid credentials', 401);
   }
-  const token = signToken(user);
-  return ok(res, { token, user: toPublicUser(user) }, 'Logged in');
+  const onlineUser = await userModel.markOnline(user.id);
+  const token = signToken(onlineUser);
+  return ok(res, { token, user: toPublicUser(onlineUser) }, 'Logged in');
 }
 
 async function me(req, res) {
@@ -97,9 +98,10 @@ async function verifyOtp(req, res) {
   }
 
   const user = await userModel.create({ ...pendingRegistration, phoneVerified: true });
+  const onlineUser = await userModel.markOnline(user.id);
   pendingRegistrations.delete(phone);
-  const token = signToken(user);
-  return created(res, { token, user: toPublicUser(user), phoneVerified: true }, 'Account created');
+  const token = signToken(onlineUser);
+  return created(res, { token, user: toPublicUser(onlineUser), phoneVerified: true }, 'Account created');
 }
 
 async function resendOtp(req, res) {
