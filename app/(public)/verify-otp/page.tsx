@@ -6,8 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, ShieldCheck, TimerReset } from 'lucide-react';
-
-const mockCode = '111111'; // For demo purposes only
+import { authApi, setAuthSession } from '@/lib/api';
 
 export default function VerifyOTPPage() {
   const router = useRouter();
@@ -20,75 +19,48 @@ export default function VerifyOTPPage() {
 
   useEffect(() => {
     const storedPhone = typeof window !== 'undefined' ? localStorage.getItem('onboardPhone') : null;
-    if (storedPhone) {
-      setMobile(storedPhone);
-    }
+    if (storedPhone) setMobile(storedPhone);
+    const backendOtp = typeof window !== 'undefined' ? localStorage.getItem('backendOtp') : null;
+    if (backendOtp) setInfo(`Enter the 6-digit code sent to your phone. Backend OTP: ${backendOtp}.`);
   }, []);
 
   useEffect(() => {
-    if (timeLeft <= 0) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setTimeLeft((count) => Math.max(count - 1, 0));
-    }, 1000);
+    if (timeLeft <= 0) return;
+    const timer = window.setInterval(() => setTimeLeft((count) => Math.max(count - 1, 0)), 1000);
     return () => window.clearInterval(timer);
   }, [timeLeft]);
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^[0-9]?$/.test(value)) {
-      return;
-    }
+  const clearOtpAndFocusFirst = () => {
+    setOtp(['', '', '', '', '', '']);
+    setTimeout(() => document.getElementById('otp-0')?.focus(), 10);
+  };
 
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^[0-9]?$/.test(value)) return;
     const nextOtp = [...otp];
     nextOtp[index] = value;
     setOtp(nextOtp);
-
-    // Clear error when user starts typing again
     if (error) {
       setError('');
       setInfo('Enter the 6-digit code sent to your phone.');
     }
-
-    if (value && index < otp.length - 1) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
+    if (value && index < otp.length - 1) document.getElementById(`otp-${index + 1}`)?.focus();
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
+      document.getElementById(`otp-${index - 1}`)?.focus();
     }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 0) return;
-
-    const newOtp = [...otp];
-    for (let i = 0; i < 6; i++) {
-      newOtp[i] = pasted[i] || '';
-    }
-    setOtp(newOtp);
-
-    // Focus the next empty input or the last one
-    const focusIndex = Math.min(pasted.length, 5);
-    document.getElementById(`otp-${focusIndex}`)?.focus();
-
-    if (error) {
-      setError('');
-      setInfo('Enter the 6-digit code sent to your phone.');
-    }
-  };
-
-  const clearOtpAndFocusFirst = () => {
-    setOtp(['', '', '', '', '', '']);
-    setTimeout(() => {
-      document.getElementById('otp-0')?.focus();
-    }, 10);
+    if (!pasted) return;
+    const nextOtp = [...otp];
+    for (let i = 0; i < 6; i += 1) nextOtp[i] = pasted[i] || '';
+    setOtp(nextOtp);
+    document.getElementById(`otp-${Math.min(pasted.length, 5)}`)?.focus();
   };
 
   const handleVerify = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -99,27 +71,33 @@ export default function VerifyOTPPage() {
 
     if (code.length < 6) {
       setError('Enter the full 6-digit code.');
-      setInfo('');
-      return;
-    }
-
-    if (code !== mockCode) {
-      setError(`Invalid code. Use ${mockCode} for this demo.`);
-      setInfo('');
-      // Clear wrong OTP and focus first input
-      clearOtpAndFocusFirst();
       return;
     }
 
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    router.push('/user/profile/age-verify');
+    try {
+      const data = await authApi.verifyOtp({ phone: mobile.replace(/\D/g, ''), otp: code });
+      setAuthSession(data.token, data.user);
+      localStorage.removeItem('backendOtp');
+      router.push('/user/profile/age-verify');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid code.');
+      clearOtpAndFocusFirst();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setTimeLeft(90);
-    setInfo('A new code has been requested. Check your phone for 483219.');
     setError('');
+    try {
+      const data = await authApi.resendOtp({ phone: mobile.replace(/\D/g, '') });
+      localStorage.setItem('backendOtp', data.otp);
+      setInfo(`A new code has been requested. Backend OTP: ${data.otp}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to resend OTP');
+    }
     clearOtpAndFocusFirst();
   };
 
@@ -156,7 +134,7 @@ export default function VerifyOTPPage() {
                     maxLength={1}
                     value={digit}
                     onChange={(event) => handleOtpChange(index, event.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onKeyDown={(event) => handleKeyDown(index, event)}
                     onPaste={handlePaste}
                     autoFocus={index === 0}
                     className="w-14 h-14 rounded-3xl border border-zinc-200 bg-white text-center text-2xl font-semibold text-zinc-950 transition focus:border-pink-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
@@ -165,11 +143,7 @@ export default function VerifyOTPPage() {
               </div>
             </div>
 
-            {error ? (
-              <p className="text-sm text-red-500 font-medium">{error}</p>
-            ) : info ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{info}</p>
-            ) : null}
+            {error ? <p className="text-sm text-red-500 font-medium">{error}</p> : info ? <p className="text-sm text-zinc-600 dark:text-zinc-400">{info}</p> : null}
 
             <div className="flex items-center justify-between rounded-3xl border border-zinc-200 bg-white/80 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-zinc-400">
               <span className="inline-flex items-center gap-2">
@@ -182,7 +156,7 @@ export default function VerifyOTPPage() {
             </div>
 
             <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? 'Verifying…' : 'Verify OTP'}
+              {loading ? 'Verifying...' : 'Verify OTP'}
             </Button>
           </form>
 
@@ -192,14 +166,11 @@ export default function VerifyOTPPage() {
               onClick={handleResend}
               disabled={timeLeft > 0}
               className={`font-semibold transition ${
-                timeLeft > 0
-                  ? 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
-                  : 'text-pink-500 hover:text-pink-600'
+                timeLeft > 0 ? 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed' : 'text-pink-500 hover:text-pink-600'
               }`}
             >
               {timeLeft > 0 ? `Resend in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : 'Resend code'}
             </button>
-            <p className="text-xs">Mock code: <span className="font-semibold text-zinc-900 dark:text-white">{mockCode}</span></p>
           </div>
         </div>
       </Card>

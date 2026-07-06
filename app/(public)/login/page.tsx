@@ -1,22 +1,39 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { authApi, setAuthSession } from '@/lib/api';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setLoading(false);
+    setError('');
+
+    try {
+      const identifier = formData.email.trim();
+      const data = await authApi.login({
+        ...(identifier.includes('@') ? { email: identifier } : { phone: identifier }),
+        password: formData.password,
+      });
+      setAuthSession(data.token, data.user);
+      router.push('/user/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,11 +49,12 @@ export default function LoginPage() {
             <div className="relative">
               <Mail className="absolute left-4 top-3 text-zinc-400" size={20} />
               <Input
-                placeholder="Email address"
-                type="email"
+                placeholder="Email address or mobile number"
+                type="text"
                 className="pl-12"
                 value={formData.email}
                 onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+                required
               />
             </div>
 
@@ -48,6 +66,7 @@ export default function LoginPage() {
                 className="pl-12 pr-12"
                 value={formData.password}
                 onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                required
               />
               <button
                 type="button"
@@ -72,8 +91,10 @@ export default function LoginPage() {
               </Link>
             </div>
 
+            {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">{error}</p>}
+
             <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 

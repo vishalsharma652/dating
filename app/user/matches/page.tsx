@@ -1,16 +1,31 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle } from 'lucide-react';
-import { matches } from '@/lib/mockData';
+import { userApi } from '@/lib/api';
 
 export default function MatchesPage() {
-  const liked = matches.filter((m) => m.status === 'you_liked');
-  const likedYou = matches.filter((m) => m.status === 'liked_you');
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    userApi.matches()
+      .then((data) => setMatches(data.matches || []))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load matches'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-zinc-500">Loading matches...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+
   const mutual = matches.filter((m) => m.status === 'matched');
 
   return (
@@ -21,7 +36,10 @@ export default function MatchesPage() {
           {matches.length} connection{matches.length !== 1 ? 's' : ''}
         </p>
 
-        {/* Mutual Matches */}
+        {mutual.length === 0 && (
+          <Card className="p-8 text-center text-zinc-500">No matches found yet.</Card>
+        )}
+
         {mutual.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
@@ -31,7 +49,7 @@ export default function MatchesPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mutual.map((match) => (
                 <Card key={match.id} className="overflow-hidden">
-                  <div className="relative h-48 bg-cover bg-center" style={{ backgroundImage: `url(${match.photo})` }}>
+                  <div className="relative h-48 bg-cover bg-center" style={{ backgroundImage: `url(${match.photo || '/placeholder.svg'})` }}>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <Badge className="absolute top-3 right-3">Matched</Badge>
                   </div>
@@ -39,7 +57,7 @@ export default function MatchesPage() {
                     <h3 className="font-semibold mb-1">{match.name}</h3>
                     <div className="flex gap-2 mb-4">
                       <Button size="sm" className="flex-1" asChild>
-                        <Link href={`/user/chat/${match.userId}`}>
+                        <Link href={`/user/chat/${match.profileId || match.userId}`}>
                           <MessageCircle size={16} />
                           Chat
                         </Link>
@@ -48,59 +66,6 @@ export default function MatchesPage() {
                         View Profile
                       </Button>
                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Liked You */}
-        {likedYou.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold mb-4">Liked You</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {likedYou.map((match) => (
-                <Card key={match.id} className="overflow-hidden">
-                  <div className="relative h-48 bg-cover bg-center" style={{ backgroundImage: `url(${match.photo})` }}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <Badge variant="pink" className="absolute top-3 right-3">
-                      Likes You
-                    </Badge>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-1">{match.name}</h3>
-                    <div className="flex gap-2 mb-4">
-                      <Button size="sm" className="flex-1">
-                        Like Back
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1">
-                        Pass
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* You Liked */}
-        {liked.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">You Liked</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {liked.map((match) => (
-                <Card key={match.id} className="overflow-hidden">
-                  <div className="relative h-48 bg-cover bg-center" style={{ backgroundImage: `url(${match.photo})` }}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <Badge variant="purple" className="absolute top-3 right-3">
-                      Waiting
-                    </Badge>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-1">{match.name}</h3>
-                    <p className="text-sm text-zinc-500 mb-4">Waiting for response</p>
                   </div>
                 </Card>
               ))}

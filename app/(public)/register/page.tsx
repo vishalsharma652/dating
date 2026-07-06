@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
+import { authApi } from '@/lib/api';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,13 +24,12 @@ export default function RegisterPage() {
     acceptTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState('');
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      nextErrors.name = 'Enter your full name to continue.';
-    }
+    if (!formData.name.trim()) nextErrors.name = 'Enter your full name to continue.';
 
     if (!formData.phone.trim()) {
       nextErrors.phone = 'Mobile number is required.';
@@ -53,9 +53,7 @@ export default function RegisterPage() {
       nextErrors.confirmPassword = 'Passwords do not match.';
     }
 
-    if (!formData.acceptTerms) {
-      nextErrors.acceptTerms = 'You must accept the terms and privacy policy.';
-    }
+    if (!formData.acceptTerms) nextErrors.acceptTerms = 'You must accept the terms and privacy policy.';
 
     return nextErrors;
   };
@@ -65,12 +63,26 @@ export default function RegisterPage() {
     const nextErrors = validate();
     setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length === 0) {
-      setLoading(true);
-      localStorage.setItem('onboardPhone', formData.phone);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setLoading(true);
+    setSubmitError('');
+
+    try {
+      const data = await authApi.register({
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || undefined,
+        password: formData.password,
+      });
+      localStorage.setItem('onboardPhone', data.phone);
       localStorage.setItem('onboardName', formData.name);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      localStorage.setItem('backendOtp', data.otp);
       router.push('/verify-otp');
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Unable to create account');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,15 +205,16 @@ export default function RegisterPage() {
               </span>
             </label>
             {errors.acceptTerms && <p className="text-xs text-red-500">{errors.acceptTerms}</p>}
+            {submitError && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">{submitError}</p>}
 
             <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
 
           <div className="mt-6 rounded-3xl bg-zinc-100/80 p-4 text-sm text-zinc-600 dark:bg-zinc-900/80 dark:text-zinc-300">
             <p className="font-semibold text-zinc-900 dark:text-white">What happens next?</p>
-            <p className="mt-1">We’ll verify your mobile number, confirm your age, and guide you through secure KYC and profile setup.</p>
+            <p className="mt-1">We will verify your mobile number, confirm your age, and guide you through secure KYC and profile setup.</p>
           </div>
 
           <div className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
