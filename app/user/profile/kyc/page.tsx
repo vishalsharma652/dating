@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Upload, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { userApi } from '@/lib/api';
 
 const statusClasses: Record<string, string> = {
   Pending: 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100',
@@ -28,6 +29,12 @@ export default function KYCPage() {
     aadhaarBack: '',
     panCard: '',
     selfie: '',
+  });
+  const [selectedFiles, setSelectedFiles] = useState<Record<keyof typeof files, File | null>>({
+    aadhaarFront: null,
+    aadhaarBack: null,
+    panCard: null,
+    selfie: null,
   });
   const [statuses, setStatuses] = useState({
     aadhaar: 'Under review',
@@ -52,6 +59,7 @@ export default function KYCPage() {
     const statusKey = key === 'panCard' ? 'pan' : key;
 
     setFiles((current) => ({ ...current, [key]: preview }));
+    setSelectedFiles((current) => ({ ...current, [key]: file }));
     setStatuses((current) => ({ ...current, [statusKey]: 'Under review' }));
   };
 
@@ -64,8 +72,21 @@ export default function KYCPage() {
 
     setError('');
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    router.push('/user/profile/setup');
+    try {
+      const payload = new FormData();
+      payload.append('fullName', formData.fullName);
+      payload.append('aadhaar', formData.aadhaar);
+      payload.append('pan', formData.pan);
+      Object.values(selectedFiles).forEach((file) => {
+        if (file) payload.append('documents', file);
+      });
+      await userApi.submitKyc(payload);
+      router.push('/user/profile/setup');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to submit KYC.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,7 +127,7 @@ export default function KYCPage() {
               <p className="text-sm uppercase tracking-[0.24em] text-pink-500">Secure onboarding</p>
               <h2 className="mt-3 text-2xl font-semibold">Complete the final verification step</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                All uploads are stored in the client flow for this mock onboarding experience. Use realistic document values and a clear selfie for the strongest result.
+                Your uploads are submitted securely to the backend for admin review.
               </p>
             </div>
           </div>
@@ -191,7 +212,7 @@ export default function KYCPage() {
             {error && <p className="rounded-3xl bg-red-500/10 px-4 py-3 text-sm text-red-700">{error}</p>}
 
             <Button type="submit" className="w-full h-12" disabled={!allComplete || loading}>
-              {loading ? 'Submitting verification…' : 'Continue to profile setup'}
+              {loading ? 'Submitting verification...' : 'Continue to profile setup'}
             </Button>
           </form>
         </Card>

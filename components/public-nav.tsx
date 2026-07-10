@@ -3,13 +3,19 @@
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Moon, Sun, Menu, X } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
 export function PublicNav() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
-  const isDark = useMemo(() => theme === 'dark', [theme]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = useMemo(() => resolvedTheme === 'dark', [resolvedTheme]);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-200/80 dark:border-zinc-800">
@@ -41,8 +47,9 @@ export function PublicNav() {
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
               className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              {mounted ? (isDark ? <Sun size={20} /> : <Moon size={20} />) : <span className="block h-5 w-5" />}
             </button>
 
             <div className="hidden md:flex items-center gap-3">

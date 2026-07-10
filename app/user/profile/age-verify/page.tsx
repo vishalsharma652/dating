@@ -7,7 +7,8 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { userApi } from '@/lib/api';
 
 function calculateAge(date: Date) {
   const diff = Date.now() - date.getTime();
@@ -30,16 +31,22 @@ export default function AgeVerificationPage() {
       setError('Select your date of birth to continue.');
       return;
     }
-
     if (!eligible) {
       setError('You must be 18 years or older to join Ember.');
       return;
     }
 
     setLoading(true);
-    localStorage.setItem('onboardDob', dob);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    router.push('/user/profile/kyc');
+    setError('');
+    try {
+      localStorage.setItem('onboardDob', dob);
+      await userApi.ageVerify(dob);
+      router.push('/user/profile/kyc');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to verify age.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,9 +58,7 @@ export default function AgeVerificationPage() {
               <ArrowLeft size={16} /> Back to OTP
             </Link>
             <h1 className="mt-4 text-3xl font-bold">Age verification</h1>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-              Confirm you are 18+ so your profile stays visible to verified matches.
-            </p>
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400">Confirm you are 18+ so your profile stays visible to verified matches.</p>
           </div>
           <div className="rounded-3xl bg-white/90 px-4 py-3 text-sm font-semibold text-zinc-700 shadow-lg shadow-zinc-900/5 backdrop-blur dark:bg-zinc-950/70 dark:text-zinc-200">
             {age !== null ? `${age} years old` : 'Awaiting birth date'}
@@ -88,15 +93,7 @@ export default function AgeVerificationPage() {
               <div className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/70">
                 <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Eligibility</p>
                 <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                  {dob ? (
-                    eligible ? (
-                      'You meet the age requirement and may continue to KYC verification.'
-                    ) : (
-                      'You must be 18 or older to continue. Update your birth date if this is incorrect.'
-                    )
-                  ) : (
-                    'We will calculate your age automatically once you pick your date of birth.'
-                  )}
+                  {dob ? (eligible ? 'You meet the age requirement and may continue to KYC verification.' : 'You must be 18 or older to continue. Update your birth date if this is incorrect.') : 'We will calculate your age automatically once you pick your date of birth.'}
                 </p>
               </div>
             </div>
@@ -107,15 +104,15 @@ export default function AgeVerificationPage() {
                 <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Members must be at least 18 years old for community safety and trust.</p>
               </div>
               <div className="rounded-[1.75rem] border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/80">
-                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Fast approval</p>
-                <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Your age is verified right away in the client flow to keep onboarding smooth.</p>
+                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Backend verified</p>
+                <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Your birth date is saved to your account before KYC starts.</p>
               </div>
             </div>
 
             {error && <p className="rounded-3xl bg-red-500/10 px-4 py-3 text-sm text-red-700">{error}</p>}
 
             <Button type="submit" className="w-full h-12" disabled={!dob || !eligible || loading}>
-              {loading ? 'Confirming…' : 'Continue to KYC'}
+              {loading ? 'Confirming...' : 'Continue to KYC'}
             </Button>
           </Card>
         </form>
