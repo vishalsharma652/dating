@@ -71,6 +71,16 @@ async function me(req, res) {
   return ok(res, { user: req.user });
 }
 
+async function logout(req, res) {
+  await userModel.markOffline(req.user.id);
+  return ok(res, null, 'Logged out');
+}
+
+async function heartbeat(req, res) {
+  const user = await userModel.markOnline(req.user.id);
+  return ok(res, { user: toPublicUser(user) }, 'Active status refreshed');
+}
+
 async function verifyOtp(req, res) {
   const phone = normalizePhone(req.body.phone);
   const { otp } = req.body;
@@ -129,4 +139,4 @@ async function resetPassword(req, res) {
   return ok(res, null, 'Password reset successfully');
 }
 
-module.exports = { registerRules, loginRules, register, login, me, verifyOtp, resendOtp, forgotPassword, resetPassword };
+module.exports = { registerRules, loginRules, register, login, me, logout, heartbeat, verifyOtp, resendOtp, forgotPassword, resetPassword };

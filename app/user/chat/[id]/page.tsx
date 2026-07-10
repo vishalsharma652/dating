@@ -5,8 +5,8 @@
 import { Container } from '@/components/ui/container';
 import { ChatHeader } from '@/components/user/chat-header';
 import { ChatInput } from '@/components/user/chat-input';
-import { getStoredUser, userApi } from '@/lib/api';
-import { use, useEffect, useState } from 'react';
+import { authApi, getStoredUser, userApi } from '@/lib/api';
+import { use, useEffect, useState, useRef } from 'react';
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,16 +15,52 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const currentUser = getStoredUser();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    userApi.messages(id)
-      .then((data) => {
-        setMessages(data.messages || []);
-        setChatUser(data.chat?.otherUser || { id, name: 'User', photo: '/placeholder.svg' });
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load chat'))
-      .finally(() => setLoading(false));
+    let active = true;
+
+    const fetchMessages = () => {
+      userApi.messages(id)
+        .then((data) => {
+          if (!active) return;
+          setMessages(data.messages || []);
+          setChatUser(data.chat?.otherUser || { id, name: 'User', photo: '/placeholder.svg' });
+        })
+        .catch((err) => {
+          if (active) setError(err instanceof Error ? err.message : 'Unable to load chat');
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+
+    fetchMessages();
+
+    const interval = setInterval(fetchMessages, 3000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [id]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    authApi.heartbeat().catch(() => undefined);
+    const interval = window.setInterval(() => {
+      authApi.heartbeat().catch(() => undefined);
+    }, 30000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const handleSend = async (message: string) => {
     try {
@@ -72,6 +108,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               </div>
             );
           })}
+          <div ref={messagesEndRef} />
         </Container>
       </div>
 

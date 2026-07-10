@@ -81,7 +81,7 @@ async function activeGirls(userId, { limit = 8 } = {}) {
     `SELECT u.id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age,
       p.city AS location, p.bio, COALESCE(pp.url, '') AS photo,
       u.kyc_status = 'approved' AS verified, p.interests,
-      true AS online, u.last_seen_at AS lastSeenAt
+      u.online_status AS online, u.last_seen_at AS lastSeenAt
      FROM users u
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
@@ -90,7 +90,7 @@ async function activeGirls(userId, { limit = 8 } = {}) {
        AND u.status = 'active'
        AND LOWER(COALESCE(u.gender, p.gender, '')) = 'female'
        AND u.online_status = true
-       AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+       AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)
      ORDER BY u.last_seen_at DESC, u.updated_at DESC
      LIMIT ${safeLimit}`,
     { userId }

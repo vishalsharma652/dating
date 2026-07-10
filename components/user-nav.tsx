@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Home,
@@ -21,6 +21,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { authApi, clearAuthSession } from '@/lib/api';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: Home },
@@ -36,9 +37,27 @@ const sidebarItems = [
 
 export function UserNav() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isDark = useMemo(() => theme === 'dark', [theme]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = useMemo(() => resolvedTheme === 'dark', [resolvedTheme]);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Local logout should still complete if the session is already expired.
+    } finally {
+      clearAuthSession();
+      router.push('/');
+    }
+  };
 
   return (
     <>
@@ -52,8 +71,9 @@ export function UserNav() {
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            {mounted ? (isDark ? <Sun size={20} /> : <Moon size={20} />) : <span className="block h-5 w-5" />}
           </button>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -102,11 +122,9 @@ export function UserNav() {
 
         {/* Bottom Section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-200/80 dark:border-zinc-800">
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2" asChild>
-            <Link href="/">
-              <LogOut size={18} />
-              Logout
-            </Link>
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={handleLogout}>
+            <LogOut size={18} />
+            Logout
           </Button>
         </div>
       </aside>

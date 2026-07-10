@@ -94,6 +94,14 @@ export const authApi = {
       body: JSON.stringify(body),
     }),
   me: () => apiRequest<{ user: any }>('/auth/me'),
+  logout: () =>
+    apiRequest<null>('/auth/logout', {
+      method: 'POST',
+    }),
+  heartbeat: () =>
+    apiRequest<{ user: any }>('/auth/heartbeat', {
+      method: 'POST',
+    }),
 };
 
 export const userApi = {

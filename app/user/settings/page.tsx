@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { authApi, clearAuthSession } from '@/lib/api';
 import {
   Lock,
   Bell,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const settings = [
     {
       icon: Bell,
@@ -56,6 +59,17 @@ export default function SettingsPage() {
     },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Local logout should still complete if the session is already expired.
+    } finally {
+      clearAuthSession();
+      router.push('/');
+    }
+  };
+
   return (
     <div className="p-4 md:p-8">
       <Container>
@@ -91,7 +105,15 @@ export default function SettingsPage() {
         {/* Account */}
         <h2 className="text-lg font-semibold mb-4">Account</h2>
         <div className="space-y-2 mb-8">
-          <Card className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
+          <Card
+            className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={handleLogout}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') handleLogout();
+            }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center">
