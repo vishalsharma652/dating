@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import Link from 'next/link';
 import { PublicNav } from '@/components/public-nav';
 
 export default function LegalLayout({ children }: { children: ReactNode }) {
@@ -12,24 +13,24 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <li><a href="/" className="hover:text-pink-500 transition">Features</a></li>
-                <li><a href="/" className="hover:text-pink-500 transition">Pricing</a></li>
-                <li><a href="/" className="hover:text-pink-500 transition">Security</a></li>
+                <li><Link href="/" className="hover:text-pink-500 transition">Features</Link></li>
+                <li><Link href="/" className="hover:text-pink-500 transition">Pricing</Link></li>
+                <li><Link href="/" className="hover:text-pink-500 transition">Security</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <li><a href="/about" className="hover:text-pink-500 transition">About</a></li>
-                <li><a href="/contact" className="hover:text-pink-500 transition">Contact</a></li>
-                <li><a href="/help" className="hover:text-pink-500 transition">Help</a></li>
+                <li><Link href="/about" className="hover:text-pink-500 transition">About</Link></li>
+                <li><Link href="/contact" className="hover:text-pink-500 transition">Contact</Link></li>
+                <li><Link href="/help" className="hover:text-pink-500 transition">Help</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <li><a href="/terms" className="hover:text-pink-500 transition">Terms</a></li>
-                <li><a href="/privacy" className="hover:text-pink-500 transition">Privacy</a></li>
+                <li><Link href="/legal/terms" className="hover:text-pink-500 transition">Terms</Link></li>
+                <li><Link href="/legal/privacy" className="hover:text-pink-500 transition">Privacy</Link></li>
               </ul>
             </div>
             <div>

@@ -47,7 +47,7 @@ export function PublicNav() {
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
               className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition"
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={mounted ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : 'Switch theme'}
             >
               {mounted ? (isDark ? <Sun size={20} /> : <Moon size={20} />) : <span className="block h-5 w-5" />}
             </button>

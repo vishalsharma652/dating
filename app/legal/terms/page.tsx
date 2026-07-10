@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/container';
+import { Card } from '@/components/ui/card';
 
 export default function TermsPage() {
   return (

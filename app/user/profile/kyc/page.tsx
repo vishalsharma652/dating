@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
@@ -20,7 +20,7 @@ const statusClasses: Record<string, string> = {
 export default function KYCPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    fullName: localStorage.getItem('onboardName') || '',
+    fullName: '',
     aadhaar: '',
     pan: '',
   });
@@ -43,6 +43,16 @@ export default function KYCPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if we are running in the browser
+    if (typeof window !== 'undefined') {
+      const storedName = localStorage.getItem('onboardName');
+      if (storedName) {
+        setFormData((current) => ({ ...current, fullName: storedName }));
+      }
+    }
+  }, []);
 
   const allComplete = useMemo(
     () =>
