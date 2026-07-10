@@ -6,12 +6,12 @@ const publicFields = `
   dob, age_verified, kyc_status, coins, earnings, gender, online_status, last_seen_at, created_at, updated_at
 `;
 
-async function create({ name, email = null, phone, password, role = 'user', phoneVerified = false }) {
+async function create({ name, email = null, phone, password, role = 'user', phoneVerified = false, gender = null }) {
   const passwordHash = await bcrypt.hash(password, 12);
   const result = await query(
-    `INSERT INTO users (name, email, phone, password_hash, role, phone_verified)
-     VALUES (:name, :email, :phone, :passwordHash, :role, :phoneVerified)`,
-    { name, email, phone, passwordHash, role, phoneVerified }
+    `INSERT INTO users (name, email, phone, password_hash, role, phone_verified, gender)
+     VALUES (:name, :email, :phone, :passwordHash, :role, :phoneVerified, :gender)`,
+    { name, email, phone, passwordHash, role, phoneVerified, gender }
   );
   return findById(result.insertId);
 }

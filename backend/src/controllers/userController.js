@@ -6,6 +6,7 @@ const walletModel = require('../models/walletModel');
 const settingsModel = require('../models/settingsModel');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
+const { hasNameGenderMismatch, normalizeGender: normalizeNameGender } = require('../utils/nameGender');
 
 const profileRules = [
   body('name').optional().trim().notEmpty(),
@@ -17,14 +18,27 @@ const profileRules = [
 async function dashboard(req, res) {
   const profile = await profileModel.getForUser(req.user.id);
   const matches = await socialModel.matches(req.user.id);
-  const activeGirls = await profileModel.activeGirls(req.user.id);
+  const activeUsers = await profileModel.activeOppositeGenderUsers(req.user.id);
+  const currentGender = normalizeGender(req.user.gender || profile?.gender);
+  const activeLabel = currentGender === 'female' ? 'Active Boys' : 'Active Girls';
+  const assignedUser = activeUsers[0] || null;
   return ok(res, {
     user: req.user,
     profile,
     matches: matches.slice(0, 3),
-    activeGirls,
-    assignedGirl: activeGirls[0] || null
+    activeUsers,
+    assignedUser,
+    activeLabel,
+    activeGirls: activeUsers,
+    assignedGirl: assignedUser
   });
+}
+
+function normalizeGender(value) {
+  const gender = String(value || '').trim().toLowerCase();
+  if (['female', 'woman', 'girl', 'women'].includes(gender)) return 'female';
+  if (['male', 'man', 'boy', 'men'].includes(gender)) return 'male';
+  return gender;
 }
 
 async function getProfile(req, res) {
@@ -33,9 +47,19 @@ async function getProfile(req, res) {
 }
 
 async function updateProfile(req, res) {
+  const currentProfile = await profileModel.getForUser(req.user.id);
+  const nextName = req.body.name || req.user.name;
+  const nextGender = req.body.gender || req.user.gender || currentProfile?.gender;
+  if (hasNameGenderMismatch(nextName, nextGender)) {
+    throw new AppError('Validation failed', 422, [{
+      field: 'gender',
+      message: 'Name and gender mismatch.'
+    }]);
+  }
+
   const userFields = {};
   if (req.body.name) userFields.name = req.body.name;
-  if (req.body.gender) userFields.gender = req.body.gender;
+  if (req.body.gender) userFields.gender = normalizeNameGender(req.body.gender) || req.body.gender;
   const user = Object.keys(userFields).length ? await userModel.update(req.user.id, userFields) : req.user;
   const profile = await profileModel.upsert(req.user.id, req.body);
   return ok(res, { user, profile }, 'Profile updated');
