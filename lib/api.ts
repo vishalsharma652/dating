@@ -78,7 +78,7 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  register: (body: { name: string; phone: string; email?: string; password: string }) =>
+  register: (body: { name: string; phone: string; email?: string; password: string; gender: string }) =>
     apiRequest<{ phone: string; otp: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -105,7 +105,16 @@ export const authApi = {
 };
 
 export const userApi = {
-  dashboard: () => apiRequest<{ user: any; profile: any; matches: any[]; activeGirls: any[]; assignedGirl: any | null }>('/user/dashboard'),
+  dashboard: () => apiRequest<{
+    user: any;
+    profile: any;
+    matches: any[];
+    activeUsers: any[];
+    assignedUser: any | null;
+    activeLabel: string;
+    activeGirls?: any[];
+    assignedGirl?: any | null;
+  }>('/user/dashboard'),
   profile: () => apiRequest<{ user: any; profile: any }>('/user/profile'),
   updateProfile: (body: Record<string, unknown>) =>
     apiRequest<{ user: any; profile: any }>('/user/profile', {

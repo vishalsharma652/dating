@@ -15,11 +15,21 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const loadProfiles = () => {
+    setLoading(true);
+    setError('');
     userApi.discover()
-      .then((data) => setProfiles(data.profiles || []))
+      .then((data) => {
+        setProfiles(data.profiles || []);
+        setCurrentIndex(0);
+        setPassedProfiles([]);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load profiles'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadProfiles();
   }, []);
 
   const currentProfile = profiles[currentIndex];
@@ -55,10 +65,7 @@ export default function DiscoverPage() {
               Check back tomorrow for new profiles
             </p>
             <button
-              onClick={() => {
-                setCurrentIndex(0);
-                setPassedProfiles([]);
-              }}
+              onClick={loadProfiles}
               className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full font-semibold hover:brightness-110 transition"
             >
               Refresh & Start Over

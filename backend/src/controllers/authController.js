@@ -4,6 +4,7 @@ const userModel = require('../models/userModel');
 const { signToken } = require('../utils/token');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
+const { hasNameGenderMismatch } = require('../utils/nameGender');
 
 const pendingRegistrations = new Map();
 
@@ -26,6 +27,16 @@ const registerRules = [
   body('name').trim().notEmpty().withMessage('Full name is required'),
   body('phone').customSanitizer(normalizePhone).matches(/^\d{10,15}$/).withMessage('Enter a valid mobile number'),
   body('email').optional({ values: 'falsy' }).isEmail().withMessage('Enter a valid email address'),
+  body('gender')
+    .isIn(['male', 'female'])
+    .withMessage('Choose a valid gender')
+    .bail()
+    .custom((gender, { req }) => {
+      if (hasNameGenderMismatch(req.body.name, gender)) {
+        throw new Error('Name and gender mismatch.');
+      }
+      return true;
+    }),
   body('password').isLength({ min: 8 }).withMessage('Password should be at least 8 characters')
 ];
 
@@ -47,6 +58,7 @@ async function register(req, res) {
     name: req.body.name,
     email,
     phone,
+    gender: req.body.gender,
     password: req.body.password,
     otp,
     expiresAt: Date.now() + 10 * 60 * 1000

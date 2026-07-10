@@ -10,6 +10,10 @@ import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const genderOptions = [
+  { label: 'Boy', value: 'male' },
+  { label: 'Girl', value: 'female' },
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,6 +23,7 @@ export default function RegisterPage() {
     name: '',
     email: '',
     phone: '',
+    gender: '',
     password: '',
     confirmPassword: '',
     acceptTerms: false,
@@ -40,6 +45,8 @@ export default function RegisterPage() {
     if (formData.email && !emailPattern.test(formData.email.trim())) {
       nextErrors.email = 'Enter a valid email address.';
     }
+
+    if (!formData.gender) nextErrors.gender = 'Choose your gender.';
 
     if (!formData.password) {
       nextErrors.password = 'Create a secure password.';
@@ -73,6 +80,7 @@ export default function RegisterPage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim() || undefined,
+        gender: formData.gender,
         password: formData.password,
       });
       localStorage.setItem('onboardPhone', data.phone);
@@ -145,6 +153,21 @@ export default function RegisterPage() {
                 </div>
               </label>
               {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Gender
+                <select
+                  value={formData.gender}
+                  onChange={(event) => setFormData({ ...formData, gender: event.target.value })}
+                  className="mt-2 h-11 w-full rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-pink-400 focus:ring-2 focus:ring-pink-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                >
+                  <option value="">Select gender</option>
+                  {genderOptions.map((gender) => (
+                    <option key={gender.value} value={gender.value}>{gender.label}</option>
+                  ))}
+                </select>
+              </label>
+              {errors.gender && <p className="text-xs text-red-500">{errors.gender}</p>}
 
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                 Password
