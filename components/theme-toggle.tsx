@@ -13,8 +13,8 @@ function useMounted() {
 
 export function ThemeToggle() {
   const mounted = useMounted();
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   if (!mounted) {
     return null;
