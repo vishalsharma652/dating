@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit2, Share2, Flag } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, apiAssetUrl } from '@/lib/api';
 
 export default function ProfilePage() {
   const [data, setData] = useState<{ user: any; profile: any } | null>(null);
@@ -28,7 +28,7 @@ export default function ProfilePage() {
 
   const user = data?.user || {};
   const profile = data?.profile || {};
-  const photos = profile.photos?.length ? profile.photos : ['/placeholder.svg'];
+  const photos = profile.photos?.length ? profile.photos.map((p: string) => apiAssetUrl(p) || p) : ['/placeholder.svg'];
   const interests = profile.interests || [];
 
   return (

@@ -134,6 +134,11 @@ export const userApi = {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
+  uploadPhoto: (formData: FormData) =>
+    apiRequest<{ url: string }>('/user/profile/photo', {
+      method: 'POST',
+      body: formData,
+    }),
   ageVerify: (dob: string) =>
     apiRequest<{ user: any; age: number }>('/user/profile/age-verify', {
       method: 'POST',

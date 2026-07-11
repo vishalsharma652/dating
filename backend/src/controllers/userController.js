@@ -66,6 +66,16 @@ async function updateProfile(req, res) {
   return ok(res, { user, profile }, 'Profile updated');
 }
 
+async function uploadPhoto(req, res) {
+  if (!req.file) throw new AppError('No photo uploaded', 400);
+  const photoUrl = `/uploads/${req.file.filename}`;
+  const profile = await profileModel.getForUser(req.user.id);
+  const photos = profile?.photos || [];
+  const newPhotos = [photoUrl, ...photos.filter(p => p !== photoUrl).slice(0, 5)];
+  await profileModel.upsert(req.user.id, { photos: newPhotos });
+  return ok(res, { url: photoUrl }, 'Photo uploaded successfully');
+}
+
 async function ageVerify(req, res) {
   const dob = new Date(req.body.dob);
   const age = Math.floor((Date.now() - dob.getTime()) / 1000 / 60 / 60 / 24 / 365.25);
@@ -225,6 +235,7 @@ module.exports = {
   dashboard,
   getProfile,
   updateProfile,
+  uploadPhoto,
   ageVerify,
   submitKyc,
   discover,
