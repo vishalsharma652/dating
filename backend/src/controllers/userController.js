@@ -4,6 +4,7 @@ const profileModel = require('../models/profileModel');
 const socialModel = require('../models/socialModel');
 const walletModel = require('../models/walletModel');
 const settingsModel = require('../models/settingsModel');
+const notificationModel = require('../models/notificationModel');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
 const { hasNameGenderMismatch, normalizeGender: normalizeNameGender } = require('../utils/nameGender');
@@ -115,7 +116,7 @@ async function messages(req, res) {
   const otherUserId = Number(req.params.userId);
   const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
   const otherUser = await socialModel.chatPartner(req.user.id, otherUserId);
-  return ok(res, { chat: { ...chat, otherUser }, messages: await socialModel.messages(chat.id) });
+  return ok(res, { chat: { ...chat, otherUser }, messages: await socialModel.messages(chat.id, req.user.id) });
 }
 
 async function sendMessage(req, res) {
@@ -188,7 +189,24 @@ async function withdrawals(req, res) {
 }
 
 async function notifications(req, res) {
-  return ok(res, { notifications: [] });
+  return ok(res, {
+    notifications: await notificationModel.list(req.user.id, req.query),
+    unread: await notificationModel.unreadCount(req.user.id)
+  });
+}
+
+async function notificationCount(req, res) {
+  return ok(res, { unread: await notificationModel.unreadCount(req.user.id) });
+}
+
+async function markNotificationRead(req, res) {
+  await notificationModel.markRead(req.user.id, Number(req.params.id));
+  return ok(res, { unread: await notificationModel.unreadCount(req.user.id) }, 'Notification marked as read');
+}
+
+async function markNotificationsRead(req, res) {
+  await notificationModel.markAllRead(req.user.id);
+  return ok(res, { unread: 0 }, 'Notifications marked as read');
 }
 
 async function settings(req, res) {
@@ -230,5 +248,8 @@ module.exports = {
   createWithdrawal,
   withdrawals,
   notifications,
+  notificationCount,
+  markNotificationRead,
+  markNotificationsRead,
   settings
 };

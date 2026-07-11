@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
@@ -19,10 +17,30 @@ export default function ChatListPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    userApi.chats()
-      .then((data) => setChats(data.chats || []))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load conversations'))
-      .finally(() => setLoading(false));
+    let active = true;
+
+    const loadChats = () => {
+      userApi.chats()
+        .then((data) => {
+          if (!active) return;
+          setChats(data.chats || []);
+          setError('');
+        })
+        .catch((err) => {
+          if (active) setError(err instanceof Error ? err.message : 'Unable to load conversations');
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+
+    loadChats();
+    const interval = window.setInterval(loadChats, 5000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   const filteredChats = useMemo(
@@ -76,7 +94,7 @@ export default function ChatListPage() {
                   <div className="text-right">
                     <p className="text-xs text-zinc-500 mb-1">{chat.lastMessageTime}</p>
                     {Number(chat.unread) > 0 && (
-                      <Badge className="bg-pink-500 text-white">{chat.unread}</Badge>
+                      <Badge className="bg-pink-500 text-white">{Number(chat.unread) > 99 ? '99+' : chat.unread}</Badge>
                     )}
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/db');
+const notificationModel = require('./notificationModel');
 
 async function like(userId, targetUserId, action) {
   await query(
@@ -37,7 +38,8 @@ async function chats(userId) {
   return query(
     `SELECT c.id, other_user.id AS userId, other_user.name, COALESCE(pp.url, '') AS photo,
       COALESCE(last_msg.body, '') AS lastMessage, COALESCE(DATE_FORMAT(last_msg.created_at, '%l:%i %p'), '') AS lastMessageTime,
-      0 AS unread, false AS online
+      COALESCE(unread_counts.unread, 0) AS unread,
+      (other_user.online_status = true AND other_user.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
      FROM chats c
      JOIN users other_user ON other_user.id = IF(c.user_one_id = :userId, c.user_two_id, c.user_one_id)
      LEFT JOIN profiles p ON p.user_id = other_user.id
@@ -45,6 +47,12 @@ async function chats(userId) {
      LEFT JOIN messages last_msg ON last_msg.id = (
        SELECT id FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1
      )
+     LEFT JOIN (
+       SELECT chat_id, COUNT(*) AS unread
+       FROM messages
+       WHERE sender_id <> :userId AND delivery_status <> 'read'
+       GROUP BY chat_id
+     ) unread_counts ON unread_counts.chat_id = c.id
      WHERE :userId IN (c.user_one_id, c.user_two_id)
      ORDER BY c.updated_at DESC`,
     { userId }
@@ -103,7 +111,9 @@ async function getOrCreateChat(userId, otherUserId) {
 
 async function chatPartner(userId, otherUserId) {
   const rows = await query(
-    `SELECT u.id, u.name, COALESCE(pp.url, '') AS photo
+    `SELECT u.id, u.name, COALESCE(pp.url, '') AS photo,
+      (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+      u.last_seen_at AS lastSeenAt
      FROM users u
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
@@ -114,7 +124,16 @@ async function chatPartner(userId, otherUserId) {
   return rows[0] || null;
 }
 
-async function messages(chatId) {
+async function messages(chatId, readerUserId) {
+  await query(
+    `UPDATE messages
+     SET delivery_status = 'read'
+     WHERE chat_id = :chatId
+       AND sender_id <> :readerUserId
+       AND delivery_status <> 'read'`,
+    { chatId, readerUserId }
+  );
+
   return query(
     'SELECT id, sender_id AS senderId, body AS text, type, delivery_status AS deliveryStatus, DATE_FORMAT(created_at, "%l:%i %p") AS timestamp FROM messages WHERE chat_id = :chatId ORDER BY created_at ASC',
     { chatId }
@@ -124,6 +143,24 @@ async function messages(chatId) {
 async function sendMessage(chatId, senderId, body, type = 'text') {
   const result = await query('INSERT INTO messages (chat_id, sender_id, body, type) VALUES (:chatId, :senderId, :body, :type)', { chatId, senderId, body, type });
   await query('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
+  const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId });
+  const chat = chatRows[0];
+  const recipientUserId = Number(chat?.user_one_id) === Number(senderId) ? chat?.user_two_id : chat?.user_one_id;
+
+  if (recipientUserId) {
+    const senderRows = await query('SELECT name FROM users WHERE id = :senderId LIMIT 1', { senderId });
+    const senderName = senderRows[0]?.name || 'Someone';
+    const preview = String(body || '').trim().slice(0, 120);
+    await notificationModel.create({
+      userId: recipientUserId,
+      actorUserId: senderId,
+      type: 'message',
+      title: senderName,
+      message: preview || 'Sent you a message',
+      linkUrl: `/user/chat/${senderId}`,
+      metadata: { chatId, messageId: result.insertId }
+    });
+  }
   return { id: result.insertId, senderId, text: body, type, deliveryStatus: 'sent' };
 }
 
