@@ -44,7 +44,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="border-t border-zinc-200/80 dark:border-zinc-800 pt-8">
             <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              © 2024 Ember. All rights reserved.
+              ÃƒÆ’Ã¢â‚¬Å¡&copy; 2024 Saathika. All rights reserved.
             </p>
           </div>
         </div>

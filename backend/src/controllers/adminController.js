@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const env = require('../config/env');
 const userModel = require('../models/userModel');
 const adminModel = require('../models/adminModel');
+const settingsModel = require('../models/settingsModel');
 const { signToken } = require('../utils/token');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
@@ -169,6 +170,17 @@ async function settings(req, res) {
   return ok(res, { settings: await adminModel.settings() });
 }
 
+async function updateBrand(req, res) {
+  await settingsModel.upsert('site_name', req.body.name.trim());
+  return ok(res, { brand: await settingsModel.brand() }, 'Brand name saved');
+}
+
+async function updateBrandLogo(req, res) {
+  if (!req.file) throw new AppError('Logo image is required', 400);
+  await settingsModel.upsert('site_logo', '/uploads/' + req.file.filename);
+  return ok(res, { brand: await settingsModel.brand() }, 'Brand logo saved');
+}
+
 async function upsertSetting(req, res) {
   return ok(res, { setting: await adminModel.upsertSetting(req.body.key, req.body.value) }, 'Setting saved');
 }
@@ -201,5 +213,7 @@ module.exports = {
   deleteOrder,
   upload,
   settings,
+  updateBrand,
+  updateBrandLogo,
   upsertSetting
 };

@@ -11,7 +11,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">Introduction</h2>
               <p className="text-zinc-700 dark:text-zinc-300">
-                Ember ("we" or "us" or "our") operates the Ember website. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
+                Saathika ("we" or "us" or "our") operates the Saathika website. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
               </p>
             </section>
 
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">Use of Data</h2>
               <p className="text-zinc-700 dark:text-zinc-300">
-                Ember uses the collected data for various purposes:
+                Saathika uses the collected data for various purposes:
               </p>
               <ul className="list-disc pl-6 text-zinc-700 dark:text-zinc-300 space-y-2">
                 <li>To provide and maintain our Service</li>
@@ -65,8 +65,8 @@ export default function PrivacyPage() {
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
               <ul className="list-disc pl-6 text-zinc-700 dark:text-zinc-300 space-y-2">
-                <li>Email: privacy@ember.app</li>
-                <li>Address: Ember Inc., Mumbai, India</li>
+                <li>Email: privacy@saathika.app</li>
+                <li>Address: Saathika Inc., Mumbai, India</li>
               </ul>
             </section>
           </div>

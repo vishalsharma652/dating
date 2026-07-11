@@ -46,6 +46,8 @@ router.patch('/orders/:id', [param('id').isInt(), body('status').isIn(['pending'
 router.delete('/orders/:id', [param('id').isInt()], validate, asyncHandler(admin.deleteOrder));
 router.post('/upload', upload.array('files', 8), asyncHandler(admin.upload));
 router.get('/settings', asyncHandler(admin.settings));
+router.put('/brand', [body('name').trim().isLength({ min: 1, max: 120 })], validate, asyncHandler(admin.updateBrand));
+router.post('/brand/logo', upload.single('logo'), asyncHandler(admin.updateBrandLogo));
 router.put('/settings', [body('key').notEmpty(), body('value').exists()], validate, asyncHandler(admin.upsertSetting));
 
 module.exports = router;

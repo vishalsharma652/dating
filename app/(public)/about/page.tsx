@@ -8,7 +8,7 @@ export default function AboutPage() {
       <div className="min-h-screen py-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">About Ember</h1>
+            <h1 className="text-4xl font-bold mb-4">About Saathika</h1>
             <p className="text-xl text-zinc-600 dark:text-zinc-400">
               Reimagining how people connect and find meaningful relationships
             </p>
@@ -42,7 +42,7 @@ export default function AboutPage() {
 
           <Card className="mb-8">
             <div className="p-8">
-              <h2 className="text-2xl font-bold mb-6">Why Choose Ember?</h2>
+              <h2 className="text-2xl font-bold mb-6">Why Choose Saathika?</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {[
                   'Verified & Safe - All profiles are verified and authentic',

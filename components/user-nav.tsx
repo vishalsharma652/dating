@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authApi, clearAuthSession } from '@/lib/api';
+import { Brand } from '@/components/brand';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: Home },
@@ -64,8 +65,7 @@ export function UserNav() {
       {/* Mobile Header */}
       <div className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-200/80 dark:border-zinc-800 p-4 flex items-center justify-between">
         <Link href="/user/dashboard" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-600" />
-          <span className="font-bold">Ember</span>
+          <Brand imageClassName="h-8 w-8" />
         </Link>
         <div className="flex items-center gap-2">
           <button
@@ -91,10 +91,12 @@ export function UserNav() {
         }`}
       >
         <div className="p-6 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-600" />
           <div className="hidden md:block">
-            <div className="font-bold text-lg">Ember</div>
-            <div className="text-xs text-zinc-500">Dating App</div>
+            <Brand />
+            
+          </div>
+          <div className="md:hidden">
+            <Brand showName={false} />
           </div>
         </div>
 

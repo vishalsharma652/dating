@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Brand } from '@/components/brand';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,8 +17,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <div className="p-8">
           <div className="text-center mb-8">
+            <Brand className="justify-center mb-4" imageClassName="h-14 w-14" />
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-zinc-600 dark:text-zinc-400">Sign in to continue to Ember</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Sign in to continue to Saathika</p>
           </div>
 
           <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>

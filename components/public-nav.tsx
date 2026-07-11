@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { Moon, Sun, Menu, X } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Brand } from '@/components/brand';
 
 export function PublicNav() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -22,8 +23,7 @@ export function PublicNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-600" />
-            <span className="font-bold text-lg">Ember</span>
+            <Brand imageClassName="h-8 w-8" />
           </Link>
 
           {/* Desktop Navigation */}

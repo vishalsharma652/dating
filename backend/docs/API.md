@@ -16,6 +16,10 @@ Errors use:
 
 Protected routes require `Authorization: Bearer <jwt>`.
 
+## Brand
+
+- `GET /api/brand` returns the public website name and logo URL
+
 ## Auth
 
 - `POST /api/auth/register` body: `name`, `phone`, optional `email`, `password`; sends an OTP and stores the signup as pending
@@ -68,4 +72,6 @@ Protected routes require `Authorization: Bearer <jwt>`.
 - `GET /api/admin/orders`
 - `POST /api/admin/upload` multipart field: `files`
 - `GET /api/admin/settings`
+- `PUT /api/admin/brand` body: `name`
+- `POST /api/admin/brand/logo` multipart field: `logo`
 - `PUT /api/admin/settings` body: `key`, `value`

@@ -235,6 +235,8 @@ INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
 ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
+('site_name', 'Saathika'),
+('site_logo', '/uploads/saathika-logo.jpg'),
 ('coin_rate_inr', '0.70'),
 ('chat_charge_per_minute', '10'),
 ('female_earning_per_minute', '7'),

@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
 import { authApi } from '@/lib/api';
+import { Brand } from '@/components/brand';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const genderOptions = [
@@ -99,10 +100,11 @@ export default function RegisterPage() {
       <Card className="w-full max-w-lg">
         <div className="p-8">
           <div className="mb-8 text-center">
+            <Brand className="justify-center mb-4" imageClassName="h-14 w-14" />
             <div className="inline-flex rounded-full bg-pink-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-pink-600 mb-4">
               Premium onboarding
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create your Ember account</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create your Saathika account</h1>
             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
               Secure your profile with mobile verification and complete onboarding in a few steps.
             </p>
@@ -216,7 +218,7 @@ export default function RegisterPage() {
                 className="mt-1 h-4 w-4 rounded border-zinc-300 text-pink-500 focus:ring-pink-500"
               />
               <span>
-                I agree to Ember&apos;s{' '}
+                I agree to Saathika&apos;s{' '}
                 <Link href="/legal/terms" className="font-semibold text-pink-500 hover:text-pink-600">
                   Terms & Conditions
                 </Link>{' '}
