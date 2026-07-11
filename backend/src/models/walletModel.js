@@ -10,24 +10,49 @@ async function coinPackages() {
 }
 
 async function purchase(userId, packageId, payment = {}) {
+  await ensureWalletTransactionPaymentColumns();
   const packages = await query('SELECT * FROM coin_packages WHERE id = :packageId AND active = true LIMIT 1', { packageId });
   const pkg = packages[0];
   if (!pkg) return null;
   const totalCoins = Number(pkg.coins) + Number(pkg.bonus || 0);
-  await query('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
-  await query(
-    `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
-     VALUES (:userId, 'purchase', 'Coin Purchase', :description, :amount, :coins, 'completed', :gateway, :reference)`,
-    {
-      userId,
-      description: pkg.name,
-      amount: pkg.price,
-      coins: totalCoins,
-      gateway: payment.gateway || null,
-      reference: payment.reference || null
-    }
-  );
+  await transaction(async (connection) => {
+    await connection.execute('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
+    await connection.execute(
+      `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
+       VALUES (:userId, 'purchase', 'Coin Purchase', :description, :amount, :coins, 'completed', :gateway, :reference)`,
+      {
+        userId,
+        description: pkg.name,
+        amount: pkg.price,
+        coins: totalCoins,
+        gateway: payment.gateway || null,
+        reference: payment.reference || null
+      }
+    );
+  });
   return { package: pkg, coinsAdded: totalCoins };
+}
+
+async function ensureWalletTransactionPaymentColumns() {
+  if (!(await columnExists('wallet_transactions', 'payment_gateway'))) {
+    await query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway ENUM('razorpay','cashfree','phonepe') NULL AFTER status");
+  }
+
+  if (!(await columnExists('wallet_transactions', 'payment_reference'))) {
+    await query('ALTER TABLE wallet_transactions ADD COLUMN payment_reference VARCHAR(190) NULL AFTER payment_gateway');
+  }
+}
+
+async function columnExists(tableName, columnName) {
+  const rows = await query(
+    `SELECT COUNT(*) AS total
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = :tableName
+       AND COLUMN_NAME = :columnName`,
+    { tableName, columnName }
+  );
+  return Number(rows[0]?.total) > 0;
 }
 
 async function saveBankAccount(userId, data) {
