@@ -47,6 +47,9 @@ router.post('/withdraw', [body('amount').isFloat({ min: 500 }), body('method').i
 router.get('/withdraw/history', asyncHandler(user.withdrawals));
 
 router.get('/notifications', asyncHandler(user.notifications));
+router.get('/notifications/count', asyncHandler(user.notificationCount));
+router.patch('/notifications/read-all', asyncHandler(user.markNotificationsRead));
+router.patch('/notifications/:id/read', [param('id').isInt()], validate, asyncHandler(user.markNotificationRead));
 router.get('/settings', asyncHandler(user.settings));
 
 module.exports = router;

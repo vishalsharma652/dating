@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Container } from '@/components/ui/container';
 import { ChatHeader } from '@/components/user/chat-header';
 import { ChatInput } from '@/components/user/chat-input';
@@ -10,7 +8,7 @@ import { use, useEffect, useState, useRef } from 'react';
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [chatUser, setChatUser] = useState<any>({ name: 'User', photo: '/placeholder.svg' });
+  const [chatUser, setChatUser] = useState<any>({ name: 'User', photo: '/placeholder.svg', online: false });
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,7 +27,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         .then((data) => {
           if (!active) return;
           setMessages(data.messages || []);
-          setChatUser(data.chat?.otherUser || { id, name: 'User', photo: '/placeholder.svg' });
+          setChatUser(data.chat?.otherUser || { id, name: 'User', photo: '/placeholder.svg', online: false });
         })
         .catch((err) => {
           if (active) setError(err instanceof Error ? err.message : 'Unable to load chat');
@@ -65,8 +63,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const handleSend = async (message: string) => {
     try {
       const data = await userApi.sendMessage(id, message);
-      setMessages([
-        ...messages,
+      setMessages((currentMessages) => [
+        ...currentMessages,
         {
           ...data.message,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -82,7 +80,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex flex-col h-screen md:h-[calc(100vh-64px)]">
-      <ChatHeader user={chatUser} online={true} />
+      <ChatHeader user={chatUser} online={Boolean(chatUser?.online)} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
         <Container>

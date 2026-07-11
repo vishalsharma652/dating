@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 const TOKEN_KEY = 'userToken';
 const USER_KEY = 'user';
@@ -198,5 +196,10 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  notifications: () => apiRequest<{ notifications: any[] }>('/user/notifications'),
+  notifications: () => apiRequest<{ notifications: any[]; unread: number }>('/user/notifications'),
+  notificationCount: () => apiRequest<{ unread: number }>('/user/notifications/count'),
+  markNotificationRead: (id: number | string) =>
+    apiRequest<{ unread: number }>(`/user/notifications/${id}/read`, { method: 'PATCH' }),
+  markNotificationsRead: () =>
+    apiRequest<{ unread: number }>('/user/notifications/read-all', { method: 'PATCH' }),
 };

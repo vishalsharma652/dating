@@ -93,6 +93,23 @@ CREATE TABLE IF NOT EXISTS messages (
   CONSTRAINT fk_messages_chat FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  type VARCHAR(40) NOT NULL,
+  title VARCHAR(160) NOT NULL,
+  message VARCHAR(255) NOT NULL,
+  link_url VARCHAR(255) NULL,
+  metadata JSON NULL,
+  read_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notifications_user_created (user_id, created_at),
+  INDEX idx_notifications_user_read (user_id, read_at),
+  CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_actor FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS chat_requests (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   requester_id BIGINT UNSIGNED NOT NULL,
