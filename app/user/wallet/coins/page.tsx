@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import { userApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function CoinPurchasePage() {
   const [coinPackages, setCoinPackages] = useState<any[]>([]);
@@ -16,6 +17,7 @@ export default function CoinPurchasePage() {
   const [purchasingId, setPurchasingId] = useState<number | string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     userApi.coinPackages()
@@ -24,18 +26,8 @@ export default function CoinPurchasePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const purchase = async (packageId: number | string) => {
-    setPurchasingId(packageId);
-    setError('');
-    setMessage('');
-    try {
-      const data = await userApi.purchaseCoins(packageId);
-      setMessage(`${data.coinsAdded} coins added to your wallet.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Purchase failed');
-    } finally {
-      setPurchasingId(null);
-    }
+  const purchase = (packageId: number | string) => {
+    router.push(`/user/wallet/coins/payment?packageId=${packageId}`);
   };
 
   if (loading) return <div className="p-8 text-center text-zinc-500">Loading packages...</div>;
