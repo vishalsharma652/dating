@@ -27,6 +27,20 @@ async function main() {
     console.log('users.last_seen_at already exists');
   }
 
+  if (!(await columnExists('wallet_transactions', 'payment_gateway'))) {
+    await pool.query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway ENUM('razorpay','cashfree','phonepe') NULL AFTER status");
+    console.log('Added wallet_transactions.payment_gateway');
+  } else {
+    console.log('wallet_transactions.payment_gateway already exists');
+  }
+
+  if (!(await columnExists('wallet_transactions', 'payment_reference'))) {
+    await pool.query('ALTER TABLE wallet_transactions ADD COLUMN payment_reference VARCHAR(190) NULL AFTER payment_gateway');
+    console.log('Added wallet_transactions.payment_reference');
+  } else {
+    console.log('wallet_transactions.payment_reference already exists');
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notifications (
       id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
