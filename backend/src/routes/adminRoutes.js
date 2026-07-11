@@ -31,19 +31,8 @@ router.patch('/withdrawals/:id', [param('id').isInt(), body('status').isIn(['pen
 
 router.get('/reports', asyncHandler(admin.reports));
 
-router.get('/categories', asyncHandler(admin.categories));
-router.post('/categories', [body('name').notEmpty(), body('slug').notEmpty()], validate, asyncHandler(admin.createCategory));
-router.put('/categories/:id', [param('id').isInt(), body('name').notEmpty(), body('slug').notEmpty()], validate, asyncHandler(admin.updateCategory));
-router.delete('/categories/:id', [param('id').isInt()], validate, asyncHandler(admin.deleteCategory));
+// Catalog and Commerce modules have been removed. Related routes are disabled.
 
-router.get('/products', asyncHandler(admin.products));
-router.post('/products', [body('name').notEmpty(), body('slug').notEmpty()], validate, asyncHandler(admin.createProduct));
-router.put('/products/:id', [param('id').isInt(), body('name').notEmpty(), body('slug').notEmpty()], validate, asyncHandler(admin.updateProduct));
-router.delete('/products/:id', [param('id').isInt()], validate, asyncHandler(admin.deleteProduct));
-
-router.get('/orders', asyncHandler(admin.orders));
-router.patch('/orders/:id', [param('id').isInt(), body('status').isIn(['pending', 'paid', 'cancelled', 'refunded'])], validate, asyncHandler(admin.updateOrder));
-router.delete('/orders/:id', [param('id').isInt()], validate, asyncHandler(admin.deleteOrder));
 router.post('/upload', upload.array('files', 8), asyncHandler(admin.upload));
 router.get('/settings', asyncHandler(admin.settings));
 router.put('/brand', [body('name').trim().isLength({ min: 1, max: 120 })], validate, asyncHandler(admin.updateBrand));

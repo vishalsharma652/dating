@@ -5,9 +5,6 @@ const modules = [
   ['wallet', 'Wallets', 'Operations'],
   ['chats', 'Chat Monitor', 'Operations'],
   ['withdrawals', 'Withdrawals', 'Operations'],
-  ['categories', 'Categories', 'Catalog'],
-  ['products', 'Products', 'Catalog'],
-  ['orders', 'Orders', 'Commerce'],
   ['reports', 'Reports', 'Insights'],
   ['settings', 'Settings', 'System'],
 ];
@@ -16,9 +13,6 @@ const state = {
   active: 'dashboard',
   dashboard: null,
   users: [],
-  categories: [],
-  products: [],
-  orders: [],
   kyc: [],
   walletTransactions: [],
   chats: [],
@@ -112,12 +106,9 @@ function toggleSidebar(open) {
 async function loadAll() {
   showLoading(true);
   try {
-    const [dashboard, users, categories, products, orders, kyc, wallet, chats, withdrawals, reports, settings] = await Promise.all([
+    const [dashboard, users, kyc, wallet, chats, withdrawals, reports, settings] = await Promise.all([
       api('/api/admin/dashboard'),
       api('/api/admin/users?page=1&limit=20'),
-      api('/api/admin/categories'),
-      api('/api/admin/products'),
-      api('/api/admin/orders'),
       api('/api/admin/kyc'),
       api('/api/admin/wallet/transactions'),
       api('/api/admin/chats'),
@@ -128,9 +119,6 @@ async function loadAll() {
 
     state.dashboard = dashboard.data.dashboard || {};
     state.users = users.data.users || [];
-    state.categories = categories.data.categories || [];
-    state.products = products.data.products || [];
-    state.orders = orders.data.orders || [];
     state.kyc = kyc.data.requests || [];
     state.walletTransactions = wallet.data.transactions || [];
     state.chats = chats.data.chats || [];
@@ -148,9 +136,6 @@ async function loadAll() {
 function renderView() {
   if (state.active === 'dashboard') return renderDashboard();
   if (state.active === 'users') return renderUsers();
-  if (state.active === 'categories') return renderCategories();
-  if (state.active === 'products') return renderProducts();
-  if (state.active === 'orders') return renderOrders();
   if (state.active === 'kyc') return renderKyc();
   if (state.active === 'wallet') return renderWallet();
   if (state.active === 'chats') return renderChats();
@@ -165,8 +150,6 @@ function renderDashboard() {
     <div class="grid metrics">
       ${metric('Total Users', d.totalUsers || 0, 'US')}
       ${metric('Revenue', rupees(d.revenue || 0), 'INR')}
-      ${metric('Orders', d.totalOrders || 0, 'OR')}
-      ${metric('Products', d.totalProducts || 0, 'PR')}
       ${metric('Pending KYC', d.pendingKyc || 0, 'KY')}
       ${metric('Withdrawals', d.pendingWithdrawals || 0, 'WD')}
       ${metric('Active Chats', d.activeChats || 0, 'CH')}
@@ -176,9 +159,8 @@ function renderDashboard() {
       ${panel('Revenue Chart', chart([32, 46, 40, 64, 58, 78, 88]))}
       ${panel('User Growth', chart([18, 26, 36, 44, 56, 72, 82]))}
     </div>
-    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 14px;">
+    <div class="grid" style="grid-template-columns: 1fr; margin-top: 14px;">
       ${panel('Recent Users', simpleList(state.users, ['name', 'email', 'status']))}
-      ${panel('Recent Orders', simpleList(state.orders, ['id', 'status', 'total_amount']))}
     </div>
   `;
 }
@@ -225,111 +207,7 @@ function usersTable(users) {
   ]));
 }
 
-function renderCategories() {
-  $('view').innerHTML = `
-    <div class="grid catalog-layout">
-      ${panel('Create Category', categoryForm())}
-      ${panel('Category List', state.categories.length ? table(['Name', 'Slug', 'Active', 'Actions'], state.categories.map((c) => [
-        escapeHtml(c.name), escapeHtml(c.slug), statusBadge(c.active ? 'active' : 'inactive'),
-        `<div class="actions"><button class="btn secondary" onclick="editCategory(${c.id})">Edit</button><button class="btn danger" onclick="confirmDeleteCategory(${c.id})">Delete</button></div>`
-      ])) : empty('No categories yet', 'No Data Found. Create your first category.'))}
-    </div>
-  `;
-}
 
-function categoryForm(category = {}) {
-  return `
-    <form class="form-grid" onsubmit="saveCategory(event, ${category.id || 'null'})">
-      <label class="field"><span>Name</span><input class="input" name="name" value="${escapeAttr(category.name || '')}" required /></label>
-      <label class="field"><span>Slug</span><input class="input" name="slug" value="${escapeAttr(category.slug || '')}" required /></label>
-      <label class="field"><span>Description</span><textarea class="input" name="description">${escapeHtml(category.description || '')}</textarea></label>
-      <label class="field"><span>Image URL</span><input class="input" name="imageUrl" value="${escapeAttr(category.image_url || category.imageUrl || '')}" /></label>
-      <label><input type="checkbox" name="active" ${category.active === false ? '' : 'checked'} /> Active</label>
-      <button class="btn" type="submit">${category.id ? 'Update' : 'Create'} Category</button>
-    </form>
-  `;
-}
-
-async function saveCategory(event, id) {
-  event.preventDefault();
-  const data = formData(event.target);
-  data.active = event.target.active.checked;
-  await save(async () => {
-    if (id) await api(`/api/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    else await api('/api/admin/categories', { method: 'POST', body: JSON.stringify(data) });
-    showNotice('Category saved.', 'success');
-    await loadAll();
-  });
-}
-
-function editCategory(id) {
-  const category = state.categories.find((item) => item.id === id);
-  $('view').querySelector('.panel-body').innerHTML = categoryForm(category);
-}
-
-function renderProducts() {
-  $('view').innerHTML = `
-    <div class="grid catalog-layout">
-      ${panel('Create Product', productForm())}
-      ${panel('Product List', state.products.length ? table(['Name', 'Price', 'Coins', 'Active', 'Actions'], state.products.map((p) => [
-        escapeHtml(p.name), rupees(p.price || 0), p.coins || 0, statusBadge(p.active ? 'active' : 'inactive'),
-        `<div class="actions"><button class="btn secondary" onclick="editProduct(${p.id})">Edit</button><button class="btn danger" onclick="confirmDeleteProduct(${p.id})">Delete</button></div>`
-      ])) : empty('No products yet', 'No Data Found. Create products or coin packages.'))}
-    </div>
-  `;
-}
-
-function productForm(product = {}) {
-  return `
-    <form class="form-grid" onsubmit="saveProduct(event, ${product.id || 'null'})">
-      <label class="field"><span>Category</span><select class="select" name="categoryId">
-        <option value="">No category</option>
-        ${state.categories.map((c) => `<option value="${c.id}" ${String(product.category_id || product.categoryId || '') === String(c.id) ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
-      </select></label>
-      <label class="field"><span>Name</span><input class="input" name="name" value="${escapeAttr(product.name || '')}" required /></label>
-      <label class="field"><span>Slug</span><input class="input" name="slug" value="${escapeAttr(product.slug || '')}" required /></label>
-      <label class="field"><span>Description</span><textarea class="input" name="description">${escapeHtml(product.description || '')}</textarea></label>
-      <div class="grid two-col">
-        <label class="field"><span>Price</span><input class="input" type="number" name="price" value="${escapeAttr(product.price || '')}" /></label>
-        <label class="field"><span>Coins</span><input class="input" type="number" name="coins" value="${escapeAttr(product.coins || '')}" /></label>
-      </div>
-      <label class="field"><span>Image URL</span><input class="input" name="imageUrl" value="${escapeAttr(product.image_url || product.imageUrl || '')}" /></label>
-      <label><input type="checkbox" name="active" ${product.active === false ? '' : 'checked'} /> Active</label>
-      <button class="btn" type="submit">${product.id ? 'Update' : 'Create'} Product</button>
-    </form>
-  `;
-}
-
-async function saveProduct(event, id) {
-  event.preventDefault();
-  const data = formData(event.target);
-  data.categoryId = data.categoryId ? Number(data.categoryId) : null;
-  data.price = Number(data.price || 0);
-  data.coins = Number(data.coins || 0);
-  data.active = event.target.active.checked;
-  await save(async () => {
-    if (id) await api(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    else await api('/api/admin/products', { method: 'POST', body: JSON.stringify(data) });
-    showNotice('Product saved.', 'success');
-    await loadAll();
-  });
-}
-
-function editProduct(id) {
-  const product = state.products.find((item) => item.id === id);
-  $('view').querySelector('.panel-body').innerHTML = productForm(product);
-}
-
-function renderOrders() {
-  $('view').innerHTML = panel('Orders', state.orders.length ? table(['Order', 'User', 'Total', 'Status', 'Created', 'Actions'], state.orders.map((o) => [
-    `#${o.id}`,
-    o.user_id || '-',
-    rupees(o.total_amount || 0),
-    `<select class="select" onchange="confirmOrderStatus(${o.id}, this.value)"><option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${o.status === 'paid' ? 'selected' : ''}>Paid</option><option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option><option value="refunded" ${o.status === 'refunded' ? 'selected' : ''}>Refunded</option></select>`,
-    date(o.created_at),
-    `<button class="btn danger" onclick="confirmDeleteOrder(${o.id})">Delete</button>`,
-  ])) : empty('No orders yet', 'No Data Found. Orders will appear after purchases.'));
-}
 
 function renderKyc() {
   $('view').innerHTML = panel('KYC Verification', state.kyc.length ? table(['User', 'Mobile', 'Status', 'Submitted', 'Actions'], state.kyc.map((u) => [
@@ -402,7 +280,6 @@ function renderReports() {
     <div class="grid metrics">
       ${metric('Revenue', rupees(reports.revenue || 0), 'INR')}
       ${metric('Users', reports.users || 0, 'US')}
-      ${metric('Orders', reports.orders || 0, 'OR')}
       ${metric('Coins', reports.coins || 0, 'CO')}
       ${metric('Chats', reports.chats || 0, 'CH')}
     </div>
@@ -486,37 +363,7 @@ function confirmDeleteUser(id) {
   }, true);
 }
 
-function confirmDeleteCategory(id) {
-  confirmAction('Delete category?', 'This category will be deleted.', 'Delete', async () => {
-    await api(`/api/admin/categories/${id}`, { method: 'DELETE' });
-    showNotice('Category deleted.', 'success');
-    await loadAll();
-  }, true);
-}
 
-function confirmDeleteProduct(id) {
-  confirmAction('Delete product?', 'This product will be deleted.', 'Delete', async () => {
-    await api(`/api/admin/products/${id}`, { method: 'DELETE' });
-    showNotice('Product deleted.', 'success');
-    await loadAll();
-  }, true);
-}
-
-function confirmOrderStatus(id, status) {
-  confirmAction('Update order status?', `Order #${id} will move to ${status}.`, 'Update', async () => {
-    await api(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-    showNotice('Order updated.', 'success');
-    await loadAll();
-  });
-}
-
-function confirmDeleteOrder(id) {
-  confirmAction('Delete order?', `Order #${id} will be deleted.`, 'Delete', async () => {
-    await api(`/api/admin/orders/${id}`, { method: 'DELETE' });
-    showNotice('Order deleted.', 'success');
-    await loadAll();
-  }, true);
-}
 
 function confirmAction(title, description, label, callback, danger = false) {
   state.confirm = callback;
