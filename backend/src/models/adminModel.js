@@ -3,14 +3,12 @@ const settingsModel = require('./settingsModel');
 
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc FROM users');
-  const [orders] = await query('SELECT COUNT(*) AS totalOrders, COALESCE(SUM(total_amount), 0) AS revenue FROM orders');
-  const [products] = await query('SELECT COUNT(*) AS totalProducts FROM products');
+  const [revenueRow] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
   const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals FROM withdrawals WHERE status = "pending"');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
-  const recentOrders = await query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 5');
   const recentUsers = await query('SELECT id, name, email, phone, role, status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
-  return { ...users, ...orders, ...products, ...withdrawals, ...chats, ...coins, recentOrders, recentUsers };
+  return { ...users, ...revenueRow, ...withdrawals, ...chats, ...coins, recentUsers };
 }
 
 async function listTable(table, { page = 1, limit = 20 } = {}) {
@@ -215,12 +213,11 @@ async function updateWithdrawal(id, { status }) {
 }
 
 async function reports() {
-  const [revenue] = await query('SELECT COALESCE(SUM(total_amount), 0) AS revenue FROM orders WHERE status = "paid"');
+  const [revenue] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
   const [users] = await query('SELECT COUNT(*) AS users FROM users WHERE role = "user"');
-  const [orders] = await query('SELECT COUNT(*) AS orders FROM orders');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coins FROM wallet_transactions WHERE status = "completed"');
   const [chatsRow] = await query('SELECT COUNT(*) AS chats FROM chats');
-  return { ...revenue, ...users, ...orders, ...coins, ...chatsRow };
+  return { ...revenue, ...users, ...coins, ...chatsRow };
 }
 
 async function updateOrder(id, data) {
