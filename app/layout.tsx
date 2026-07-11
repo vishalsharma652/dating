@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ember — Premium Dating Experience",
+  title: "Saathika — Premium Dating Experience",
   description:
-    "Ember is a premium Indian dating app with verified profiles, voice-first chat, smart matchmaking, and dark mode.",
+    "Saathika is a premium Indian dating app with verified profiles, voice-first chat, smart matchmaking, and dark mode.",
 };
 
 export default function RootLayout({

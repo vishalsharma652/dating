@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 const TOKEN_KEY = 'userToken';
 const USER_KEY = 'user';
 
@@ -71,6 +71,21 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
 
   return payload.data;
 }
+
+export function apiAssetUrl(path: string | null | undefined) {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return new URL(path, new URL(API_BASE_URL).origin).toString();
+}
+
+export type BrandData = {
+  name: string;
+  logoUrl: string | null;
+};
+
+export const brandApi = {
+  get: () => apiRequest<{ brand: BrandData }>('/brand').then((data) => data.brand),
+};
 
 export const authApi = {
   login: (body: { email?: string; phone?: string; password: string }) =>

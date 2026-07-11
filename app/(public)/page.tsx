@@ -16,7 +16,7 @@ export default function Home() {
                 Find Your Perfect Connection
               </h1>
               <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8">
-                Meet genuine people who share your interests, values, and dreams. Ember brings together authentic profiles for real relationships.
+                Meet genuine people who share your interests, values, and dreams. Saathika brings together authentic profiles for real relationships.
               </p>
 
               <div className="flex flex-col md:flex-row gap-4 justify-center mb-12">
@@ -50,7 +50,7 @@ export default function Home() {
         {/* Features Section */}
         <section className="py-20 bg-zinc-50 dark:bg-zinc-900/50">
           <Container>
-            <h2 className="text-4xl font-bold text-center mb-12">Why Choose Ember?</h2>
+            <h2 className="text-4xl font-bold text-center mb-12">Why Choose Saathika?</h2>
 
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {[
@@ -112,7 +112,7 @@ export default function Home() {
                   Ready to Find Your Perfect Match?
                 </h2>
                 <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-                  Join thousands of people who have found meaningful connections on Ember
+                  Join thousands of people who have found meaningful connections on Saathika
                 </p>
                 <Button size="lg" className="bg-white text-pink-600 hover:bg-white/90" asChild>
                   <Link href="/register">Start For Free Today</Link>

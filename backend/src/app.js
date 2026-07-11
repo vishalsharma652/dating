@@ -8,6 +8,7 @@ const env = require('./config/env');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const brandRoutes = require('./routes/brandRoutes');
 const { authenticate } = require('./middleware/auth');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { ok } = require('./utils/apiResponse');
@@ -36,6 +37,7 @@ app.get('/health', (req, res) => ok(res, { status: 'healthy' }, 'API is running'
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
+app.use('/api/brand', brandRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', authenticate, userRoutes);
 app.use('/api/admin', adminRoutes);

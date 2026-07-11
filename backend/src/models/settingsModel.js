@@ -1,6 +1,8 @@
 const { query } = require('../config/db');
 
 const DEFAULTS = {
+  site_name: 'Saathika',
+  site_logo: '/uploads/saathika-logo.jpg',
   coin_rate_inr: '0.70',
   chat_charge_per_minute: '10',
   female_earning_per_minute: '7',
@@ -10,6 +12,14 @@ const DEFAULTS = {
 async function all() {
   const rows = await query('SELECT setting_key, setting_value FROM settings ORDER BY setting_key ASC');
   return { ...DEFAULTS, ...Object.fromEntries(rows.map((row) => [row.setting_key, row.setting_value])) };
+}
+
+async function brand() {
+  const settings = await all();
+  return {
+    name: settings.site_name || DEFAULTS.site_name,
+    logoUrl: settings.site_logo || DEFAULTS.site_logo
+  };
 }
 
 async function chatSettings() {
@@ -38,4 +48,4 @@ async function upsert(key, value) {
   return { key, value };
 }
 
-module.exports = { all, chatSettings, upsert };
+module.exports = { all, brand, chatSettings, upsert };

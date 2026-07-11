@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { authApi, setAuthSession } from '@/lib/api';
+import { Brand } from '@/components/brand';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,8 +42,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <div className="p-8">
           <div className="text-center mb-8">
+            <Brand className="justify-center mb-4" imageClassName="h-14 w-14" />
             <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Sign in and continue onboarding your Ember profile.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Sign in and continue onboarding your Saathika profile.</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -99,7 +101,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-            New to Ember?{' '}
+            New to Saathika?{' '}
             <Link href="/register" className="font-semibold text-pink-500 hover:text-pink-600">
               Create account
             </Link>

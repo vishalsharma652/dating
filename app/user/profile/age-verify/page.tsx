@@ -32,7 +32,7 @@ export default function AgeVerificationPage() {
       return;
     }
     if (!eligible) {
-      setError('You must be 18 years or older to join Ember.');
+      setError('You must be 18 years or older to join Saathika.');
       return;
     }
 

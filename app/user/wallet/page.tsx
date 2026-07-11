@@ -37,7 +37,7 @@ export default function WalletPage() {
               </div>
               <span className="text-2xl">Coins</span>
             </div>
-            <p className="text-sm text-zinc-500 mb-6">Ember Coins</p>
+            <p className="text-sm text-zinc-500 mb-6">Saathika Coins</p>
             <Button size="lg" asChild>
               <Link href="/user/wallet/coins">
                 <Plus size={18} />
