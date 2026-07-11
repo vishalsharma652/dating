@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, X } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, setAuthSession, getToken, apiAssetUrl } from '@/lib/api';
 
 export default function EditProfilePage() {
   const [formData, setFormData] = useState({ name: '', age: '', location: '', bio: '', photo: '/placeholder.svg' });
@@ -18,6 +18,25 @@ export default function EditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const form = new FormData();
+    form.append('photo', file);
+    setMessage('');
+    setError('');
+
+    try {
+      const data = await userApi.uploadPhoto(form);
+      setFormData(prev => ({ ...prev, photo: apiAssetUrl(data.url) || data.url }));
+      setMessage('Photo uploaded successfully.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload photo');
+    }
+  };
 
   useEffect(() => {
     userApi.profile()
@@ -27,7 +46,7 @@ export default function EditProfilePage() {
           age: data.profile?.age ? String(data.profile.age) : '',
           location: data.profile?.city || '',
           bio: data.profile?.bio || '',
-          photo: data.profile?.photos?.[0] || '/placeholder.svg',
+          photo: data.profile?.photos?.[0] ? (apiAssetUrl(data.profile.photos[0]) || data.profile.photos[0]) : '/placeholder.svg',
         });
         setInterests(data.profile?.interests || []);
       })
@@ -40,13 +59,16 @@ export default function EditProfilePage() {
     setMessage('');
     setError('');
     try {
-      await userApi.updateProfile({
+      const data = await userApi.updateProfile({
         name: formData.name,
         age: formData.age ? Number(formData.age) : undefined,
         location: formData.location,
         bio: formData.bio,
         interests,
       });
+      if (data.user) {
+        setAuthSession(getToken() || '', data.user);
+      }
       setMessage('Profile updated.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save profile');
@@ -74,8 +96,9 @@ export default function EditProfilePage() {
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">Profile Picture</h2>
             <div className="flex gap-4 items-end">
+              <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
               <img src={formData.photo} alt={formData.name || 'Profile'} className="w-24 h-24 rounded-lg object-cover" />
-              <Button type="button">Upload Photo</Button>
+              <Button type="button" onClick={() => fileInputRef.current?.click()}>Upload Photo</Button>
             </div>
           </div>
         </Card>
