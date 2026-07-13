@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useEffect, useState } from 'react';
 import { Users, Heart, MessageCircle, TrendingUp, Circle } from 'lucide-react';
 import { StatCard } from '@/components/user/stat-card';
@@ -91,6 +89,7 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={assignedUser.photo || '/placeholder.svg'}
                             alt={assignedUser.name}
@@ -114,6 +113,7 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={activeUser.photo || '/placeholder.svg'}
                             alt={activeUser.name}
@@ -147,6 +147,7 @@ export default function DashboardPage() {
                   <div key={match.id} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={match.photo || '/placeholder.svg'}
                           alt={match.name}

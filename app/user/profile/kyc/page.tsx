@@ -210,6 +210,7 @@ export default function KYCPage() {
                     <Upload size={28} className="text-pink-500" />
                     <p className="font-semibold text-zinc-900 dark:text-white">{item.label}</p>
                     {files[item.key] ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={files[item.key]} alt={item.label} className="mx-auto h-24 w-24 rounded-3xl object-cover" />
                     ) : (
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">Tap to attach</p>

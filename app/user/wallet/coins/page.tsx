@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useEffect, useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';

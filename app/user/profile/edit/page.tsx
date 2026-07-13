@@ -97,6 +97,7 @@ export default function EditProfilePage() {
             <h2 className="text-lg font-semibold mb-4">Profile Picture</h2>
             <div className="flex gap-4 items-end">
               <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={formData.photo} alt={formData.name || 'Profile'} className="w-24 h-24 rounded-lg object-cover" />
               <Button type="button" onClick={() => fileInputRef.current?.click()}>Upload Photo</Button>
             </div>
