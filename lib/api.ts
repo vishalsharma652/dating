@@ -36,6 +36,15 @@ export function getStoredUser<T = any>() {
   }
 }
 
+export class RateLimitError extends Error {
+  retryAfter: number;
+  constructor(message: string, retryAfter = 60) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
 export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   const token = getToken();
   const isFormData = options.body instanceof FormData;
@@ -61,6 +70,16 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
 
   if (response.status === 401) {
     clearAuthSession();
+  }
+
+  if (response.status === 429) {
+    const retryAfter = Number(response.headers.get('Retry-After') || 60);
+    const msg = payload.message || 'Too many requests, please try again later.';
+    // Broadcast globally so a toast component can pick it up
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('app:rate-limited', { detail: { message: msg, retryAfter } }));
+    }
+    throw new RateLimitError(msg, retryAfter);
   }
 
   if (!response.ok || !payload.success) {

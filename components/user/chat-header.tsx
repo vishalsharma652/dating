@@ -7,9 +7,20 @@ import { Avatar } from '@/components/ui/avatar';
 interface ChatHeaderProps {
   user: any;
   online?: boolean;
+  onVoiceCall?: () => void;
+  onVideoCall?: () => void;
+  coinBalance?: number | null;
+  isBoy?: boolean;
 }
 
-export function ChatHeader({ user, online = false }: ChatHeaderProps) {
+export function ChatHeader({
+  user,
+  online = false,
+  onVoiceCall,
+  onVideoCall,
+  coinBalance,
+  isBoy,
+}: ChatHeaderProps) {
   const name = user?.name || 'User';
 
   return (
@@ -29,14 +40,40 @@ export function ChatHeader({ user, online = false }: ChatHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="rounded-full">
+      {/* Live coin balance chip for boy users */}
+      {isBoy && coinBalance !== null && coinBalance !== undefined && (
+        <div className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mr-2 transition-colors ${
+          coinBalance < 10
+            ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+            : coinBalance < 30
+            ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+            : 'bg-green-500/10 text-green-600 border border-green-500/20'
+        }`}>
+          <span>🪙</span>
+          <span>{coinBalance} coins</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-green-500/10 hover:text-green-600 transition-colors"
+          onClick={onVoiceCall}
+          title="Voice call"
+        >
           <Phone size={18} />
         </Button>
-        <Button variant="ghost" size="sm" className="rounded-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-blue-500/10 hover:text-blue-600 transition-colors"
+          onClick={onVideoCall}
+          title="Video call"
+        >
           <Video size={18} />
         </Button>
-        <Button variant="ghost" size="sm" className="rounded-full">
+        <Button variant="ghost" size="icon" className="rounded-full" title="Info">
           <Info size={18} />
         </Button>
       </div>
