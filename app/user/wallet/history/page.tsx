@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useEffect, useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
@@ -42,10 +40,10 @@ export default function TransactionHistoryPage() {
 
                 <div className="text-right">
                   <div className="flex items-center gap-2 mb-2">
-                    <p className={`text-lg font-semibold ${txn.type === 'earning' ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
-                      {txn.type === 'earning' ? '+' : '-'}Rs {txn.amount}
+                    <p className={`text-lg font-semibold ${Number(txn.coins) >= 0 ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
+                      {Number(txn.coins) > 0 ? '+' : ''}{txn.coins} coins
                     </p>
-                    {Number(txn.coins) > 0 && <span className="text-pink-500">+{txn.coins} coins</span>}
+                    {Number(txn.amount) > 0 && <span className="text-zinc-500">₹{txn.amount}</span>}
                   </div>
                   <Badge variant={txn.status === 'completed' ? 'default' : 'pink'}>{txn.status}</Badge>
                 </div>

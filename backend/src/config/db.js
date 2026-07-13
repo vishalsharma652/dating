@@ -10,6 +10,9 @@ async function query(sql, params = {}) {
 
 async function transaction(work) {
   const connection = await pool.getConnection();
+  // mysql2: pool.getConnection() does NOT inherit namedPlaceholders from the pool
+  // config, so we must set it explicitly on every acquired connection.
+  connection.config.namedPlaceholders = true;
   try {
     await connection.beginTransaction();
     const result = await work(connection);

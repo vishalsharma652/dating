@@ -131,6 +131,10 @@ async function messages(req, res) {
 
 async function sendMessage(req, res) {
   const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
+  if (normalizeGender(req.user.gender) === 'male') {
+    const session = await socialModel.activeChatSession(chat.id);
+    if (!session) throw new AppError('Chat is blocked. Add at least 10 coins to continue.', 402);
+  }
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
   return created(res, { message }, 'Message sent');
 }
@@ -140,10 +144,17 @@ async function startChatSession(req, res) {
   const otherUser = await userModel.findPublicById(Number(req.params.userId));
   if (!otherUser) throw new AppError('Chat partner not found', 404);
 
-  const currentGender = String(req.user.gender || '').toLowerCase();
-  const otherGender = String(otherUser.gender || '').toLowerCase();
-  const payerUserId = currentGender === 'female' && otherGender !== 'female' ? otherUser.id : req.user.id;
+  const currentGender = normalizeGender(req.user.gender);
+  const otherGender = normalizeGender(otherUser.gender);
+  if (currentGender === otherGender || (currentGender !== 'male' && currentGender !== 'female') || (otherGender !== 'male' && otherGender !== 'female')) {
+    throw new AppError('Coin chats require one boy user and one girl user', 422);
+  }
+  const payerUserId = currentGender === 'male' ? req.user.id : otherUser.id;
   const earnerUserId = payerUserId === req.user.id ? otherUser.id : req.user.id;
+  const payerWallet = await walletModel.wallet(payerUserId);
+  if (!payerWallet || Number(payerWallet.coins) < 10) {
+    throw new AppError('Insufficient coins. Buy coins to start chatting.', 402);
+  }
   const session = await socialModel.startChatSession(chat.id, payerUserId, earnerUserId, await settingsModel.chatSettings());
   return created(res, { session }, 'Chat session started');
 }
@@ -161,7 +172,8 @@ async function endChatSession(req, res) {
 }
 
 async function wallet(req, res) {
-  return ok(res, { coins: req.user.coins, earnings: req.user.earnings });
+  const data = await walletModel.wallet(req.user.id);
+  return ok(res, data || { coins: 0, earnings: 0, totalPurchased: 0, totalSpent: 0, totalEarned: 0, withdrawalBalance: 0 });
 }
 
 async function transactions(req, res) {

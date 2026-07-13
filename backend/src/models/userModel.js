@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { query } = require('../config/db');
+const { query, transaction } = require('../config/db');
 
 const publicFields = `
   id, name, email, phone, role, status, email_verified, phone_verified,
@@ -8,11 +8,28 @@ const publicFields = `
 
 async function create({ name, email = null, phone, password, role = 'user', phoneVerified = false, gender = null }) {
   const passwordHash = await bcrypt.hash(password, 12);
-  const result = await query(
-    `INSERT INTO users (name, email, phone, password_hash, role, phone_verified, gender)
-     VALUES (:name, :email, :phone, :passwordHash, :role, :phoneVerified, :gender)`,
-    { name, email, phone, passwordHash, role, phoneVerified, gender }
-  );
+  const isBoy = ['male', 'man', 'boy', 'men'].includes(String(gender || '').toLowerCase());
+  const result = await transaction(async (connection) => {
+    const [created] = await connection.execute(
+      `INSERT INTO users (name, email, phone, password_hash, role, phone_verified, gender, coins)
+       VALUES (:name, :email, :phone, :passwordHash, :role, :phoneVerified, :gender, :coins)`,
+      { name, email, phone, passwordHash, role, phoneVerified, gender, coins: isBoy ? 100 : 0 }
+    );
+    const userId = created.insertId;
+    await connection.execute(
+      `INSERT INTO wallets (user_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance)
+       VALUES (:userId, :balance, 0, 0, 0, 0)`,
+      { userId, balance: isBoy ? 100 : 0 }
+    );
+    if (isBoy) {
+      await connection.execute(
+        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+         VALUES (:userId, 'welcome_bonus', 'Welcome Bonus', '100 welcome coins for joining', 0, 100, 'completed')`,
+        { userId }
+      );
+    }
+    return created;
+  });
   return findById(result.insertId);
 }
 

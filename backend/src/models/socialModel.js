@@ -176,57 +176,141 @@ async function startChatSession(chatId, payerUserId, earnerUserId, settings) {
      VALUES (:chatId, :payerUserId, :earnerUserId, :chargePerMinute, :earnerShare, :platformShare)`,
     { chatId, payerUserId, earnerUserId, chargePerMinute, earnerShare, platformShare }
   );
+
+  // Notify the girl that a paid session has started
+  const [payerRows] = await query('SELECT name FROM users WHERE id = :id LIMIT 1', { id: payerUserId }).then((r) => [r]);
+  const payerName = payerRows[0]?.name || 'Someone';
+  await notificationModel.create({
+    userId: earnerUserId,
+    actorUserId: payerUserId,
+    type: 'chat_session_started',
+    title: 'Paid Chat Started',
+    message: `${payerName} started a paid chat with you. You earn ${earnerShare} coins per minute.`,
+    linkUrl: `/user/chat/${payerUserId}`,
+    metadata: { chatId, chargePerMinute, earnerShare }
+  });
+
   return query('SELECT * FROM chat_sessions WHERE id = :id', { id: result.insertId }).then((rows) => rows[0]);
 }
 
 async function chargeChatMinute(sessionId) {
-  return transaction(async (connection) => {
+  const result = await transaction(async (connection) => {
     const [sessions] = await connection.execute(
       'SELECT * FROM chat_sessions WHERE id = :sessionId AND status = "active" LIMIT 1 FOR UPDATE',
       { sessionId }
     );
     const session = sessions[0];
-    if (!session) return null;
+    if (!session) return { session: null };
 
     const charge = Number(session.charge_per_minute);
     const earnerShare = Number(session.earner_share);
     const platformShare = Number(session.platform_share);
-    const [payers] = await connection.execute('SELECT coins FROM users WHERE id = :payerUserId LIMIT 1 FOR UPDATE', {
-      payerUserId: session.payer_user_id
-    });
-    if (!payers[0] || Number(payers[0].coins) < charge) {
-      await connection.execute('UPDATE chat_sessions SET status = "ended", ended_at = CURRENT_TIMESTAMP WHERE id = :sessionId', { sessionId });
-      return { ...session, status: 'ended', charged: false, reason: 'insufficient_coins' };
+
+    // Check payer wallet balance
+    const [payers] = await connection.execute(
+      'SELECT balance FROM wallets WHERE user_id = :payerUserId LIMIT 1 FOR UPDATE',
+      { payerUserId: session.payer_user_id }
+    );
+
+    if (!payers[0] || Number(payers[0].balance) < charge) {
+      // End session due to insufficient coins
+      await connection.execute(
+        'UPDATE chat_sessions SET status = "ended", ended_at = CURRENT_TIMESTAMP WHERE id = :sessionId',
+        { sessionId }
+      );
+      return { ...session, status: 'ended', charged: false, reason: 'insufficient_coins', _payerId: session.payer_user_id, _earnerId: session.earner_user_id, _hadSession: true };
     }
 
-    await connection.execute('UPDATE users SET coins = coins - :charge WHERE id = :payerUserId', {
-      charge,
-      payerUserId: session.payer_user_id
-    });
-    await connection.execute('UPDATE users SET coins = coins + :earnerShare, earnings = earnings + :earningAmount WHERE id = :earnerUserId', {
-      earnerShare,
-      earningAmount: earnerShare,
-      earnerUserId: session.earner_user_id
-    });
+    // Deduct coins from boy (payer)
+    await connection.execute(
+      'UPDATE wallets SET balance = balance - :charge, total_spent = total_spent + :charge WHERE user_id = :payerUserId',
+      { charge, payerUserId: session.payer_user_id }
+    );
+    await connection.execute(
+      'UPDATE users SET coins = coins - :charge WHERE id = :payerUserId',
+      { charge, payerUserId: session.payer_user_id }
+    );
+
+    // Credit earnings to girl (earner)
+    await connection.execute(
+      `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
+       VALUES (:earnerUserId, :earnerShare, :earnerShare, :earnerShare)
+       ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance), total_earned = total_earned + VALUES(total_earned), withdrawal_balance = withdrawal_balance + VALUES(withdrawal_balance)`,
+      { earnerUserId: session.earner_user_id, earnerShare }
+    );
+    await connection.execute(
+      'UPDATE users SET coins = coins + :earnerShare, earnings = earnings + :earnerShare WHERE id = :earnerUserId',
+      { earnerShare, earnerUserId: session.earner_user_id }
+    );
+
+    // Log wallet transactions for both users
     await connection.execute(
       `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
        VALUES (:payerUserId, 'chat_charge', 'Chat Minute Charged', :payerDescription, 0, :payerCoins, 'completed'),
-              (:earnerUserId, 'earning', 'Chat Minute Earning', :earnerDescription, 0, :earnerCoins, 'completed'),
-              (:payerUserId, 'commission', 'Platform Commission', :commissionDescription, 0, :platformCoins, 'completed')`,
+              (:earnerUserId, 'earning',    'Chat Minute Earning',  :earnerDescription, 0, :earnerCoins, 'completed')`,
       {
         payerUserId: session.payer_user_id,
         earnerUserId: session.earner_user_id,
         payerDescription: `Chat session #${session.id}`,
         earnerDescription: `Chat session #${session.id}`,
-        commissionDescription: `Chat session #${session.id}`,
         payerCoins: -charge,
-        earnerCoins: earnerShare,
-        platformCoins: platformShare
+        earnerCoins: earnerShare
       }
     );
-    await connection.execute('UPDATE chat_sessions SET charged_minutes = charged_minutes + 1 WHERE id = :sessionId', { sessionId });
-    return { ...session, charged: true, chargedMinutes: Number(session.charged_minutes) + 1 };
+
+    // Log platform commission
+    await connection.execute(
+      'INSERT INTO platform_commission_ledger (chat_session_id, amount, description) VALUES (:sessionId, :platformShare, :description)',
+      { sessionId, platformShare, description: `Chat session #${session.id}` }
+    );
+
+    // Advance session timer
+    await connection.execute(
+      'UPDATE chat_sessions SET charged_minutes = charged_minutes + 1, last_charged_at = CURRENT_TIMESTAMP WHERE id = :sessionId',
+      { sessionId }
+    );
+
+    const remainingBalance = Number(payers[0].balance) - charge;
+    return { ...session, status: 'active', charged: true, chargedMinutes: Number(session.charged_minutes) + 1, _payerId: session.payer_user_id, _remainingBalance: remainingBalance, _charge: charge, _hadSession: true };
   });
+
+  if (!result._hadSession) return null;
+
+  // Send notifications AFTER the transaction has committed to avoid deadlocks
+  if (result.status === 'ended') {
+    await Promise.all([
+      notificationModel.create({
+        userId: result._payerId,
+        type: 'chat_session_ended',
+        title: 'Chat Ended — Coins Exhausted',
+        message: `Your chat session ended because you ran out of coins. Buy more coins to keep chatting.`,
+        linkUrl: '/user/wallet/coins',
+        metadata: { sessionId, reason: 'insufficient_coins' }
+      }).catch(() => {}),
+      notificationModel.create({
+        userId: result._earnerId,
+        actorUserId: result._payerId,
+        type: 'chat_session_ended',
+        title: 'Paid Chat Ended',
+        message: `The paid chat session ended because the user ran out of coins.`,
+        linkUrl: `/user/chat/${result._payerId}`,
+        metadata: { sessionId, reason: 'insufficient_coins' }
+      }).catch(() => {})
+    ]);
+  } else if (result._remainingBalance < result._charge * 2) {
+    notificationModel.create({
+      userId: result._payerId,
+      type: 'low_coins_warning',
+      title: 'Low Coins Warning',
+      message: `You have only ${result._remainingBalance} coins left. Buy more to keep your chat going.`,
+      linkUrl: '/user/wallet/coins',
+      metadata: { sessionId, remainingBalance: result._remainingBalance }
+    }).catch(() => {});
+  }
+
+  // Strip internal fields before returning
+  const { _payerId, _earnerId, _remainingBalance, _charge, _hadSession, ...cleanResult } = result;
+  return cleanResult;
 }
 
 async function endChatSession(sessionId, userId) {
@@ -236,6 +320,14 @@ async function endChatSession(sessionId, userId) {
     { sessionId, userId }
   );
   return query('SELECT * FROM chat_sessions WHERE id = :sessionId', { sessionId }).then((rows) => rows[0] || null);
+}
+
+async function activeChatSession(chatId) {
+  return query('SELECT * FROM chat_sessions WHERE chat_id = :chatId AND status = "active" LIMIT 1', { chatId }).then((rows) => rows[0] || null);
+}
+
+async function dueChatSessions() {
+  return query(`SELECT id FROM chat_sessions WHERE status = 'active' AND COALESCE(last_charged_at, started_at) <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MINUTE)`);
 }
 
 module.exports = {
@@ -251,5 +343,7 @@ module.exports = {
   sendMessage,
   startChatSession,
   chargeChatMinute,
-  endChatSession
+  endChatSession,
+  activeChatSession,
+  dueChatSessions
 };

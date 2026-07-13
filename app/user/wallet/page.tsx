@@ -6,23 +6,23 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, History, Plus } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { getStoredUser, userApi } from '@/lib/api';
 
 export default function WalletPage() {
-  const [wallet, setWallet] = useState({ coins: 0, earnings: 0 });
+  const [wallet, setWallet] = useState({ coins: 0, earnings: 0, totalPurchased: 0, totalSpent: 0, totalEarned: 0, withdrawalBalance: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     userApi.wallet()
-      .then(setWallet)
+      .then((data) => setWallet((prev) => ({ ...prev, ...data })))
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load wallet'))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="p-8 text-center text-zinc-500">Loading wallet...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-
+  const isBoy = String(getStoredUser()?.gender || '').toLowerCase() === 'male';
   return (
     <div className="p-4 md:p-8">
       <Container>
@@ -38,12 +38,7 @@ export default function WalletPage() {
               <span className="text-2xl">Coins</span>
             </div>
             <p className="text-sm text-zinc-500 mb-6">Saathika Coins</p>
-            <Button size="lg" asChild>
-              <Link href="/user/wallet/coins">
-                <Plus size={18} />
-                Buy Coins
-              </Link>
-            </Button>
+            {isBoy && <Button size="lg" asChild><Link href="/user/wallet/coins"><Plus size={18} />Buy Coins</Link></Button>}
           </div>
         </Card>
 
@@ -52,12 +47,12 @@ export default function WalletPage() {
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
               <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                {isBoy && <Button variant="outline" className="w-full justify-start gap-2" asChild>
                   <Link href="/user/wallet/coins">
                     <Plus size={18} />
                     Purchase Coins
                   </Link>
-                </Button>
+                </Button>}
                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
                   <Link href="/user/wallet/history">
                     <History size={18} />
@@ -80,15 +75,15 @@ export default function WalletPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-zinc-600 dark:text-zinc-400">Total Earned</span>
-                  <span className="font-semibold">Rs {wallet.earnings}</span>
+                  <span className="font-semibold">{wallet.totalEarned} coins</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-600 dark:text-zinc-400">Available</span>
-                  <span className="font-semibold">Rs {wallet.earnings}</span>
+                  <span className="font-semibold">{wallet.withdrawalBalance} coins</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-600 dark:text-zinc-400">Pending</span>
-                  <span className="font-semibold">Rs 0</span>
+                  <span className="font-semibold">{wallet.totalSpent} coins spent</span>
                 </div>
               </div>
             </div>

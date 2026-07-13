@@ -25,11 +25,23 @@ app.use(helmet({
     }
   }
 }));
-app.use(cors({ origin: env.appUrl, credentials: true }));
+const allowedOrigins = env.nodeEnv === 'production'
+  ? [env.appUrl]
+  : (origin, cb) => cb(null, true); // allow all origins in development
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
+// General rate limiter — generous to support polling (messages every 3s + wallet every 5s)
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 2000,              // 2000 requests per 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ success: false, message: 'Too many requests, please try again later.' });
+  },
+}));
 app.use('/uploads', express.static(path.join(__dirname, '../', env.uploadDir)));
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
@@ -37,8 +49,18 @@ app.get('/health', (req, res) => ok(res, { status: 'healthy' }, 'API is running'
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
+// Auth-specific limiter — stricter to prevent brute-force login/register attempts
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ success: false, message: 'Too many attempts. Please wait 15 minutes before trying again.' });
+  },
+});
 app.use('/api/brand', brandRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/user', authenticate, userRoutes);
 app.use('/api/admin', adminRoutes);
 
