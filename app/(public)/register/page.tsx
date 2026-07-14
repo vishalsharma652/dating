@@ -43,7 +43,9 @@ export default function RegisterPage() {
       nextErrors.phone = 'Enter a valid mobile number.';
     }
 
-    if (formData.email && !emailPattern.test(formData.email.trim())) {
+    if (!formData.email.trim()) {
+      nextErrors.email = 'Email address is required.';
+    } else if (!emailPattern.test(formData.email.trim())) {
       nextErrors.email = 'Enter a valid email address.';
     }
 
@@ -80,7 +82,7 @@ export default function RegisterPage() {
       const data = await authApi.register({
         name: formData.name.trim(),
         phone: formData.phone.trim(),
-        email: formData.email.trim() || undefined,
+        email: formData.email.trim(),
         gender: formData.gender,
         password: formData.password,
       });
@@ -142,7 +144,7 @@ export default function RegisterPage() {
               {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
 
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                Email (optional)
+                Email
                 <div className="relative mt-2">
                   <Mail className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
                   <Input

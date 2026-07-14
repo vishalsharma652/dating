@@ -7,6 +7,7 @@ const { AppError } = require('../utils/errors');
 const { hasNameGenderMismatch } = require('../utils/nameGender');
 
 const pendingRegistrations = new Map();
+const pendingResets = new Map(); // email → { token, expiresAt }
 
 function createOtp() {
   return String(randomInt(100000, 1000000));
@@ -26,7 +27,7 @@ function toPublicUser(user) {
 const registerRules = [
   body('name').trim().notEmpty().withMessage('Full name is required'),
   body('phone').customSanitizer(normalizePhone).matches(/^\d{10,15}$/).withMessage('Enter a valid mobile number'),
-  body('email').optional({ values: 'falsy' }).isEmail().withMessage('Enter a valid email address'),
+  body('email').notEmpty().withMessage('Email address is required').bail().isEmail().withMessage('Enter a valid email address'),
   body('gender')
     .isIn(['male', 'female'])
     .withMessage('Choose a valid gender')
@@ -48,7 +49,7 @@ const loginRules = [
 
 async function register(req, res) {
   const phone = normalizePhone(req.body.phone);
-  const email = req.body.email || null;
+  const email = req.body.email;
   const existingPhone = await userModel.findByEmailOrPhone(phone);
   const existingEmail = req.body.email ? await userModel.findByEmailOrPhone(req.body.email) : null;
   if (existingPhone || existingEmail) throw new AppError('An account with this email or phone already exists', 409);
@@ -143,12 +144,44 @@ async function resendOtp(req, res) {
   return ok(res, { phone, otp }, 'OTP sent');
 }
 
+const forgotPasswordRules = [
+  body('email').notEmpty().withMessage('Email address is required').bail().isEmail().withMessage('Enter a valid email address')
+];
+
 async function forgotPassword(req, res) {
-  return ok(res, { resetToken: 'development-reset-token' }, 'Password reset instructions sent');
+  const email = (req.body.email || '').trim().toLowerCase();
+  // Always respond with success to prevent email enumeration
+  const user = await userModel.findByEmailOrPhone(email);
+  if (user) {
+    const token = require('crypto').randomBytes(32).toString('hex');
+    pendingResets.set(email, { token, userId: user.id, expiresAt: Date.now() + 30 * 60 * 1000 });
+    // In production: send email with reset link containing token
+    // For development: token is returned in response
+    return ok(res, { resetToken: token }, 'Password reset instructions sent to your email');
+  }
+  return ok(res, {}, 'If this email is registered, you will receive reset instructions shortly');
 }
+
+const resetPasswordRules = [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+];
 
 async function resetPassword(req, res) {
-  return ok(res, null, 'Password reset successfully');
+  const { token, password } = req.body;
+  // Find the pending reset entry
+  let found = null;
+  for (const [email, entry] of pendingResets) {
+    if (entry.token === token) { found = { email, entry }; break; }
+  }
+  if (!found) throw new AppError('Invalid or expired reset link. Please request a new one.', 410);
+  if (Date.now() > found.entry.expiresAt) {
+    pendingResets.delete(found.email);
+    throw new AppError('Reset link has expired. Please request a new one.', 410);
+  }
+  await userModel.updatePassword(found.entry.userId, password);
+  pendingResets.delete(found.email);
+  return ok(res, null, 'Password reset successfully. You can now sign in.');
 }
 
-module.exports = { registerRules, loginRules, register, login, me, logout, heartbeat, verifyOtp, resendOtp, forgotPassword, resetPassword };
+module.exports = { registerRules, loginRules, forgotPasswordRules, resetPasswordRules, register, login, me, logout, heartbeat, verifyOtp, resendOtp, forgotPassword, resetPassword };
