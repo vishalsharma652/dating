@@ -4,11 +4,12 @@ const settingsModel = require('./settingsModel');
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc FROM users');
   const [revenueRow] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
+  const [paidRow] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
   const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals FROM withdrawals WHERE status = "pending"');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
   const recentUsers = await query('SELECT id, name, email, phone, role, status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
-  return { ...users, ...revenueRow, ...withdrawals, ...chats, ...coins, recentUsers };
+  return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...chats, ...coins, recentUsers };
 }
 
 async function listTable(table, { page = 1, limit = 20 } = {}) {
@@ -214,10 +215,11 @@ async function updateWithdrawal(id, { status }) {
 
 async function reports() {
   const [revenue] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
+  const [paidRow] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
   const [users] = await query('SELECT COUNT(*) AS users FROM users WHERE role = "user"');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coins FROM wallet_transactions WHERE status = "completed"');
   const [chatsRow] = await query('SELECT COUNT(*) AS chats FROM chats');
-  return { ...revenue, ...users, ...coins, ...chatsRow };
+  return { ...revenue, ...paidRow, ...users, ...coins, ...chatsRow };
 }
 
 async function updateOrder(id, data) {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ember Admin</title>
+    <title>Saathika Admin Panel</title>
     <style>
       :root {
         --bg: #0f0f1a;
@@ -68,9 +68,28 @@
         color: var(--text);
         padding: 0 12px;
         outline: none;
+        transition: all 0.2s ease;
+      }
+      .select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 36px !important;
+        cursor: pointer;
+      }
+      .select option {
+        background: var(--panel-2);
+        color: var(--text);
       }
       textarea.input { min-height: 88px; padding-top: 12px; resize: vertical; }
-      .input:focus, .select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2); }
+      .input:focus, .select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(108,92,231,0.2);
+      }
 
       .btn {
         min-height: 40px;
@@ -84,13 +103,20 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        transition: all 0.2s ease;
+      }
+      .btn:hover:not(:disabled) {
+        opacity: 0.9;
+        box-shadow: 0 0 12px rgba(108,92,231,0.35);
       }
       .btn.secondary { background: rgba(255,255,255,0.06); border-color: var(--border); }
+      .btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,0.1); box-shadow: none; }
       .btn.danger { background: var(--danger); }
+      .btn.danger:hover:not(:disabled) { box-shadow: 0 0 12px rgba(255,59,48,0.35); }
       .btn.success { background: var(--success); color: #07120b; }
       .btn.block { width: 100%; margin-top: 22px; }
 
-      .app { display: none; min-height: 100vh; }
+      .app { min-height: 100vh; }
       .sidebar {
         position: fixed;
         inset: 0 auto 0 0;
@@ -125,8 +151,14 @@
         padding: 0 12px;
         text-align: left;
         font-weight: 700;
+        transition: all 0.15s ease;
       }
-      .nav-btn.active { background: var(--primary); border-color: rgba(255,255,255,0.18); color: white; box-shadow: 0 12px 30px rgba(108,92,231,0.25); }
+      .nav-btn.active {
+        background: var(--primary);
+        border-color: rgba(255, 255, 255, 0.18);
+        color: white;
+        box-shadow: 0 12px 30px rgba(108,92,231,0.25);
+      }
       .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.07); color: #fff; }
 
       .main { min-width: 0; }
@@ -148,40 +180,78 @@
       .hamburger { width: 42px; padding: 0; }
       .content { padding: 16px; max-width: 1600px; margin: 0 auto; }
 
-      .notice {
-        display: none;
-        margin-bottom: 16px;
-        border-radius: 10px;
-        padding: 12px 14px;
-        border: 1px solid var(--border);
-      }
-      .notice.success { display: block; color: #bbf7d0; background: rgba(0,200,83,0.1); border-color: rgba(0,200,83,0.3); }
-      .notice.error { display: block; color: #fecaca; background: rgba(255,59,48,0.1); border-color: rgba(255,59,48,0.3); }
+      .notice { margin-bottom: 16px; border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border); }
+      .notice.success { color: #bbf7d0; background: rgba(0, 200, 83, 0.1); border-color: rgba(0, 200, 83, 0.3); }
+      .notice.error { color: #fecaca; background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3); }
 
       .grid { display: grid; gap: 14px; }
       .metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
       .metric { padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .metric-value { margin-top: 8px; font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 26px; font-weight: 900; }
-      .metric-icon { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; background: rgba(108,92,231,0.16); color: #a69cff; }
+      .metric-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: rgba(108,92,231,0.16);
+        color: #a69cff;
+      }
 
       .panel { overflow: hidden; }
-      .panel-head {
-        padding: 16px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-      }
+      .panel-head { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .panel-body { padding: 16px; }
       .toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 
       .table-wrap { overflow-x: auto; border-radius: 10px; scrollbar-color: #3f3f5a transparent; }
       table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; }
-      th, td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; vertical-align: middle; }
-      th { color: #71717a; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
-      td { color: #d4d4d8; }
-      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      th, td { padding: 14px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; vertical-align: middle; transition: background 0.15s ease; }
+      th { color: #71717a; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+      td { color: #e4e4e7; }
+      tr:hover td { background: rgba(255, 255, 255, 0.02); }
+      .actions { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; white-space: nowrap; }
+
+      .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        height: 32px;
+        padding: 0 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        outline: none;
+      }
+      .btn-action.btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-action.btn-primary:hover {
+        opacity: 0.9;
+        box-shadow: 0 0 12px rgba(108, 92, 231, 0.35);
+      }
+      .btn-action.btn-outline {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #e4e4e7;
+      }
+      .btn-action.btn-outline:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      .btn-action.btn-danger-outline {
+        background: transparent;
+        border-color: rgba(255, 59, 48, 0.3);
+        color: #ff453a;
+      }
+      .btn-action.btn-danger-outline:hover {
+        background: rgba(255, 59, 48, 0.1);
+        border-color: #ff453a;
+      }
 
       .badge {
         display: inline-flex;
@@ -221,16 +291,19 @@
         text-align: center;
         border: 1px dashed var(--border);
         border-radius: 10px;
-        background: rgba(255,255,255,0.03);
+        background: rgba(255, 255, 255, 0.03);
         padding: 24px;
       }
-      .empty-title { margin-top: 10px; color: #71717a; font-size: 12px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; }
-
-      .spinner-page, .saving-toast {
-        display: none;
-        align-items: center;
-        gap: 12px;
+      .empty-title {
+        margin-top: 10px;
+        color: #71717a;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
       }
+
+      .spinner-page, .saving-toast { display: flex; align-items: center; gap: 12px; }
       .spinner {
         width: 24px;
         height: 24px;
@@ -240,13 +313,9 @@
         animation: spin 800ms linear infinite;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
-      .spinner-page {
-        min-height: 280px;
-        justify-content: center;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.04);
-      }
+      .animate-spin { animation: spin 1s linear infinite; }
+
+      .spinner-page { min-height: 280px; justify-content: center; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.04); }
       .saving-toast {
         position: fixed;
         right: 16px;
@@ -263,7 +332,7 @@
         position: fixed;
         inset: 0;
         z-index: 60;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(0,0,0,0.72);
@@ -288,72 +357,25 @@
     </style>
   </head>
   <body>
-    <section id="loginPage" class="login-page">
-      <form id="loginForm" class="login-card">
-        <p class="eyebrow">Ember Admin</p>
-        <h1>Sign in</h1>
-        <p class="muted" style="margin-top: 8px;">Manage users, KYC verification, wallets, chats, withdrawals, and reports.</p>
-        <label class="field">
-          <span>Email</span>
-          <input id="email" class="input" type="email" value="admin@ember.local" required />
-        </label>
-        <label class="field">
-          <span>Password</span>
-          <input id="password" class="input" type="password" value="Admin@12345" required />
-        </label>
-        <div id="loginError" class="notice error"></div>
-        <button id="loginButton" class="btn block" type="submit">Sign In</button>
-      </form>
-    </section>
+    <div id="root"></div>
 
-    <section id="app" class="app">
-      <aside id="sidebar" class="sidebar">
-        <div class="sidebar-head">
-          <div>
-            <p class="eyebrow">Ember</p>
-            <strong>Admin Panel</strong>
-          </div>
-          <button class="btn secondary mobile-close" onclick="toggleSidebar(false)" type="button">Close</button>
-        </div>
-        <nav class="nav" id="nav"></nav>
-      </aside>
+    <!-- React CDN Modules -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-      <main class="main">
-        <header class="topbar">
-          <div class="top-left">
-            <button class="btn secondary hamburger" onclick="toggleSidebar(true)" type="button">☰</button>
-            <div>
-              <p id="moduleGroup" class="eyebrow">Overview</p>
-              <h2 id="moduleTitle">Dashboard</h2>
-            </div>
-          </div>
-          <div class="actions">
-            <button class="btn secondary" onclick="loadAll()" type="button">Refresh</button>
-            <button class="btn secondary" onclick="logout()" type="button">Logout</button>
-          </div>
-        </header>
+    <!-- React Components -->
+    <script type="text/babel" src="./components/Dashboard.js"></script>
+    <script type="text/babel" src="./components/Users.js"></script>
+    <script type="text/babel" src="./components/Kyc.js"></script>
+    <script type="text/babel" src="./components/Wallet.js"></script>
+    <script type="text/babel" src="./components/Chats.js"></script>
+    <script type="text/babel" src="./components/Withdrawals.js"></script>
+    <script type="text/babel" src="./components/Reports.js"></script>
+    <script type="text/babel" src="./components/Settings.js"></script>
 
-        <div class="content">
-          <div id="notice" class="notice"></div>
-          <div id="loader" class="spinner-page"><div class="spinner"></div><span>Loading admin data...</span></div>
-          <div id="view"></div>
-        </div>
-      </main>
-    </section>
-
-    <div id="savingToast" class="saving-toast"><div class="spinner"></div><span>Updating data...</span></div>
-
-    <div id="confirmModal" class="modal-backdrop">
-      <div class="modal">
-        <h3 id="confirmTitle">Confirm action</h3>
-        <p id="confirmDescription" class="muted" style="margin-top: 10px; line-height: 1.6;"></p>
-        <div class="modal-actions">
-          <button class="btn secondary" onclick="closeConfirm()" type="button">Cancel</button>
-          <button id="confirmButton" class="btn danger" type="button">Confirm</button>
-        </div>
-      </div>
-    </div>
-
-    <script src="/admin/admin.js"></script>
+    <!-- Main Controller -->
+    <script type="text/babel" src="./App.js"></script>
   </body>
 </html>

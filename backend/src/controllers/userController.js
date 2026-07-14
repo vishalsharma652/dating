@@ -185,6 +185,46 @@ async function coinPackages(req, res) {
 }
 
 async function purchaseCoins(req, res) {
+  const { gateway, upiId, cardNumber, expiry, cvv, cardName } = req.body;
+
+  if (gateway === 'phonepe') {
+    if (!upiId || typeof upiId !== 'string' || !upiId.trim() || !upiId.includes('@')) {
+      const err = new AppError('UPI validation failed', 422);
+      err.details = { upiId: 'Please enter a valid UPI ID (e.g., username@bank)' };
+      throw err;
+    }
+  } else if (gateway === 'razorpay') {
+    const errors = {};
+    const cleanCard = (cardNumber || '').replace(/\s/g, '');
+    if (!cardNumber || typeof cardNumber !== 'string' || cleanCard.length < 16 || !/^\d+$/.test(cleanCard)) {
+      errors.cardNumber = 'Please enter a valid 16-digit card number';
+    }
+    if (!expiry || typeof expiry !== 'string' || !expiry.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/)) {
+      errors.expiry = 'Please enter a valid expiry (MM/YY)';
+    } else {
+      const [expMonth, expYear] = expiry.split('/').map(Number);
+      const now = new Date();
+      const currentYear = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+      if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+        errors.expiry = 'Card has expired';
+      }
+    }
+    const cleanCvv = (cvv || '').trim();
+    if (!cvv || typeof cvv !== 'string' || cleanCvv.length < 3 || cleanCvv.length > 4 || !/^\d+$/.test(cleanCvv)) {
+      errors.cvv = 'Please enter a valid CVV (3 or 4 digits)';
+    }
+    if (!cardName || typeof cardName !== 'string' || !cardName.trim()) {
+      errors.cardName = 'Please enter cardholder name';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      const err = new AppError('Card validation failed', 422);
+      err.details = errors;
+      throw err;
+    }
+  }
+
   const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId), {
     gateway: req.body.gateway,
     reference: req.body.paymentReference

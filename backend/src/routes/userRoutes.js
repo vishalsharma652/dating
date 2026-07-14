@@ -34,7 +34,12 @@ router.get('/wallet/coins', asyncHandler(user.coinPackages));
 router.post('/wallet/coins/purchase', [
   body('packageId').isInt(),
   body('gateway').optional({ values: 'falsy' }).isIn(['razorpay', 'cashfree', 'phonepe']),
-  body('paymentReference').optional({ values: 'falsy' }).isString()
+  body('paymentReference').optional({ values: 'falsy' }).isString(),
+  body('upiId').optional({ values: 'falsy' }).isString(),
+  body('cardNumber').optional({ values: 'falsy' }).isString(),
+  body('expiry').optional({ values: 'falsy' }).isString(),
+  body('cvv').optional({ values: 'falsy' }).isString(),
+  body('cardName').optional({ values: 'falsy' }).isString()
 ], validate, asyncHandler(user.purchaseCoins));
 router.get('/wallet/bank-accounts', asyncHandler(user.bankAccounts));
 router.post('/wallet/bank-accounts', [

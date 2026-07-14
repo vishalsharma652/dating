@@ -65,7 +65,9 @@ async function dashboard(req, res) {
 }
 
 async function users(req, res) {
-  return ok(res, { users: await userModel.list(req.query) });
+  const users = await userModel.list(req.query);
+  const total = await userModel.count(req.query);
+  return ok(res, { users, total });
 }
 
 async function updateUser(req, res) {

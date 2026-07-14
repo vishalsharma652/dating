@@ -48,9 +48,9 @@ async function findByEmailOrPhone(identifier) {
   return rows[0] || null;
 }
 
-async function list({ page = 1, limit = 20, search = '', role = null, status = null }) {
+async function list({ page = 1, limit = 10, search = '', role = null, status = null, online_status = null, kyc_status = null }) {
   const pageNumber = Math.max(Number(page) || 1, 1);
-  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 200);
   const offset = (pageNumber - 1) * limitNumber;
   const filters = ['1=1'];
   const params = { search: `%${search}%` };
@@ -63,7 +63,39 @@ async function list({ page = 1, limit = 20, search = '', role = null, status = n
     filters.push('status = :status');
     params.status = status;
   }
+  if (online_status !== null && online_status !== undefined && online_status !== '') {
+    filters.push('online_status = :online_status');
+    params.online_status = online_status === 'true' || online_status === true || online_status === 1 || online_status === '1';
+  }
+  if (kyc_status) {
+    filters.push('kyc_status = :kyc_status');
+    params.kyc_status = kyc_status;
+  }
   return query(`SELECT ${publicFields} FROM users WHERE ${filters.join(' AND ')} ORDER BY created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`, params);
+}
+
+async function count({ search = '', role = null, status = null, online_status = null, kyc_status = null }) {
+  const filters = ['1=1'];
+  const params = { search: `%${search}%` };
+  if (search) filters.push('(name LIKE :search OR email LIKE :search OR phone LIKE :search)');
+  if (role) {
+    filters.push('role = :role');
+    params.role = role;
+  }
+  if (status) {
+    filters.push('status = :status');
+    params.status = status;
+  }
+  if (online_status !== null && online_status !== undefined && online_status !== '') {
+    filters.push('online_status = :online_status');
+    params.online_status = online_status === 'true' || online_status === true || online_status === 1 || online_status === '1';
+  }
+  if (kyc_status) {
+    filters.push('kyc_status = :kyc_status');
+    params.kyc_status = kyc_status;
+  }
+  const result = await query(`SELECT COUNT(*) as count FROM users WHERE ${filters.join(' AND ')}`, params);
+  return result[0]?.count || 0;
 }
 
 async function update(id, fields) {
@@ -95,4 +127,4 @@ async function verifyPassword(user, password) {
   return bcrypt.compare(password, user.password_hash);
 }
 
-module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, update, updatePassword, markOnline, markOffline, verifyPassword };
+module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword };

@@ -83,7 +83,11 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   }
 
   if (!response.ok || !payload.success) {
-    throw new Error(payload.message || 'Request failed');
+    const err = new Error(payload.message || 'Request failed') as any;
+    if ((payload as any).errors) {
+      err.errors = (payload as any).errors;
+    }
+    throw err;
   }
 
   return payload.data;
@@ -188,7 +192,15 @@ export const userApi = {
   coinPackages: () => apiRequest<{ packages: any[] }>('/user/wallet/coins'),
   purchaseCoins: (
     packageId: number | string,
-    payment?: { gateway?: 'razorpay' | 'cashfree' | 'phonepe'; paymentReference?: string }
+    payment?: {
+      gateway?: 'razorpay' | 'cashfree' | 'phonepe';
+      paymentReference?: string;
+      upiId?: string;
+      cardNumber?: string;
+      expiry?: string;
+      cvv?: string;
+      cardName?: string;
+    }
   ) =>
     apiRequest<{ package: any; coinsAdded: number }>('/user/wallet/coins/purchase', {
       method: 'POST',
