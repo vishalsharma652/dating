@@ -138,6 +138,16 @@ export const authApi = {
     apiRequest<{ user: any }>('/auth/heartbeat', {
       method: 'POST',
     }),
+  forgotPassword: (email: string) =>
+    apiRequest<{ resetToken?: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, password: string) =>
+    apiRequest<null>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    }),
 };
 
 export const userApi = {
