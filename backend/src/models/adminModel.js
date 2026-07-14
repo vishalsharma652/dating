@@ -112,16 +112,21 @@ async function updateKyc(id, { status }) {
   return query('SELECT id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
 }
 
-async function walletLogs({ page = 1, limit = 20 } = {}) {
+async function walletLogs({ page = 1, limit = 10 } = {}) {
   const pageNumber = Math.max(Number(page) || 1, 1);
-  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 100);
   const offset = (pageNumber - 1) * limitNumber;
-  return query(
-    `SELECT wt.*, u.name AS user_name, u.phone AS user_phone
-     FROM wallet_transactions wt
-     LEFT JOIN users u ON u.id = wt.user_id
-     ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`
-  );
+  const [transactions, countRows] = await Promise.all([
+    query(
+      `SELECT wt.*, u.name AS user_name, u.phone AS user_phone
+       FROM wallet_transactions wt
+       LEFT JOIN users u ON u.id = wt.user_id
+       ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`
+    ),
+    query('SELECT COUNT(*) AS total FROM wallet_transactions')
+  ]);
+  const total = countRows[0]?.total || 0;
+  return { transactions, total };
 }
 
 async function adjustCoins({ userId, coins, reason, mode }) {

@@ -42,6 +42,10 @@ function App() {
   const [userRole, setUserRole] = useState('');
   const [userSort, setUserSort] = useState('newest');
 
+  // Wallet Pagination States
+  const [walletPage, setWalletPage] = useState(1);
+  const [walletTotal, setWalletTotal] = useState(0);
+
   // Modals States
   const [detailModal, setDetailModal] = useState({
     show: false,
@@ -129,13 +133,28 @@ function App() {
     }
   }, [token, usersPage, userSearch, userStatus, userOnline, userKyc, userRole]);
 
+  const loadWalletTransactions = async () => {
+    try {
+      const res = await apiRequest(`/admin/wallet/transactions?page=${walletPage}&limit=10`);
+      setWalletTransactions(res.data.transactions || []);
+      setWalletTotal(res.data.total || 0);
+    } catch (err) {
+      showNotice(err.message, 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      loadWalletTransactions();
+    }
+  }, [token, walletPage]);
+
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [db, ky, wt, ch, wd, rp, st, usDropdown] = await Promise.all([
+      const [db, ky, ch, wd, rp, st, usDropdown] = await Promise.all([
         apiRequest('/admin/dashboard'),
         apiRequest('/admin/kyc'),
-        apiRequest('/admin/wallet/transactions'),
         apiRequest('/admin/chats'),
         apiRequest('/admin/withdrawals'),
         apiRequest('/admin/reports'),
@@ -145,7 +164,7 @@ function App() {
 
       setDashboardData(db.data.dashboard || {});
       setKycRequests(ky.data.requests || []);
-      setWalletTransactions(wt.data.transactions || []);
+      // walletTransactions fetched separately via loadWalletTransactions()
       setChatsList(ch.data.chats || []);
       setWithdrawalsList(wd.data.withdrawals || []);
       setReportsData(rp.data.reports || {});
@@ -159,11 +178,13 @@ function App() {
     }
   };
 
+
   const triggerAction = async (callback) => {
     setSaving(true);
     try {
       await callback();
       await loadAllData();
+      await loadWalletTransactions();
     } catch (err) {
       showNotice(err.message, 'error');
     } finally {
@@ -461,6 +482,9 @@ function App() {
           <window.Wallet
             users={dropdownUsers}
             transactions={walletTransactions}
+            total={walletTotal}
+            page={walletPage}
+            onPageChange={setWalletPage}
             onAdjust={handleAdjustWallet}
             dateStr={dateStr}
           />
