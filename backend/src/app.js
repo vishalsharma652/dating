@@ -19,7 +19,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'", "'unsafe-eval'"],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "https:", "'unsafe-inline'"]
     }

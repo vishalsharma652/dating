@@ -28,10 +28,11 @@ async function main() {
   }
 
   if (!(await columnExists('wallet_transactions', 'payment_gateway'))) {
-    await pool.query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway ENUM('razorpay','cashfree','phonepe') NULL AFTER status");
+    await pool.query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway VARCHAR(50) NULL AFTER status");
     console.log('Added wallet_transactions.payment_gateway');
   } else {
-    console.log('wallet_transactions.payment_gateway already exists');
+    await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN payment_gateway VARCHAR(50) NULL");
+    console.log('Modified wallet_transactions.payment_gateway to VARCHAR(50)');
   }
 
   if (!(await columnExists('wallet_transactions', 'payment_reference'))) {

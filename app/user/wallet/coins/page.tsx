@@ -5,6 +5,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Loader } from '@/components/ui/loader';
 import { Check } from 'lucide-react';
 import { userApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,7 @@ export default function CoinPurchasePage() {
     router.push(`/user/wallet/coins/payment?packageId=${packageId}`);
   };
 
-  if (loading) return <div className="p-8 text-center text-zinc-500">Loading packages...</div>;
+  if (loading) return <Loader text="Loading coin packages..." />;
 
   return (
     <div className="p-4 md:p-8">

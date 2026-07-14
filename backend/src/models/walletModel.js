@@ -66,7 +66,9 @@ async function purchase(userId, packageId, payment = {}) {
 
 async function ensureWalletTransactionPaymentColumns() {
   if (!(await columnExists('wallet_transactions', 'payment_gateway'))) {
-    await query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway ENUM('razorpay','cashfree','phonepe') NULL AFTER status");
+    await query("ALTER TABLE wallet_transactions ADD COLUMN payment_gateway VARCHAR(50) NULL AFTER status");
+  } else {
+    await query("ALTER TABLE wallet_transactions MODIFY COLUMN payment_gateway VARCHAR(50) NULL");
   }
 
   if (!(await columnExists('wallet_transactions', 'payment_reference'))) {
