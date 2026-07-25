@@ -61,9 +61,9 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, rupees }) {
         <section className="panel">
           <div className="panel-head"><h3>Coin Sales & Revenue Trend</h3></div>
           <div className="panel-body">
-            <div style={{ height: '230px', display: 'flex', alignItems: 'end', gap: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px' }}>
+            <div className="chart-container">
               {[32, 46, 40, 64, 58, 78, 88].map((v, i) => (
-                <div key={i} style={{ flex: 1, height: `${v}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0' }}></div>
+                <div key={i} className="chart-bar" style={{ height: `${v}%` }}></div>
               ))}
             </div>
           </div>
@@ -71,9 +71,9 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, rupees }) {
         <section className="panel">
           <div className="panel-head"><h3>User Registrations Trend</h3></div>
           <div className="panel-body">
-            <div style={{ height: '230px', display: 'flex', alignItems: 'end', gap: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px' }}>
+            <div className="chart-container">
               {[18, 26, 36, 44, 56, 72, 82].map((v, i) => (
-                <div key={i} style={{ flex: 1, height: `${v}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0' }}></div>
+                <div key={i} className="chart-bar" style={{ height: `${v}%` }}></div>
               ))}
             </div>
           </div>

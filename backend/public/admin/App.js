@@ -513,7 +513,13 @@ function App() {
     return (
       <section className="login-page">
         <form className="login-card" onSubmit={handleLogin}>
-          <p className="eyebrow">Saathika Admin</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+            <img src="./logo.jpg" alt="Saathika Logo" style={{ width: '48px', height: '48px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} />
+            <div>
+              <p className="eyebrow" style={{ margin: 0 }}>Saathika</p>
+              <h2 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text)' }}>Admin Panel</h2>
+            </div>
+          </div>
           <h1>Sign in</h1>
           <p className="muted" style={{ marginTop: '8px' }}>Manage users, KYC verification, wallets, chats, withdrawals, and reports.</p>
           
@@ -556,9 +562,12 @@ function App() {
       {/* Sidebar navigation */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-head">
-          <div>
-            <p className="eyebrow">Saathika</p>
-            <strong>Admin Panel</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="./logo.jpg" alt="Saathika Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} />
+            <div>
+              <p className="eyebrow" style={{ margin: 0, fontSize: '10px' }}>Saathika</p>
+              <strong style={{ fontSize: '14px', fontWeight: '800' }}>Admin Panel</strong>
+            </div>
           </div>
           <button className="btn secondary mobile-close" onClick={() => setSidebarOpen(false)} type="button">
             ✕
