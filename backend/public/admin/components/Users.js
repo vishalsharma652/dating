@@ -216,11 +216,15 @@ window.Users = function Users({
                         </td>
                         <td>
                           <div className="actions">
-                            <button className="btn-action btn-primary" onClick={() => onViewProfile(u)}>View Profile</button>
-                            <button className="btn-action btn-outline" onClick={() => onChangeStatus(u.id)}>
-                              {u.status === 'active' ? 'Deactivate' : 'Activate'}
+                            <button className="btn-action btn-primary" style={{ width: '34px', padding: 0 }} onClick={() => onViewProfile(u)} title="View Profile">
+                              <window.Icon name="eye" size={14} />
                             </button>
-                            <button className="btn-action btn-danger-outline" onClick={() => onDeleteUser(u.id)}>Delete</button>
+                            <button className="btn-action btn-outline" style={{ width: '34px', padding: 0, color: u.status === 'active' ? '#f43f5e' : '#10b981', borderColor: u.status === 'active' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(16, 185, 129, 0.2)', backgroundColor: u.status === 'active' ? 'rgba(244, 63, 94, 0.02)' : 'rgba(16, 185, 129, 0.02)' }} onClick={() => onChangeStatus(u.id)} title={u.status === 'active' ? 'Deactivate User' : 'Activate User'}>
+                              <window.Icon name={u.status === 'active' ? 'user-x' : 'user-check'} size={14} />
+                            </button>
+                            <button className="btn-action btn-danger-outline" style={{ width: '34px', padding: 0 }} onClick={() => onDeleteUser(u.id)} title="Delete User">
+                              <window.Icon name="trash-2" size={14} />
+                            </button>
                           </div>
                         </td>
                       </tr>
