@@ -43,10 +43,44 @@ export function UserNav() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [hasDiscoverData, setHasDiscoverData] = useState(false);
+  const [hasMatchesData, setHasMatchesData] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    userApi.discover()
+      .then((data) => {
+        if (active) setHasDiscoverData((data.profiles || []).length > 0);
+      })
+      .catch(() => {
+        if (active) setHasDiscoverData(false);
+      });
+
+    userApi.matches()
+      .then((data) => {
+        if (active) setHasMatchesData((data.matches || []).length > 0);
+      })
+      .catch(() => {
+        if (active) setHasMatchesData(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const visibleSidebarItems = useMemo(() => {
+    return sidebarItems.filter((item) => {
+      if (item.href === '/user/discover') return hasDiscoverData;
+      if (item.href === '/user/matches') return hasMatchesData;
+      return true;
+    });
+  }, [hasDiscoverData, hasMatchesData]);
 
   useEffect(() => {
     let active = true;
@@ -141,7 +175,7 @@ export function UserNav() {
         </div>
 
         <nav className="mt-8 space-y-2 px-4">
-          {sidebarItems.map((item) => {
+          {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname.startsWith(item.href);
             return (
