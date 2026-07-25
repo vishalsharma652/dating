@@ -440,7 +440,7 @@ function App() {
   const renderActiveModule = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <window.Dashboard data={dashboardData} users={usersList} onViewProfile={openUserProfile} rupees={rupees} />;
+        return <window.Dashboard data={dashboardData} users={usersList} onViewProfile={openUserProfile} onTabChange={setActiveTab} rupees={rupees} />;
       case 'users':
         return (
           <window.Users
@@ -505,7 +505,7 @@ function App() {
       case 'settings':
         return <window.Settings data={settingsData} onSave={handleSaveSettings} />;
       default:
-        return <window.Dashboard data={dashboardData} users={usersList} onViewProfile={openUserProfile} rupees={rupees} />;
+        return <window.Dashboard data={dashboardData} users={usersList} onViewProfile={openUserProfile} onTabChange={setActiveTab} rupees={rupees} />;
     }
   };
 
@@ -563,10 +563,10 @@ function App() {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="./logo.jpg" alt="Saathika Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} />
+            <img src="./logo.jpg" alt="Saathika Logo" style={{ width: '36px', height: '36px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} />
             <div>
-              <p className="eyebrow" style={{ margin: 0, fontSize: '10px' }}>Saathika</p>
-              <strong style={{ fontSize: '14px', fontWeight: '800' }}>Admin Panel</strong>
+              <strong style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '0.05em', background: 'linear-gradient(135deg, #c7d2fe 0%, #818cf8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'block', lineHeight: 1.2 }}>SAATHIKA</strong>
+              <span className="muted" style={{ fontSize: '11px', fontWeight: '500', display: 'block', marginTop: '1px' }}>Admin Panel</span>
             </div>
           </div>
           <button className="btn secondary mobile-close" onClick={() => setSidebarOpen(false)} type="button">
@@ -596,29 +596,144 @@ function App() {
             </div>
           ))}
         </nav>
+        {/* Bottom Banner Card */}
+        <div style={{ padding: '16px', borderTop: '1px solid var(--border)', flexShrink: 0 }} className="sidebar-footer">
+          <div style={{ background: 'linear-gradient(135deg, rgba(129, 140, 248, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%)', border: '1px solid rgba(129, 140, 248, 0.15)', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', zIndex: 2, position: 'relative' }}>
+              <span style={{ background: 'rgba(129, 140, 248, 0.15)', color: '#818cf8', width: '30px', height: '30px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
+                <window.Icon name="shield" size={14} />
+              </span>
+              <div>
+                <strong style={{ fontSize: '12px', display: 'block', color: 'white' }}>Saathika Platform</strong>
+                <span className="muted" style={{ fontSize: '9px', display: 'block' }}>Secure. Simple. Smart.</span>
+              </div>
+            </div>
+            {/* SVG shield illustration */}
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 12px', zIndex: 1, position: 'relative' }}>
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px rgba(129, 140, 248, 0.4))' }}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </div>
+            <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
+              <div style={{ width: '70%', height: '100%', background: 'var(--primary-gradient)', boxShadow: '0 0 8px rgba(129, 140, 248, 0.5)' }}></div>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main viewport */}
       <main className="main">
-        <header className="topbar">
-          <div className="top-left">
-            <button className="btn secondary hamburger" onClick={() => setSidebarOpen(true)} type="button">
-              ☰
-            </button>
-            <div>
-              <p className="eyebrow">{currentTabDetails?.group || 'Overview'}</p>
-              <h2>{currentTabDetails?.label || 'Dashboard'}</h2>
+        <header className="topbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 24px', borderBottom: '1px solid var(--border)', alignItems: 'stretch' }}>
+          {/* Row 1: Title/Hamburger (Left) & Search/Bell/Avatar (Right) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button className="btn secondary hamburger" onClick={() => setSidebarOpen(true)} type="button">
+                ☰
+              </button>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', color: 'white', margin: 0 }}>
+                {currentTabDetails?.label || 'Dashboard'}
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+              {/* Search Input */}
+              <div style={{ position: 'relative', width: '100%', maxWidth: '240px' }} className="desktop-search">
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                  <window.Icon name="search" size={14} />
+                </span>
+                <input
+                  className="input"
+                  placeholder="Search anything..."
+                  style={{ height: '36px', paddingLeft: '32px', paddingRight: '48px', fontSize: '13px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                />
+                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                  ⌘K
+                </span>
+              </div>
+
+              {/* Notification Bell */}
+              <button 
+                type="button"
+                style={{ 
+                  width: '36px', 
+                  height: '36px', 
+                  padding: 0, 
+                  borderRadius: '50%', 
+                  position: 'relative', 
+                  background: 'rgba(255,255,255,0.03)', 
+                  border: '1px solid var(--border)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  cursor: 'pointer',
+                  color: '#cbd5e1',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'var(--border-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+              >
+                <window.Icon name="bell" size={16} />
+                <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#6366f1', color: 'white', fontSize: '9px', fontWeight: '800', width: '15px', height: '15px', borderRadius: '50%', display: 'grid', placeItems: 'center', border: '2px solid #030306' }}>
+                  5
+                </span>
+              </button>
+
+              {/* Admin Avatar Wrapper with Green Dot */}
+              <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+                <img
+                  src="./avatar.jpg"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'grid';
+                  }}
+                  alt="Admin Avatar"
+                  style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1.5px solid rgba(129, 140, 248, 0.4)', objectFit: 'cover' }}
+                />
+                <span style={{ 
+                  display: 'none',
+                  width: '36px', 
+                  height: '36px', 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%)', 
+                  color: '#818cf8', 
+                  placeItems: 'center',
+                  border: '1.5px solid rgba(129, 140, 248, 0.3)',
+                  fontSize: '13px',
+                  fontWeight: 'bold'
+                }}>
+                  AD
+                </span>
+                <span style={{ 
+                  position: 'absolute', 
+                  bottom: '-1px', 
+                  right: '-1px', 
+                  width: '10px', 
+                  height: '10px', 
+                  background: '#10b981', 
+                  border: '2px solid #030306', 
+                  borderRadius: '50%',
+                  boxShadow: '0 0 6px #10b981'
+                }}></span>
+              </div>
             </div>
           </div>
-          <div className="actions">
-            <button className="btn secondary" onClick={loadAllData} type="button" disabled={loading}>
-              <window.Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} />
-              <span style={{ marginLeft: '4px' }}>Refresh</span>
-            </button>
-            <button className="btn secondary" onClick={logout} type="button">
-              <window.Icon name="log-out" size={14} />
-              <span style={{ marginLeft: '4px' }}>Logout</span>
-            </button>
+
+          {/* Row 2: Welcome message (Left) & Actions (Right) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <p className="muted" style={{ fontSize: '13px', margin: 0, display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '0' }} className="welcome-msg">
+              Welcome back, Admin <span style={{ fontSize: '14px' }}>👋</span>
+            </p>
+
+            <div style={{ display: 'flex', gap: '8px' }} className="actions">
+              <button className="btn secondary" style={{ height: '32px', padding: '0 10px', fontSize: '11px', borderRadius: '6px' }} onClick={loadAllData} type="button" disabled={loading}>
+                <window.Icon name="refresh-cw" size={11} className={loading ? 'animate-spin' : ''} />
+                <span style={{ marginLeft: '4px' }}>Refresh</span>
+              </button>
+              <button className="btn secondary" style={{ height: '32px', padding: '0 10px', fontSize: '11px', borderRadius: '6px' }} onClick={logout} type="button">
+                <window.Icon name="log-out" size={11} />
+                <span style={{ marginLeft: '4px' }}>Logout</span>
+              </button>
+            </div>
           </div>
         </header>
 
