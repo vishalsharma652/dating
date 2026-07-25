@@ -22,12 +22,17 @@ export default function DashboardPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasDiscoverProfiles, setHasDiscoverProfiles] = useState(false);
 
   useEffect(() => {
     userApi.dashboard()
       .then(setData)
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load dashboard'))
       .finally(() => setLoading(false));
+
+    userApi.discover()
+      .then((res) => setHasDiscoverProfiles((res.profiles || []).length > 0))
+      .catch(() => setHasDiscoverProfiles(false));
   }, []);
 
   if (loading) {
@@ -135,39 +140,38 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            <Card>
-              <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800">
-                <h2 className="text-xl font-semibold">Recent Matches</h2>
-              </div>
-              <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
-                {matches.length === 0 && (
-                  <div className="p-6 text-center text-zinc-500">No matches found yet.</div>
-                )}
-                {matches.slice(0, 3).map((match) => (
-                  <div key={match.id} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={match.photo || '/placeholder.svg'}
-                          alt={match.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <p className="font-semibold">{match.name}</p>
-                          <p className="text-sm text-zinc-500">
-                            Matched {match.matchedDate || 'recently'}
-                          </p>
+            {matches.length > 0 && (
+              <Card>
+                <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800">
+                  <h2 className="text-xl font-semibold">Recent Matches</h2>
+                </div>
+                <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
+                  {matches.slice(0, 3).map((match) => (
+                    <div key={match.id} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={match.photo || '/placeholder.svg'}
+                            alt={match.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="font-semibold">{match.name}</p>
+                            <p className="text-sm text-zinc-500">
+                              Matched {match.matchedDate || 'recently'}
+                            </p>
+                          </div>
                         </div>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/user/chat/${match.profileId || match.userId}`}>Message</Link>
+                        </Button>
                       </div>
-                      <Button size="sm" variant="outline" asChild>
-                        <Link href={`/user/chat/${match.profileId || match.userId}`}>Message</Link>
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -175,9 +179,11 @@ export default function DashboardPage() {
               <div className="p-6">
                 <h3 className="font-semibold mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                  <Button className="w-full" asChild>
-                    <Link href="/user/discover">Start Discovering</Link>
-                  </Button>
+                  {hasDiscoverProfiles && (
+                    <Button className="w-full" asChild>
+                      <Link href="/user/discover">Start Discovering</Link>
+                    </Button>
+                  )}
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/user/wallet/coins">Buy Coins</Link>
                   </Button>

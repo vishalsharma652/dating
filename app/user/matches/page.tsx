@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { Heart, MessageCircle } from 'lucide-react';
 import { userApi } from '@/lib/api';
 
 export default function MatchesPage() {
+  const router = useRouter();
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,6 +22,12 @@ export default function MatchesPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load matches'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!loading && matches.length === 0) {
+      router.push('/user/dashboard');
+    }
+  }, [loading, matches, router]);
 
   if (loading) return <div className="p-8 text-center text-zinc-500">Loading matches...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;

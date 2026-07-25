@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { DiscoverCard } from '@/components/user/discover-card';
 import { AnimatePresence } from 'framer-motion';
 import { userApi } from '@/lib/api';
 
 export default function DiscoverPage() {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [passedProfiles, setPassedProfiles] = useState<Array<string | number>>([]);
@@ -29,6 +31,12 @@ export default function DiscoverPage() {
   useEffect(() => {
     loadProfiles();
   }, []);
+
+  useEffect(() => {
+    if (!loading && profiles.length === 0) {
+      router.push('/user/dashboard');
+    }
+  }, [loading, profiles, router]);
 
   const currentProfile = profiles[currentIndex];
   const remainingProfiles = profiles.length - passedProfiles.length;
