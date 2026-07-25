@@ -631,9 +631,20 @@ function App() {
               <button className="btn secondary hamburger" onClick={() => setSidebarOpen(true)} type="button">
                 ☰
               </button>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', color: 'white', margin: 0 }}>
-                {currentTabDetails?.label || 'Dashboard'}
-              </h2>
+              {activeTab === 'dashboard' ? (
+                <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', color: 'white', margin: 0 }}>
+                  Dashboard
+                </h2>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.05em', color: '#818cf8', textTransform: 'uppercase', lineHeight: 1 }}>
+                    {currentTabDetails?.group}
+                  </span>
+                  <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', color: 'white', margin: 0, lineHeight: 1.1 }}>
+                    {currentTabDetails?.label}
+                  </h2>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -720,9 +731,13 @@ function App() {
 
           {/* Row 2: Welcome message (Left) & Actions (Right) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <p className="muted" style={{ fontSize: '13px', margin: 0, display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '0' }} className="welcome-msg">
-              Welcome back, Admin <span style={{ fontSize: '14px' }}>👋</span>
-            </p>
+            {activeTab === 'dashboard' ? (
+              <p className="muted welcome-msg" style={{ fontSize: '13px', margin: 0, display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '0' }}>
+                Welcome back, Admin <span style={{ fontSize: '14px' }}>👋</span>
+              </p>
+            ) : (
+              <div />
+            )}
 
             <div style={{ display: 'flex', gap: '8px' }} className="actions">
               <button className="btn secondary" style={{ height: '32px', padding: '0 10px', fontSize: '11px', borderRadius: '6px' }} onClick={loadAllData} type="button" disabled={loading}>
