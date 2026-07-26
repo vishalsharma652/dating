@@ -10,6 +10,7 @@ import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CheckCheck } from 'lucide-react';
 
 type ActiveCall = 'voice' | 'video' | null;
 
@@ -146,27 +147,32 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           isBoy={isBoy}
         />
 
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        {/* Messages area — WhatsApp style wallpaper background */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 bg-[#070B18] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
           <Container>
             {messages.length === 0 && (
-              <p className="text-center text-zinc-500">No messages yet. Start the conversation.</p>
+              <div className="flex items-center justify-center h-48 text-zinc-500 text-sm font-medium">
+                No messages yet. Say hi to start chatting! 👋
+              </div>
             )}
             {messages.map((msg) => {
               const isMine = Number(msg.senderId) === Number(currentUser?.id);
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-2`}>
                   <div
-                    className={`max-w-xs md:max-w-md px-4 py-2 rounded-2xl ${
+                    className={`max-w-[82%] sm:max-w-md px-3.5 py-2.5 rounded-2xl relative shadow-md ${
                       isMine
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-br-none'
-                        : 'bg-zinc-200 dark:bg-zinc-800 rounded-bl-none'
+                        ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white rounded-tr-none'
+                        : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
                     }`}
                   >
-                    <p>{msg.text}</p>
-                    <p className={`text-xs mt-1 ${isMine ? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                      {msg.timestamp}
-                    </p>
+                    <p className="text-sm sm:text-base leading-relaxed break-words pr-2">{msg.text}</p>
+                    <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] sm:text-xs ${
+                      isMine ? 'text-white/70' : 'text-zinc-400'
+                    }`}>
+                      <span>{msg.timestamp}</span>
+                      {isMine && <CheckCheck size={14} className="text-sky-300 inline-block" />}
+                    </div>
                   </div>
                 </div>
               );
@@ -174,6 +180,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             <div ref={messagesEndRef} />
           </Container>
         </div>
+
 
         {/* Bottom bar */}
         {chatBlocked ? (
