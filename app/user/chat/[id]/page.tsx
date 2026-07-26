@@ -136,7 +136,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   return (
     <>
       {/* ── Main Chat UI ───────────────────────────────── */}
-      <div className="flex flex-col h-screen md:h-[calc(100vh-64px)]">
+      <div className="flex flex-col h-[100dvh] md:h-[calc(100vh-64px)]">
         <ChatHeader
           user={chatUser}
           online={Boolean(chatUser?.online)}

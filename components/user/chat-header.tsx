@@ -1,8 +1,9 @@
 'use client';
 
-import { Phone, Video, Info } from 'lucide-react';
+import { Phone, Video, Info, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 interface ChatHeaderProps {
   user: any;
@@ -24,21 +25,25 @@ export function ChatHeader({
   const name = user?.name || 'User';
 
   return (
-    <div className="sticky top-0 bg-white dark:bg-zinc-950 border-b border-zinc-200/80 dark:border-zinc-800 p-4 flex items-center justify-between z-20">
-      <div className="flex items-center gap-3 flex-1">
+    <div className="sticky top-0 bg-[#0D1120] dark:bg-zinc-950 border-b border-white/10 p-3 sm:p-4 flex items-center justify-between z-20 text-white">
+      <div className="flex items-center gap-2 sm:gap-3 flex-1">
+        <Link href="/user/chat" className="md:hidden p-1.5 -ml-1 hover:bg-white/10 rounded-full transition text-zinc-300">
+          <ArrowLeft size={20} />
+        </Link>
         <div className="relative">
           <Avatar src={user?.photo || ''} alt={name} fallback={name[0]} />
           {online && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-zinc-950" />
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0D1120]" />
           )}
         </div>
         <div>
-          <h3 className="font-semibold">{name}</h3>
-          <p className="text-sm text-zinc-500">
+          <h3 className="font-semibold text-sm sm:text-base leading-tight">{name}</h3>
+          <p className="text-xs text-zinc-400">
             {online ? 'Online now' : 'Offline'}
           </p>
         </div>
       </div>
+
 
       {/* Live coin balance chip for boy users */}
       {isBoy && coinBalance !== null && coinBalance !== undefined && (

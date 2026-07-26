@@ -87,6 +87,8 @@ export function UserNav() {
     }
   };
 
+  const isInsideChatRoom = pathname.startsWith('/user/chat/') && pathname !== '/user/chat';
+
   return (
     <>
       {/* ===== DESKTOP SIDEBAR ===== */}
@@ -147,7 +149,9 @@ export function UserNav() {
       </aside>
 
       {/* ===== MOBILE BOTTOM NAV BAR ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#070B18]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 py-2">
+      {!isInsideChatRoom && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#070B18]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 py-2">
+
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/user/dashboard' && pathname.startsWith(item.href));
@@ -185,6 +189,8 @@ export function UserNav() {
           <span className="text-[10px] font-semibold text-zinc-500">More</span>
         </button>
       </nav>
+      )}
+
 
       {/* ===== MOBILE MORE MENU (Slide-up Sheet) ===== */}
       {mobileMenuOpen && (
