@@ -5,7 +5,7 @@ import { ChatHeader } from '@/components/user/chat-header';
 import { ChatInput } from '@/components/user/chat-input';
 import { VoiceCallModal } from '@/components/user/voice-call-modal';
 import { VideoCallModal } from '@/components/user/video-call-modal';
-import { authApi, getStoredUser, userApi } from '@/lib/api';
+import { authApi, getStoredUser, userApi, apiAssetUrl } from '@/lib/api';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
@@ -41,7 +41,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         .then((data) => {
           if (!active) return;
           setMessages(data.messages || []);
-          setChatUser(data.chat?.otherUser || { id, name: 'User', photo: '/placeholder.svg', online: false });
+          const otherUser = data.chat?.otherUser || { id, name: 'User', photo: '', online: false };
+          // Gender-based default avatar: boy sees girl photo, girl sees boy photo
+          const isBoyUser = String(currentUser?.gender || '').toLowerCase() === 'male';
+          const defaultAvatar = isBoyUser ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+          const resolvedPhoto = otherUser.photo && otherUser.photo.trim()
+            ? (apiAssetUrl(otherUser.photo) || otherUser.photo)
+            : defaultAvatar;
+          setChatUser({ ...otherUser, photo: resolvedPhoto });
         })
         .catch((err) => {
           if (active) setError(err instanceof Error ? err.message : 'Unable to load chat');

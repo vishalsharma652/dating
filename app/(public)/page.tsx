@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { CheckCircle2, Zap, Shield, Heart, Users, Sparkles } from 'lucide-react';
+import { getStoredUser } from '@/lib/api';
 
 // Canvas Particle System for premium float effect
 function FloatingParticles() {
@@ -79,6 +81,15 @@ function FloatingParticles() {
 }
 
 export default function Home() {
+  const router = useRouter();
+
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (typeof window !== 'undefined' && getStoredUser()) {
+      router.replace('/user/dashboard');
+    }
+  }, [router]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {

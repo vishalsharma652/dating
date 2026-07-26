@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { authApi, setAuthSession } from '@/lib/api';
+import { authApi, setAuthSession, getStoredUser } from '@/lib/api';
 import { Brand } from '@/components/brand';
 
 export default function LoginPage() {
@@ -16,6 +16,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+
+  // Already logged in? Go straight to dashboard
+  useEffect(() => {
+    if (getStoredUser()) router.replace('/user/dashboard');
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -8,9 +8,11 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { userApi } from '@/lib/api';
+import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 
 export default function ChatListPage() {
+  const currentUser = getStoredUser();
+  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
   const [chats, setChats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -73,34 +75,41 @@ export default function ChatListPage() {
           {filteredChats.length === 0 && (
             <Card className="p-8 text-center text-zinc-500">No conversations found.</Card>
           )}
-          {filteredChats.map((chat) => (
-            <Link key={chat.id} href={`/user/chat/${chat.userId}`}>
-              <Card className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="relative">
-                      <Avatar src={chat.photo || '/placeholder.svg'} alt={chat.name} fallback={chat.name?.[0] || 'U'} />
-                      {Boolean(chat.online) && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-zinc-950" />
+          {filteredChats.map((chat) => {
+            // Gender-based default: boy sees girl avatars, girl sees boy avatars
+            const defaultAvatar = isBoy ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+            const photoVal = chat.photo && chat.photo.trim() && chat.photo !== '/placeholder.svg'
+              ? (apiAssetUrl(chat.photo) || chat.photo)
+              : defaultAvatar;
+            return (
+              <Link key={chat.id} href={`/user/chat/${chat.userId}`}>
+                <Card className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="relative">
+                        <Avatar src={photoVal} alt={chat.name} fallback={chat.name?.[0] || 'U'} />
+                        {Boolean(chat.online) && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-zinc-950" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{chat.name}</h3>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                          {chat.lastMessage || 'No messages yet'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-500 mb-1">{chat.lastMessageTime}</p>
+                      {Number(chat.unread) > 0 && (
+                        <Badge className="bg-pink-500 text-white">{Number(chat.unread) > 99 ? '99+' : chat.unread}</Badge>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{chat.name}</h3>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
-                        {chat.lastMessage || 'No messages yet'}
-                      </p>
-                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-500 mb-1">{chat.lastMessageTime}</p>
-                    {Number(chat.unread) > 0 && (
-                      <Badge className="bg-pink-500 text-white">{Number(chat.unread) > 99 ? '99+' : chat.unread}</Badge>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </Container>
     </div>
