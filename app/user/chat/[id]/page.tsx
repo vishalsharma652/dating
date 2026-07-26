@@ -148,7 +148,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         />
 
         {/* Messages area — WhatsApp style wallpaper background */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-2 bg-[#070B18] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-1 bg-[#070B18] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
           <Container>
             {messages.length === 0 && (
               <div className="flex items-center justify-center h-48 text-zinc-500 text-sm font-medium">
@@ -158,18 +158,18 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             {messages.map((msg) => {
               const isMine = Number(msg.senderId) === Number(currentUser?.id);
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-1.5`}>
+                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-0.5`}>
                   <div
-                    className={`max-w-[85%] sm:max-w-md px-3.5 py-2 rounded-2xl relative shadow-md text-sm sm:text-base leading-relaxed ${
+                    className={`w-fit max-w-[85%] sm:max-w-md px-3 py-1.5 rounded-xl text-sm leading-normal shadow-sm ${
                       isMine
                         ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white rounded-tr-none'
                         : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
                     }`}
                   >
-                    <span className="break-words">{msg.text}</span>
-                    <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs opacity-75 whitespace-nowrap float-right ml-3 mt-1">
+                    <span className="break-words font-normal">{msg.text}</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
                       <span>{msg.timestamp}</span>
-                      {isMine && <CheckCheck size={14} className="text-sky-300 inline" />}
+                      {isMine && <CheckCheck size={13} className="text-sky-300 inline" />}
                     </span>
                   </div>
                 </div>
@@ -178,6 +178,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             <div ref={messagesEndRef} />
           </Container>
         </div>
+
 
 
 
