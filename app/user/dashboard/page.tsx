@@ -63,7 +63,14 @@ export default function DashboardPage() {
   const matches = data?.matches || [];
   const activeUsers = data?.activeUsers || data?.activeGirls || [];
   
-  const fallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
+  const isFemale = user.gender === 'female';
+  const targetLabel = isFemale ? 'Active Boys' : (user.gender === 'male' ? 'Active Girls' : 'Active Users');
+  
+  const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
+  const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
+  const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
+  const defaultHeaderAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+
   const activeGirlsList = activeUsers.slice(0, 4).map((u: any, idx: number) => ({
     id: u.id,
     name: u.name || 'User',
@@ -116,7 +123,7 @@ export default function DashboardPage() {
               className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-[#EC4899]/30 transition duration-300"
             >
               <img 
-                src={user.photo || '/saathika-logo.jpg'} 
+                src={user.photo || defaultHeaderAvatar} 
                 alt="Profile Avatar" 
                 className="w-full h-full object-cover"
               />
@@ -144,7 +151,7 @@ export default function DashboardPage() {
               chartColor: '#7C3AED'
             },
             { 
-              label: 'Active Girls', 
+              label: targetLabel, 
               value: activeGirlsList.filter(g => g.status === 'Online').length, 
               icon: Users, 
               change: 'Waiting for online users', 
@@ -244,7 +251,7 @@ export default function DashboardPage() {
               <div className="flex justify-between items-center pb-2">
                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                   <Heart size={18} className="text-[#EC4899]" />
-                  <span>Active Girls</span>
+                  <span>{targetLabel}</span>
                 </h2>
                 <Button 
                   size="sm" 
@@ -274,7 +281,7 @@ export default function DashboardPage() {
                   <div className="space-y-2 max-w-sm relative z-10">
                     <h3 className="font-bold text-white text-sm tracking-tight">Scanning for connections...</h3>
                     <p className="text-zinc-400 text-xs leading-relaxed font-semibold">
-                      No active girls are online right now. We are constantly searching. Check back soon or boost your profile to increase your views!
+                      No active {isFemale ? 'boys' : 'girls'} are online right now. We are constantly searching. Check back soon or boost your profile to increase your views!
                     </p>
                   </div>
 
@@ -332,7 +339,7 @@ export default function DashboardPage() {
                   {/* Bottom alert banner */}
                   <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-zinc-400 text-xs font-semibold relative z-10 overflow-hidden">
                     <Sparkles size={14} className="text-[#EC4899]" />
-                    <span>No active girls are online right now. Check back later!</span>
+                    <span>No active {isFemale ? 'boys' : 'girls'} are online right now. Check back later!</span>
                     
                     {/* Floating hearts */}
                     <div className="absolute right-6 flex items-center gap-1.5 text-[#EC4899]/30">

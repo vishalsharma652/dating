@@ -18,16 +18,16 @@ async function upsert(userId, data) {
   const existing = await getForUser(userId);
   const payload = {
     userId,
-    age: data.age || null,
-    gender: data.gender || null,
-    interestedIn: data.interestedIn || null,
-    city: data.city || data.location || null,
-    occupation: data.occupation || null,
-    education: data.education || null,
-    bio: data.bio || null,
-    languages: JSON.stringify(data.languages || []),
-    interests: JSON.stringify(data.interests || []),
-    lifestyle: JSON.stringify(data.lifestyle || [])
+    age: data.age !== undefined ? data.age : (existing?.age || null),
+    gender: data.gender !== undefined ? data.gender : (existing?.gender || null),
+    interestedIn: data.interestedIn !== undefined ? data.interestedIn : (existing?.interestedIn || null),
+    city: (data.city !== undefined || data.location !== undefined) ? (data.city || data.location) : (existing?.city || null),
+    occupation: data.occupation !== undefined ? data.occupation : (existing?.occupation || null),
+    education: data.education !== undefined ? data.education : (existing?.education || null),
+    bio: data.bio !== undefined ? data.bio : (existing?.bio || null),
+    languages: JSON.stringify(data.languages !== undefined ? data.languages : (existing?.languages || [])),
+    interests: JSON.stringify(data.interests !== undefined ? data.interests : (existing?.interests || [])),
+    lifestyle: JSON.stringify(data.lifestyle !== undefined ? data.lifestyle : (existing?.lifestyle || []))
   };
 
   if (existing) {
