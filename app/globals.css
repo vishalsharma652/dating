@@ -10,7 +10,7 @@
   --border: #e5e7eb;
   --ring: rgba(124, 58, 237, 0.18);
   --radius: 1.75rem;
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), var(--font-geist-sans), ui-sans-serif, system-ui;
   --font-mono: var(--font-geist-mono);
   --pink: #ff4d8d;
   --purple: #7c3aed;
@@ -18,11 +18,12 @@
 
 .dark {
   color-scheme: dark;
-  --background: #050816;
-  --foreground: #f8fafc;
-  --muted: #111827;
-  --border: #27272a;
-  --ring: rgba(255, 77, 141, 0.18);
+  --background: #070B18;
+  --foreground: #ffffff;
+  --muted: #94A3B8;
+  --card: #101827;
+  --border: rgba(255, 255, 255, 0.05);
+  --ring: rgba(124, 58, 237, 0.2);
 }
 
 @theme inline {
@@ -68,6 +69,36 @@ select {
 ::selection {
   background: rgba(255, 77, 141, 0.2);
   color: var(--foreground);
+}
+
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes float-slow {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(-2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.45; transform: scale(1); filter: blur(120px); }
+  50% { opacity: 0.7; transform: scale(1.06); filter: blur(140px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 9s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
