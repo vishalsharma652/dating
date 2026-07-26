@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Home,
   MessageCircle,
@@ -12,11 +12,8 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  Sparkles,
   Menu,
-  X
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { authApi, clearAuthSession, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
 
@@ -30,10 +27,18 @@ const sidebarItems = [
   { label: 'Help & Support', href: '/user/help', icon: HelpCircle },
 ];
 
+// Bottom nav items for mobile (most important 4 + menu)
+const bottomNavItems = [
+  { label: 'Home', href: '/user/dashboard', icon: Home },
+  { label: 'Chat', href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
+  { label: 'Alerts', href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
+  { label: 'Profile', href: '/user/profile', icon: User },
+];
+
 export function UserNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [chatCount, setChatCount] = useState(0);
 
@@ -84,29 +89,9 @@ export function UserNav() {
 
   return (
     <>
-      {/* Mobile Header */}
-      <div className="md:hidden sticky top-0 z-40 bg-[#070B18]/90 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between text-white w-full">
-        <Link href="/user/dashboard" className="flex items-center gap-2">
-          <Brand imageClassName="h-8 w-8" className="text-white font-bold" />
-        </Link>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-white/5 rounded-full transition text-white"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Sidebar container */}
-      <aside
-        className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#070B18] border-r border-white/5 flex flex-col justify-between z-30 transition-transform md:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } text-white`}
-      >
+      {/* ===== DESKTOP SIDEBAR ===== */}
+      <aside className="hidden md:flex sticky top-0 h-screen w-64 bg-[#070B18] border-r border-white/5 flex-col justify-between z-30 text-white">
         <div className="flex-1 flex flex-col min-h-0">
-          
           {/* Logo Header */}
           <div className="p-6 flex items-center justify-between">
             <Link href="/user/dashboard" className="transition-transform hover:scale-[1.02] duration-300">
@@ -119,7 +104,7 @@ export function UserNav() {
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/user/dashboard' && pathname.startsWith(item.href));
-              
+
               let badgeVal = 0;
               if (item.badgeKey === 'chat') badgeVal = chatCount;
               if (item.badgeKey === 'notifications') badgeVal = notificationCount;
@@ -128,8 +113,7 @@ export function UserNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3.5 px-4.5 py-3.5 rounded-[14px] transition-all duration-300 group text-sm font-semibold ${
+                  className={`flex items-center gap-3.5 px-4 py-3.5 rounded-[14px] transition-all duration-300 group text-sm font-semibold ${
                     isActive
                       ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white shadow-[0_8px_20px_rgba(236,72,153,0.25)]'
                       : 'text-zinc-400 hover:text-white hover:bg-white/[0.03]'
@@ -137,8 +121,6 @@ export function UserNav() {
                 >
                   <Icon size={18} className={isActive ? 'text-white' : 'text-zinc-400 group-hover:text-white transition-colors'} />
                   <span className="flex-grow">{item.label}</span>
-                  
-                  {/* Badge */}
                   {badgeVal > 0 && (
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
                       isActive ? 'bg-white text-[#EC4899]' : 'bg-[#EC4899] text-white'
@@ -152,12 +134,8 @@ export function UserNav() {
           </nav>
         </div>
 
-        {/* Bottom Section (Upgrade card, Logout, Couple graphic) */}
+        {/* Bottom Section */}
         <div className="p-4 space-y-4 border-t border-white/5 bg-[#070B18]">
-          
-         
-
-          {/* Logout Button */}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.03] transition text-sm font-semibold"
@@ -165,19 +143,98 @@ export function UserNav() {
             <LogOut size={16} />
             <span>Logout</span>
           </button>
-
-          {/* Sidebar Bottom Couple Illustration (glowing romantic backdrop) */}
-         
-
         </div>
       </aside>
 
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/40 z-20 backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
+      {/* ===== MOBILE BOTTOM NAV BAR ===== */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#070B18]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 py-2">
+        {bottomNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href || (item.href !== '/user/dashboard' && pathname.startsWith(item.href));
+          let badgeVal = 0;
+          if (item.badgeKey === 'chat') badgeVal = chatCount;
+          if (item.badgeKey === 'notifications') badgeVal = notificationCount;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center gap-1 px-3 py-1"
+            >
+              <div className={`relative p-2 rounded-2xl transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] shadow-[0_4px_12px_rgba(236,72,153,0.4)]' : ''}`}>
+                <Icon size={20} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                {badgeVal > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#EC4899] text-white text-[9px] font-black flex items-center justify-center">
+                    {badgeVal > 9 ? '9+' : badgeVal}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[10px] font-semibold ${isActive ? 'text-[#EC4899]' : 'text-zinc-500'}`}>{item.label}</span>
+            </Link>
+          );
+        })}
+
+        {/* More Button */}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-1 px-3 py-1"
+        >
+          <div className="p-2 rounded-2xl">
+            <Menu size={20} className="text-zinc-400" />
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-500">More</span>
+        </button>
+      </nav>
+
+      {/* ===== MOBILE MORE MENU (Slide-up Sheet) ===== */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Slide-up Panel */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0D1120] border-t border-white/10 rounded-t-3xl p-6 space-y-2">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6" />
+
+            <div className="flex items-center gap-3 mb-6">
+              <Brand imageClassName="h-8 w-8" className="text-white font-bold" />
+            </div>
+
+            {[
+              { label: 'Wallet', href: '/user/wallet', icon: Wallet },
+              { label: 'Settings', href: '/user/settings', icon: Settings },
+              { label: 'Help & Support', href: '/user/help', icon: HelpCircle },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${
+                    isActive ? 'bg-gradient-to-r from-[#EC4899]/20 to-[#7C3AED]/20 text-white' : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="font-semibold">{item.label}</span>
+                </Link>
+              );
+            })}
+
+            <div className="pt-2 border-t border-white/10">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition"
+              >
+                <LogOut size={20} />
+                <span className="font-semibold">Logout</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </>
   );

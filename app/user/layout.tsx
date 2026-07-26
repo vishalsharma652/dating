@@ -8,9 +8,10 @@ export default function UserLayout({ children }: { children: ReactNode }) {
     <CallProvider>
       <div className="flex">
         <UserNav />
-        <main className="flex-1 min-h-screen bg-[#070B18] text-white overflow-x-hidden">{children}</main>
+        <main className="flex-1 min-h-screen bg-[#070B18] text-white overflow-x-hidden pb-20 md:pb-0">{children}</main>
         <RateLimitToast />
       </div>
     </CallProvider>
   );
 }
+
