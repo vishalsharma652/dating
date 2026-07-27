@@ -200,16 +200,34 @@ export const userApi = {
   wallet: () => apiRequest<{ coins: number; earnings: number }>('/user/wallet'),
   transactions: () => apiRequest<{ transactions: any[] }>('/user/wallet/history'),
   coinPackages: () => apiRequest<{ packages: any[] }>('/user/wallet/coins'),
+  createStripeIntent: (packageId: number | string) =>
+    apiRequest<{ clientSecret: string; paymentIntentId: string; amount: number; currency: string }>(
+      '/user/wallet/coins/stripe-intent',
+      {
+        method: 'POST',
+        body: JSON.stringify({ packageId: Number(packageId) }),
+      }
+    ),
+  verifyUpiId: (upiId: string) =>
+    apiRequest<{ valid: boolean; customerName?: string; bankHandle?: string; message?: string }>(
+      '/user/wallet/coins/verify-upi',
+      {
+        method: 'POST',
+        body: JSON.stringify({ upiId }),
+      }
+    ),
   purchaseCoins: (
     packageId: number | string,
     payment?: {
-      gateway?: 'razorpay' | 'cashfree' | 'phonepe';
+      gateway?: 'razorpay' | 'cashfree' | 'phonepe' | 'netbanking' | 'wallet' | 'upi_qr' | 'stripe';
       paymentReference?: string;
       upiId?: string;
       cardNumber?: string;
       expiry?: string;
       cvv?: string;
       cardName?: string;
+      bankCode?: string;
+      walletProvider?: string;
     }
   ) =>
     apiRequest<{ package: any; coinsAdded: number }>('/user/wallet/coins/purchase', {

@@ -31,15 +31,26 @@ router.post('/chat/:userId/messages', [param('userId').isInt(), body('text').tri
 router.get('/wallet', asyncHandler(user.wallet));
 router.get('/wallet/history', asyncHandler(user.transactions));
 router.get('/wallet/coins', asyncHandler(user.coinPackages));
+router.post('/wallet/coins/stripe-intent', [
+  body('packageId').isInt()
+], validate, asyncHandler(user.createStripeIntent));
+router.post('/wallet/coins/razorpay-order', [
+  body('packageId').isInt()
+], validate, asyncHandler(user.createRazorpayOrder));
+router.post('/wallet/coins/verify-upi', [
+  body('upiId').trim().notEmpty()
+], validate, asyncHandler(user.verifyUpiId));
 router.post('/wallet/coins/purchase', [
   body('packageId').isInt(),
-  body('gateway').optional({ values: 'falsy' }).isIn(['razorpay', 'cashfree', 'phonepe']),
+  body('gateway').optional({ values: 'falsy' }).isIn(['razorpay', 'cashfree', 'phonepe', 'netbanking', 'wallet', 'upi_qr', 'stripe']),
   body('paymentReference').optional({ values: 'falsy' }).isString(),
   body('upiId').optional({ values: 'falsy' }).isString(),
   body('cardNumber').optional({ values: 'falsy' }).isString(),
   body('expiry').optional({ values: 'falsy' }).isString(),
   body('cvv').optional({ values: 'falsy' }).isString(),
-  body('cardName').optional({ values: 'falsy' }).isString()
+  body('cardName').optional({ values: 'falsy' }).isString(),
+  body('bankCode').optional({ values: 'falsy' }).isString(),
+  body('walletProvider').optional({ values: 'falsy' }).isString()
 ], validate, asyncHandler(user.purchaseCoins));
 router.get('/wallet/bank-accounts', asyncHandler(user.bankAccounts));
 router.post('/wallet/bank-accounts', [
