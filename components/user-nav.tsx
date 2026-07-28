@@ -44,6 +44,12 @@ export function UserNav() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [chatCount, setChatCount] = useState(0);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
+
   useEffect(() => {
     let active = true;
 
@@ -141,17 +147,15 @@ export function UserNav() {
         {/* Bottom Section */}
         <div className="p-4 space-y-3 border-t border-white/5 bg-[#070B18]">
           {/* Logged in User Card */}
-          {(() => {
-            const u = getStoredUser();
-            if (!u) return null;
-            const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
+          {currentUser && (() => {
+            const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(currentUser.gender || '').toLowerCase());
             const symbol = isFemaleUser ? '💎' : '🪙';
-            const displayId = u.unique_id || `STK-${String(u.id).padStart(6, '0')}`;
+            const displayId = currentUser.unique_id || `STK-${String(currentUser.id).padStart(6, '0')}`;
             return (
               <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-white truncate flex items-center gap-1">
-                    <span>{u.name || 'User'}</span>
+                    <span>{currentUser.name || 'User'}</span>
                     <span title={isFemaleUser ? 'Female Diamond Badge' : 'Male Golden Badge'}>{symbol}</span>
                   </p>
                   <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">🆔 {displayId}</p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
@@ -18,7 +18,11 @@ export default function UserSearchPage() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
 
-  const currentUser = getStoredUser();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
+
   const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
 
   const handleSearch = async (e: React.FormEvent) => {

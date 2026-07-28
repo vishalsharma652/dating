@@ -49,7 +49,13 @@ export default function WalletPage() {
   );
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
-  const isBoy = String(getStoredUser()?.gender || '').toLowerCase() === 'male';
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
+
+  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] min-h-screen text-white">
