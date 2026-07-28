@@ -299,7 +299,7 @@ export default function EditProfilePage() {
               <Link href="/user/profile/age-verify">Age Verification</Link>
             </Button>
             <Button variant="outline" className="rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11 flex items-center justify-center gap-2 transition duration-300" asChild>
-              <Link href="/user/profile/mobile-verify">Mobile Verification</Link>
+              <Link href="/auth/verify-otp">Email Verification</Link>
             </Button>
           </div>
         </Card>

@@ -53,18 +53,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Phone */}
-            <div className="relative">
-              <Phone className="absolute left-4 top-3 text-zinc-400" size={20} />
-              <Input
-                placeholder="Phone number"
-                type="tel"
-                className="pl-12"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-
             {/* Password */}
             <div className="relative">
               <Lock className="absolute left-4 top-3 text-zinc-400" size={20} />

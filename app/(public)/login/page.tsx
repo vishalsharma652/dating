@@ -56,7 +56,7 @@ export default function LoginPage() {
             <div className="relative">
               <Mail className="absolute left-4 top-3 text-zinc-400" size={20} />
               <Input
-                placeholder="Email address or mobile number"
+                placeholder="Email address"
                 type="text"
                 className="pl-12"
                 value={formData.email}

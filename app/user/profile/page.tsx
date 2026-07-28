@@ -312,7 +312,7 @@ export default function ProfilePage() {
                     ) : (
                       <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
                     )}
-                    <span className={user.status === 'active' ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Email & Phone Verified (+30%)</span>
+                    <span className={user.status === 'active' ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Email Verified (+30%)</span>
                   </div>
 
                   <div className="flex items-center gap-2">

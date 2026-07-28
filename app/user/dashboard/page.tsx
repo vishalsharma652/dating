@@ -433,9 +433,9 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center justify-between py-1 border-b border-white/5">
-                  <span className="text-zinc-400">Phone</span>
+                  <span className="text-zinc-400">Unique ID</span>
                   <div className="flex items-center gap-1.5 text-white">
-                    <span>Added</span>
+                    <span>{user?.unique_id || 'Assigned'}</span>
                     <CheckCircle2 size={14} className="text-[#10B981]" />
                   </div>
                 </div>
