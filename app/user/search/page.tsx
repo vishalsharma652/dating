@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck } from 'lucide-react';
+import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck, Gem, Coins } from 'lucide-react';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 
 export default function UserSearchPage() {
@@ -97,7 +97,7 @@ export default function UserSearchPage() {
                   : defaultAvatar;
 
                 const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(user.gender || '').toLowerCase());
-                const genderSymbol = isFemaleUser ? '💎' : '🪙';
+                const IconSymbol = isFemaleUser ? Gem : Coins;
                 const genderBadgeColor = isFemaleUser
                   ? 'bg-pink-500/20 text-pink-300 border-pink-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
@@ -118,8 +118,9 @@ export default function UserSearchPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-xl font-bold truncate">{user.name}</h3>
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${genderBadgeColor}`}>
-                              {genderSymbol} {user.gender ? user.gender.toUpperCase() : 'MEMBER'}
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold border ${genderBadgeColor} inline-flex items-center gap-1.5`}>
+                              <IconSymbol size={13} className="shrink-0" />
+                              <span>{user.gender ? user.gender.toUpperCase() : 'MEMBER'}</span>
                             </span>
                             {user.kyc_status === 'approved' && (
                               <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1">
@@ -170,8 +171,9 @@ export default function UserSearchPage() {
                           <UserCheck size={16} className="text-sky-400 shrink-0" />
                           <div>
                             <span className="text-zinc-400 text-xs block">Gender &amp; Badge</span>
-                            <span className="font-bold text-white flex items-center gap-1">
-                              {genderSymbol} {user.gender || 'Member'}
+                            <span className="font-bold text-white flex items-center gap-1.5 capitalize">
+                              <IconSymbol size={14} className="shrink-0" />
+                              <span>{user.gender || 'Member'}</span>
                             </span>
                           </div>
                         </div>

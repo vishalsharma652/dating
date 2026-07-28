@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Video, Info, ArrowLeft } from 'lucide-react';
+import { Phone, Video, Info, ArrowLeft, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -54,7 +54,7 @@ export function ChatHeader({
             ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
             : 'bg-green-500/10 text-green-600 border border-green-500/20'
         }`}>
-          <span>🪙</span>
+          <Coins size={14} className="text-amber-500 shrink-0" />
           <span>{coinBalance} coins</span>
         </div>
       )}

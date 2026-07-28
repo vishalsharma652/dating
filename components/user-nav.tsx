@@ -14,6 +14,8 @@ import {
   HelpCircle,
   LogOut,
   Menu,
+  Gem,
+  Coins,
 } from 'lucide-react';
 import { authApi, clearAuthSession, getStoredUser, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
@@ -149,14 +151,15 @@ export function UserNav() {
           {/* Logged in User Card */}
           {currentUser && (() => {
             const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(currentUser.gender || '').toLowerCase());
-            const symbol = isFemaleUser ? '💎' : '🪙';
+            const IconSymbol = isFemaleUser ? Gem : Coins;
+            const symbolColor = isFemaleUser ? 'text-cyan-400' : 'text-amber-400';
             const displayId = currentUser.unique_id;
             return (
               <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-white truncate flex items-center gap-1">
+                  <p className="font-bold text-white truncate flex items-center gap-1.5">
                     <span>{currentUser.name || 'User'}</span>
-                    <span title={isFemaleUser ? 'Female Diamond Badge' : 'Male Golden Badge'}>{symbol}</span>
+                    <IconSymbol size={14} className={`${symbolColor} flex-shrink-0`} />
                   </p>
                   <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">🆔 {displayId}</p>
                 </div>
