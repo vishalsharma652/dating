@@ -49,14 +49,14 @@ app.get('/health', (req, res) => ok(res, { status: 'healthy' }, 'API is running'
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
-// Auth-specific limiter — stricter to prevent brute-force login/register attempts
+// Auth-specific limiter — relaxed window to prevent blocking valid user testing
 const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 20,
+  windowMs: 1 * 60 * 1000, // 1 minute
+  limit: process.env.NODE_ENV === 'production' ? 100 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    res.status(429).json({ success: false, message: 'Too many attempts. Please wait 15 minutes before trying again.' });
+    res.status(429).json({ success: false, message: 'Too many attempts. Please wait 1 minute before trying again.' });
   },
 });
 app.use('/api/brand', brandRoutes);
