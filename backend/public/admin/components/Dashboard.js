@@ -393,7 +393,7 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
               <thead>
                 <tr>
                   <th>USER INFO</th>
-                  <th>CONTACT</th>
+                  <th>UNIQUE ID / EMAIL</th>
                   <th>STATUS</th>
                   <th>KYC</th>
                   <th>ACTIONS</th>
@@ -402,6 +402,7 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
               <tbody>
                 {users.slice(0, 5).map((u) => {
                   const avatarLetter = u.name ? u.name.charAt(0).toUpperCase() : '?';
+                  const displayId = u.unique_id || `STK-${String(u.id).padStart(6, '0')}`;
                   return (
                     <tr key={u.id}>
                       <td>
@@ -428,8 +429,17 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
                         </div>
                       </td>
                       <td>
-                        <strong style={{ color: '#e2e8f0', fontSize: '13px' }}>{u.phone || '-'}</strong>
-                        <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>{u.email || '-'}</div>
+                        <span style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          color: '#10b981',
+                          background: 'rgba(16,185,129,0.1)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          border: '1px solid rgba(16,185,129,0.2)'
+                        }}>🆔 {displayId}</span>
+                        <div className="muted" style={{ fontSize: '11px', marginTop: '3px' }}>✉ {u.email || '-'}</div>
                       </td>
                       <td>
                         {u.online_status ? (

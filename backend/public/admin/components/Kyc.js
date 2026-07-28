@@ -19,7 +19,7 @@ window.Kyc = function Kyc({ requests, onViewRecord, onApprove, onReject, dateStr
               <thead>
                 <tr>
                   <th>User Profile</th>
-                  <th>Mobile</th>
+                  <th>Email / Unique ID</th>
                   <th>KYC Status</th>
                   <th>Submitted</th>
                   <th>Actions</th>
@@ -29,7 +29,7 @@ window.Kyc = function Kyc({ requests, onViewRecord, onApprove, onReject, dateStr
                 {requests.map((u) => (
                   <tr key={u.id}>
                     <td><strong>{u.name}</strong><br /><span className="muted">ID {u.id}</span></td>
-                    <td>{u.phone || '-'}</td>
+                    <td>{u.email || u.unique_id || '-'}</td>
                     <td><span className="badge yellow">{u.kyc_status || 'pending'}</span></td>
                     <td>{dateStr(u.created_at)}</td>
                     <td>

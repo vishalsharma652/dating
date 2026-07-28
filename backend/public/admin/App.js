@@ -437,7 +437,7 @@ function App() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
           <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{user.name}</h4>
-          <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: {user.id} &bull; Phone: {user.phone || 'N/A'}</p>
+          <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: {user.id} &bull; Email: {user.email || 'N/A'}</p>
         </div>
         <div>
           <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Uploaded ID Documents (Photo ID / Passport)</p>

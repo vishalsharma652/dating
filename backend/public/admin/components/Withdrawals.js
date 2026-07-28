@@ -51,7 +51,6 @@ window.Withdrawals = function Withdrawals({ withdrawals, onProcess, rupees, date
                     </td>
                     <td>
                       <strong>{w.user_name || `User #${w.user_id}`}</strong>
-                      <br /><span className="muted">📱 {w.user_phone || '-'}</span>
                       {w.user_email && <><br /><span className="muted" style={{ fontSize: '11px' }}>✉ {w.user_email}</span></>}
                     </td>
                     <td><strong>{rupees(w.amount || 0)}</strong></td>

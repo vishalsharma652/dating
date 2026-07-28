@@ -57,7 +57,7 @@ window.Wallet = function Wallet({ users, transactions, total, page, onPageChange
           <select className="select" name="userId" required style={{ flex: '1', minWidth: '200px' }}>
             <option value="">Select user</option>
             {users.filter((u) => u.role === 'user').map((u) => (
-              <option key={u.id} value={u.id}>{u.name} ({u.phone || '-'})</option>
+              <option key={u.id} value={u.id}>{u.name} ({u.email || u.unique_id || `ID #${u.id}`})</option>
             ))}
           </select>
           <input className="input" name="coins" type="number" min="1" placeholder="Coin amount" required style={{ flex: '1', minWidth: '150px' }} />
@@ -136,7 +136,7 @@ window.Wallet = function Wallet({ users, transactions, total, page, onPageChange
                     <tr key={tx.id || idx}>
                       <td>
                         {tx.user_name || `User #${tx.user_id}`}<br />
-                        <span className="muted" style={{ fontSize: '12px' }}>{tx.user_phone || ''}</span>
+                        <span className="muted" style={{ fontSize: '12px' }}>{tx.user_email || ''}</span>
                       </td>
                       <td>{tx.type || '-'}</td>
                       <td>{tx.description || tx.title || '-'}</td>
