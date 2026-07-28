@@ -150,7 +150,7 @@ export function UserNav() {
           {currentUser && (() => {
             const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(currentUser.gender || '').toLowerCase());
             const symbol = isFemaleUser ? '💎' : '🪙';
-            const displayId = currentUser.unique_id || `STK-${String(currentUser.id).padStart(6, '0')}`;
+            const displayId = currentUser.unique_id;
             return (
               <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1">

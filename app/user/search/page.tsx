@@ -102,7 +102,7 @@ export default function UserSearchPage() {
                   ? 'bg-pink-500/20 text-pink-300 border-pink-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
 
-                const displayId = user.unique_id || `STK-${String(user.id).padStart(6, '0')}`;
+                const displayId = user.unique_id;
 
                 return (
                   <Card key={user.id} className="p-6 bg-[#0D1120] border-white/10 text-white rounded-2xl shadow-xl flex flex-col justify-between">

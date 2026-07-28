@@ -20,6 +20,9 @@ async function create({ name, email = null, phone, password, role = 'user', phon
       { name, email, phone, passwordHash, role, phoneVerified, emailVerified: emailVerified ? 1 : 0, gender, coins: isBoy ? 100 : 0 }
     );
     const userId = created.insertId;
+    const uniqueId = `STK-${String(userId).padStart(6, '0')}`;
+    await connection.execute('UPDATE users SET unique_id = :uniqueId WHERE id = :userId', { uniqueId, userId });
+
     // Insert wallet and auto-generate wallet_id
     const [walletResult] = await connection.execute(
       `INSERT INTO wallets (user_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance)
