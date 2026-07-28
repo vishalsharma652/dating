@@ -694,7 +694,12 @@ function App() {
                 </span>
                 <input
                   className="input"
-                  placeholder="Search anything..."
+                  placeholder="Search users, IDs, emails..."
+                  value={userSearch}
+                  onChange={(e) => {
+                    setUserSearch(e.target.value);
+                    if (activeTab !== 'users') setActiveTab('users');
+                  }}
                   style={{ height: '36px', paddingLeft: '32px', paddingRight: '48px', fontSize: '13px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
                 />
                 <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.05em' }}>
@@ -705,6 +710,18 @@ function App() {
               {/* Notification Bell */}
               <button 
                 type="button"
+                onClick={() => {
+                  if (kycRequests.length > 0) {
+                    setActiveTab('kyc');
+                    showNotice(`${kycRequests.length} pending KYC requests.`);
+                  } else if (withdrawalsList.filter(w => w.status === 'pending').length > 0) {
+                    setActiveTab('withdrawals');
+                    showNotice('Pending withdrawal requests found.');
+                  } else {
+                    showNotice('No new pending notifications.');
+                  }
+                }}
+                title="Notifications"
                 style={{ 
                   width: '36px', 
                   height: '36px', 
@@ -723,13 +740,19 @@ function App() {
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
               >
                 <window.Icon name="bell" size={16} />
-                <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#6366f1', color: 'white', fontSize: '9px', fontWeight: '800', width: '15px', height: '15px', borderRadius: '50%', display: 'grid', placeItems: 'center', border: '2px solid #030306' }}>
-                  5
-                </span>
+                {(kycRequests.length + withdrawalsList.filter(w => w.status === 'pending').length) > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#6366f1', color: 'white', fontSize: '9px', fontWeight: '800', width: '16px', height: '16px', borderRadius: '50%', display: 'grid', placeItems: 'center', border: '2px solid #030306' }}>
+                    {kycRequests.length + withdrawalsList.filter(w => w.status === 'pending').length}
+                  </span>
+                )}
               </button>
 
               {/* Admin Avatar Wrapper with Green Dot */}
-              <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+              <div 
+                onClick={() => setActiveTab('settings')}
+                title="Admin Profile & Settings"
+                style={{ position: 'relative', width: '36px', height: '36px', cursor: 'pointer' }}
+              >
                 <img
                   src="./avatar.jpg"
                   onError={(e) => {
