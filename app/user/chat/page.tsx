@@ -11,12 +11,17 @@ import { Input } from '@/components/ui/input';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 
 export default function ChatListPage() {
-  const currentUser = getStoredUser();
-  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [chats, setChats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -50,21 +55,25 @@ export default function ChatListPage() {
     [chats, search]
   );
 
-  if (loading) return <div className="p-8 text-center text-zinc-500">Loading conversations...</div>;
+  if (loading) return <div className="p-8 text-center text-zinc-500">Loading chat history...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
     <div className="p-4 md:p-8">
       <Container>
-        <h1 className="text-3xl font-bold mb-2">Messages</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          {chats.length} conversation{chats.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Chat History</h1>
+            <p className="text-zinc-600 dark:text-zinc-400 mt-1">
+              {chats.length} active conversation{chats.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
 
         <div className="mb-6 relative">
           <Search className="absolute left-4 top-3 text-zinc-400" size={20} />
           <Input
-            placeholder="Search conversations..."
+            placeholder="Search chat history..."
             className="pl-12"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -73,7 +82,9 @@ export default function ChatListPage() {
 
         <div className="space-y-3">
           {filteredChats.length === 0 && (
-            <Card className="p-8 text-center text-zinc-500">No conversations found.</Card>
+            <Card className="p-8 text-center text-zinc-500">
+              No chat history found. Start a conversation with a match!
+            </Card>
           )}
           {filteredChats.map((chat) => {
             // Gender-based default: boy sees girl avatars, girl sees boy avatars

@@ -16,6 +16,7 @@ router.post('/profile/mobile/send-otp', asyncHandler((req, res) => res.json({ su
 router.post('/profile/mobile/verify', asyncHandler((req, res) => res.json({ success: true, message: 'Mobile verified', data: { phoneVerified: true } })));
 
 router.get('/discover', asyncHandler(user.discover));
+router.get('/search', asyncHandler(user.searchUsers));
 router.post('/discover/:id/action', [param('id').isInt(), body('action').isIn(['like', 'pass', 'super_like'])], validate, asyncHandler(user.reactToProfile));
 router.get('/matches', asyncHandler(user.matches));
 router.get('/chat', asyncHandler(user.chats));

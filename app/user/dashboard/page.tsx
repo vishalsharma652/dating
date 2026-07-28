@@ -14,7 +14,9 @@ import {
   CheckCircle2, 
   Clock,
   Eye,
-  Shield
+  Shield,
+  Search,
+  BadgeIndianRupee
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
@@ -357,28 +359,52 @@ export default function DashboardPage() {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Quick Actions Card */}
-            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6.5 shadow-[0_20px_45px_rgba(0,0,0,0.4)]">
-              <h3 className="font-bold text-white tracking-tight text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
+            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)]">
+              <h3 className="font-bold text-white tracking-tight text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Sparkles size={14} className="text-[#EC4899]" />
-                <span>Quick Actions</span>
+                <span>Quick Navigation</span>
               </h3>
               
-              <div className="space-y-3.5">
+              <div className="space-y-3">
                 {/* Buy Coins button */}
                 <Button 
-                  className="w-full h-11.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 border-0 shadow-md transition-transform hover:scale-[1.01]"
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 border-0 shadow-md transition-transform hover:scale-[1.01]"
                   asChild
                 >
-                  <Link href="/user/wallet">
+                  <Link href="/user/wallet/coins">
                     <Coins size={15} />
                     <span>Buy Coins</span>
+                  </Link>
+                </Button>
+
+                {/* Search Unique ID button */}
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 rounded-xl border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
+                  asChild
+                >
+                  <Link href="/user/search">
+                    <Search size={15} />
+                    <span>Search Unique ID</span>
+                  </Link>
+                </Button>
+
+                {/* Withdraw Earnings button */}
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 rounded-xl border-purple-500/30 hover:border-purple-500 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
+                  asChild
+                >
+                  <Link href="/user/withdraw">
+                    <BadgeIndianRupee size={15} />
+                    <span>Withdraw Earnings</span>
                   </Link>
                 </Button>
 
                 {/* Edit Profile button */}
                 <Button 
                   variant="outline" 
-                  className="w-full h-11.5 rounded-xl border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/8 text-zinc-350 hover:text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
+                  className="w-full h-11 rounded-xl border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
                   asChild
                 >
                   <Link href="/user/profile">

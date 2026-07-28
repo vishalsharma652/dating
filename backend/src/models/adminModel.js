@@ -2,13 +2,13 @@ const { query, transaction } = require('../config/db');
 const settingsModel = require('./settingsModel');
 
 async function dashboard() {
-  const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc FROM users');
+  const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc, SUM(role = "user" AND online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS onlineUsers FROM users');
   const [revenueRow] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
   const [paidRow] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
   const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals FROM withdrawals WHERE status = "pending"');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
-  const recentUsers = await query('SELECT id, name, email, phone, role, status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
+  const recentUsers = await query('SELECT id, name, email, phone, role, status, (online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online_status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
   return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...chats, ...coins, recentUsers };
 }
 
@@ -100,7 +100,7 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
     params.status = status;
   }
   return query(
-    `SELECT id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
+    `SELECT id, unique_id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
      FROM users WHERE ${filters.join(' AND ')}
      ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
     params
@@ -108,8 +108,19 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
 }
 
 async function updateKyc(id, { status }) {
-  await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
-  return query('SELECT id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
+  if (status === 'approved') {
+    // Assign unique_id if not already set
+    await query(
+      `UPDATE users
+       SET kyc_status = :status,
+           unique_id = CASE WHEN unique_id IS NULL THEN CONCAT('STK-', LPAD(id, 6, '0')) ELSE unique_id END
+       WHERE id = :id`,
+      { id, status }
+    );
+  } else {
+    await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
+  }
+  return query('SELECT id, unique_id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
 }
 
 async function walletLogs({ page = 1, limit = 10 } = {}) {
@@ -133,6 +144,12 @@ async function adjustCoins({ userId, coins, reason, mode }) {
   const amount = Math.abs(Number(coins) || 0);
   const signedCoins = mode === 'deduct' ? -amount : amount;
   await query('UPDATE users SET coins = GREATEST(coins + :signedCoins, 0) WHERE id = :userId', { userId, signedCoins });
+  await query(
+    `INSERT INTO wallets (user_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance)
+     VALUES (:userId, GREATEST(:signedCoins, 0), 0, 0, 0, 0)
+     ON DUPLICATE KEY UPDATE balance = GREATEST(balance + :signedCoins, 0)`,
+    { userId, signedCoins }
+  );
   await query(
     `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
      VALUES (:userId, 'earning', :title, :description, 0, :coins, 'completed')`,
@@ -176,9 +193,11 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
     params.status = status;
   }
   return query(
-    `SELECT w.*, u.name AS user_name, u.phone AS user_phone
+    `SELECT w.*, u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
+            wa.wallet_id AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
+     LEFT JOIN wallets wa ON wa.user_id = w.user_id
      WHERE ${filters.join(' AND ')}
      ORDER BY w.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
     params
@@ -199,6 +218,10 @@ async function updateWithdrawal(id, { status }) {
 
     if (status === 'rejected' && withdrawal.status === 'pending') {
       await connection.execute('UPDATE users SET earnings = earnings + :amount WHERE id = :userId', {
+        amount: withdrawal.amount,
+        userId: withdrawal.user_id
+      });
+      await connection.execute('UPDATE wallets SET withdrawal_balance = withdrawal_balance + :amount WHERE user_id = :userId', {
         amount: withdrawal.amount,
         userId: withdrawal.user_id
       });

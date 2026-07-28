@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, Loader2, RefreshCcw, ShieldCheck, TimerReset } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Mail, RefreshCcw, ShieldCheck, TimerReset } from 'lucide-react';
 import { authApi, setAuthSession } from '@/lib/api';
 
 const OTP_LENGTH = 6;
@@ -16,7 +16,8 @@ export default function OTPPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [otp, setOtp]           = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [mobile, setMobile]     = useState('');
+  const [email, setEmail]       = useState('');
+  const [name, setName]         = useState('');
   const [timeLeft, setTimeLeft] = useState(RESEND_COOLDOWN);
 
   const [verifying, setVerifying]         = useState(false);
@@ -24,13 +25,21 @@ export default function OTPPage() {
   const [error, setError]                 = useState('');
   const [resendSuccess, setResendSuccess] = useState('');
 
-  // Load phone from storage (set during register/login flow)
+  // Load email from localStorage (set during registration)
   useEffect(() => {
-    const storedPhone = typeof window !== 'undefined' ? localStorage.getItem('onboardPhone') : null;
-    if (storedPhone) setMobile(storedPhone);
+    const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('onboardEmail') : null;
+    const storedName  = typeof window !== 'undefined' ? localStorage.getItem('onboardName')  : null;
+    if (storedEmail) setEmail(storedEmail);
+    if (storedName)  setName(storedName);
+
+    // Dev mode: auto-fill OTP if backend returned it
+    const devOtp = typeof window !== 'undefined' ? localStorage.getItem('backendOtp') : null;
+    if (devOtp && devOtp.length === OTP_LENGTH) {
+      setOtp(devOtp.split(''));
+    }
   }, []);
 
-  // Countdown timer — re-starts whenever timeLeft is reset
+  // Countdown timer
   useEffect(() => {
     if (timeLeft <= 0) return;
     const timer = window.setInterval(() => setTimeLeft((t) => Math.max(t - 1, 0)), 1000);
@@ -40,7 +49,7 @@ export default function OTPPage() {
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  // ── OTP helpers ────────────────────────────────────────────
+  // ── OTP helpers ────────────────────────────────────────────────
   const focusInput = (index: number) => setTimeout(() => inputRefs.current[index]?.focus(), 10);
 
   const clearOtp = () => {
@@ -72,7 +81,7 @@ export default function OTPPage() {
     focusInput(Math.min(pasted.length, OTP_LENGTH - 1));
   };
 
-  // ── Verify ─────────────────────────────────────────────────
+  // ── Verify ─────────────────────────────────────────────────────
   const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -84,9 +93,11 @@ export default function OTPPage() {
     }
     setVerifying(true);
     try {
-      const data = await authApi.verifyOtp({ phone: mobile.replace(/\D/g, ''), otp: code });
+      const data = await authApi.verifyOtp({ email, otp: code });
       setAuthSession(data.token, data.user);
       localStorage.removeItem('backendOtp');
+      localStorage.removeItem('onboardEmail');
+      localStorage.removeItem('onboardName');
       router.push('/user/profile/age-verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid code. Please try again.');
@@ -96,21 +107,22 @@ export default function OTPPage() {
     }
   };
 
-  // ── Resend ─────────────────────────────────────────────────
+  // ── Resend ─────────────────────────────────────────────────────
   const handleResend = async () => {
     if (timeLeft > 0 || resending) return;
     setError('');
     setResendSuccess('');
     setResending(true);
     try {
-      const data = await authApi.resendOtp({ phone: mobile.replace(/\D/g, '') });
+      const data = await authApi.resendOtp({ email });
       if (data.otp) {
         localStorage.setItem('backendOtp', data.otp);
+        setOtp(data.otp.split(''));
         setResendSuccess(`Code resent! (Dev OTP: ${data.otp})`);
       } else {
-        setResendSuccess('Verification code has been resent to your phone.');
+        setResendSuccess('Verification code has been resent to your email.');
       }
-      setTimeLeft(RESEND_COOLDOWN); // restart countdown
+      setTimeLeft(RESEND_COOLDOWN);
       clearOtp();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to resend verification code. Please try again.');
@@ -121,30 +133,37 @@ export default function OTPPage() {
 
   const canResend = timeLeft === 0 && !resending;
 
+  // Mask email for display: a****@example.com
+  const maskedEmail = email
+    ? email.replace(/^(.{1,2})(.*)(@.*)$/, (_, a, b, c) => a + '*'.repeat(Math.max(b.length, 4)) + c)
+    : '';
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.08),_transparent_40%),radial-gradient(circle_at_bottom_right,_rgba(236,72,153,0.07),_transparent_35%)]">
       <Card className="w-full max-w-md">
         <div className="p-8">
           <Link
-            href="/login"
+            href="/register"
             className="inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 mb-6 transition"
           >
             <ArrowLeft size={16} />
-            Back
+            Back to Register
           </Link>
 
           {/* Header */}
           <div className="text-center mb-8">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-pink-500/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-pink-600">
               <ShieldCheck size={14} />
-              Secure SMS
+              Email Verification
             </div>
-            <h1 className="text-3xl font-bold mb-2">Verify Your Number</h1>
+            <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mx-auto mb-4">
+              <Mail className="text-pink-500" size={30} />
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Check your Email</h1>
             <p className="text-zinc-600 dark:text-zinc-400 text-sm">
-              {mobile
-                ? <>Code sent to <span className="font-semibold text-zinc-900 dark:text-zinc-100">{mobile}</span></>
-                : "We've sent a 6-digit code to your phone."
-              }
+              {name && <span>Hi <strong className="text-zinc-900 dark:text-zinc-100">{name}</strong>! </span>}
+              We&apos;ve sent a 6-digit code to{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{maskedEmail || 'your email'}</span>
             </p>
           </div>
 
@@ -208,14 +227,14 @@ export default function OTPPage() {
                   Verifying...
                 </span>
               ) : (
-                'Verify OTP'
+                'Verify Email'
               )}
             </Button>
           </form>
 
           {/* Resend section */}
           <p className="text-center text-sm mt-6 text-zinc-600 dark:text-zinc-400">
-            Didn't receive the code?{' '}
+            Didn&apos;t receive the email?{' '}
             <button
               type="button"
               onClick={handleResend}
@@ -241,6 +260,10 @@ export default function OTPPage() {
                 </>
               )}
             </button>
+          </p>
+
+          <p className="text-center text-xs text-zinc-400 mt-4">
+            Check your spam/junk folder if you don&apos;t see it in your inbox.
           </p>
         </div>
       </Card>

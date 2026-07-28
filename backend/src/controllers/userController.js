@@ -96,6 +96,15 @@ async function discover(req, res) {
   return ok(res, { profiles });
 }
 
+async function searchUsers(req, res) {
+  const queryStr = String(req.query.q || req.query.search || '').trim();
+  if (!queryStr) return ok(res, { users: [] });
+
+  const users = await userModel.list({ search: queryStr, limit: 10 });
+  const filtered = users.filter((u) => Number(u.id) !== Number(req.user.id));
+  return ok(res, { users: filtered });
+}
+
 async function reactToProfile(req, res) {
   await socialModel.like(req.user.id, Number(req.params.id), req.body.action || 'like');
   return ok(res, null, 'Profile action saved');
@@ -444,6 +453,7 @@ module.exports = {
   ageVerify,
   submitKyc,
   discover,
+  searchUsers,
   reactToProfile,
   matches,
   chats,

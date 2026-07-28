@@ -6,10 +6,10 @@ const { signToken } = require('../utils/token');
 const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
 const { hasNameGenderMismatch } = require('../utils/nameGender');
+const nodemailer = require('nodemailer');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DB-backed session store (survives server restarts)
-// Auto-creates the otp_sessions table on first use.
+// Email OTP session store (DB-backed, keyed by email for registration)
 // ─────────────────────────────────────────────────────────────────────────────
 let _tableReady = false;
 
@@ -17,55 +17,96 @@ async function ensureSessionTable() {
   if (_tableReady) return;
   await query(`
     CREATE TABLE IF NOT EXISTS otp_sessions (
-      phone        VARCHAR(20)  NOT NULL,
+      email        VARCHAR(190) NOT NULL,
       otp          VARCHAR(10)  NOT NULL,
       data         JSON         NOT NULL,
       expires_at   BIGINT       NOT NULL,
-      PRIMARY KEY  (phone)
+      PRIMARY KEY  (email)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
   try {
-    await query("ALTER TABLE otp_sessions MODIFY COLUMN expires_at BIGINT NOT NULL");
-  } catch (err) {
-    // Ignore
-  }
+    await query("ALTER TABLE otp_sessions ADD COLUMN IF NOT EXISTS email VARCHAR(190) NOT NULL PRIMARY KEY");
+  } catch { /* ignore if column/primary key already exists */ }
   _tableReady = true;
 }
 
-async function saveSession(phone, payload, ttlMs = 10 * 60 * 1000) {
+async function saveSession(email, payload, ttlMs = 10 * 60 * 1000) {
   await ensureSessionTable();
   const expiresAt = Date.now() + ttlMs;
   await query(
-    `INSERT INTO otp_sessions (phone, otp, data, expires_at)
-     VALUES (:phone, :otp, :data, :expiresAt)
+    `INSERT INTO otp_sessions (email, otp, data, expires_at)
+     VALUES (:email, :otp, :data, :expiresAt)
      ON DUPLICATE KEY UPDATE otp = :otp, data = :data, expires_at = :expiresAt`,
-    { phone, otp: payload.otp, data: JSON.stringify(payload), expiresAt }
+    { email, otp: payload.otp, data: JSON.stringify(payload), expiresAt }
   );
 }
 
-async function getSession(phone) {
+async function getSession(email) {
   await ensureSessionTable();
-  const rows = await query(
-    'SELECT * FROM otp_sessions WHERE phone = :phone LIMIT 1',
-    { phone }
-  );
+  const rows = await query('SELECT * FROM otp_sessions WHERE email = :email LIMIT 1', { email });
   if (!rows[0]) return null;
   const session = rows[0];
   if (Number(session.expires_at) < Date.now()) {
-    await deleteSession(phone);
+    await deleteSession(email);
     return null; // expired
   }
   return typeof session.data === 'string' ? JSON.parse(session.data) : session.data;
 }
 
-async function deleteSession(phone) {
+async function deleteSession(email) {
   await ensureSessionTable();
-  await query('DELETE FROM otp_sessions WHERE phone = :phone', { phone });
+  await query('DELETE FROM otp_sessions WHERE email = :email', { email });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Password-reset tokens (still in-memory but with DB fallback if needed)
-// Using DB table for persistence across restarts
+// Email sender (nodemailer — configure via .env SMTP_* variables)
+// ─────────────────────────────────────────────────────────────────────────────
+function createTransporter() {
+  if (process.env.SMTP_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+  }
+  // Fallback: no-op transport (OTP still returned in dev mode)
+  return { sendMail: async () => {} };
+}
+
+async function sendOtpEmail(toEmail, otp, name) {
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"Saathika" <noreply@saathika.in>`,
+      to: toEmail,
+      subject: 'Your Saathika Verification Code',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+          <div style="background:linear-gradient(135deg,#ec4899,#6366f1);padding:32px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:26px">Saathika</h1>
+            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0">Your love story begins here</p>
+          </div>
+          <div style="padding:32px">
+            <p style="color:#374151;font-size:16px">Hi <strong>${name || 'there'}</strong>,</p>
+            <p style="color:#6b7280;font-size:14px">Use the code below to verify your email address. It expires in <strong>10 minutes</strong>.</p>
+            <div style="text-align:center;margin:28px 0">
+              <span style="display:inline-block;background:#f9fafb;border:2px dashed #e5e7eb;border-radius:12px;padding:16px 40px;font-size:36px;font-weight:bold;letter-spacing:10px;color:#111827">${otp}</span>
+            </div>
+            <p style="color:#9ca3af;font-size:12px;text-align:center">If you didn't create an account on Saathika, you can safely ignore this email.</p>
+          </div>
+        </div>
+      `,
+      text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 10 minutes.`,
+    });
+  } catch (err) {
+    console.error('[OTP Email] Failed to send email:', err.message);
+    // Don't throw — OTP is also returned in dev mode
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Password-reset tokens (DB-backed)
 // ─────────────────────────────────────────────────────────────────────────────
 let _resetTableReady = false;
 
@@ -83,9 +124,7 @@ async function ensureResetTable() {
   `);
   try {
     await query("ALTER TABLE password_reset_tokens MODIFY COLUMN expires_at BIGINT NOT NULL");
-  } catch (err) {
-    // Ignore
-  }
+  } catch (err) { /* ignore */ }
   _resetTableReady = true;
 }
 
@@ -102,10 +141,7 @@ async function saveResetToken(email, token, userId, ttlMs = 30 * 60 * 1000) {
 
 async function getResetToken(token) {
   await ensureResetTable();
-  const rows = await query(
-    'SELECT * FROM password_reset_tokens WHERE token = :token LIMIT 1',
-    { token }
-  );
+  const rows = await query('SELECT * FROM password_reset_tokens WHERE token = :token LIMIT 1', { token });
   if (!rows[0]) return null;
   if (Number(rows[0].expires_at) < Date.now()) {
     await deleteResetToken(token);
@@ -142,8 +178,8 @@ function toPublicUser(user) {
 // ─────────────────────────────────────────────────────────────────────────────
 const registerRules = [
   body('name').trim().notEmpty().withMessage('Full name is required'),
-  body('phone').customSanitizer(normalizePhone).matches(/^\d{10,15}$/).withMessage('Enter a valid mobile number'),
   body('email').notEmpty().withMessage('Email address is required').bail().isEmail().withMessage('Enter a valid email address'),
+  body('phone').optional({ values: 'falsy' }).customSanitizer(normalizePhone),
   body('gender')
     .isIn(['male', 'female'])
     .withMessage('Choose a valid gender')
@@ -175,26 +211,92 @@ const resetPasswordRules = [
 // ─────────────────────────────────────────────────────────────────────────────
 // Controllers
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Registration Step 1: Validate form, check uniqueness, send OTP to EMAIL.
+ * Phone is optional (auto-generated fallback if omitted).
+ */
 async function register(req, res) {
-  const phone = normalizePhone(req.body.phone);
-  const email = req.body.email;
-  const existingPhone = await userModel.findByEmailOrPhone(phone);
+  const email = (req.body.email || '').trim().toLowerCase();
+  let phone = normalizePhone(req.body.phone);
+  if (!phone) {
+    phone = '99' + Math.floor(10000000 + Math.random() * 90000000);
+  }
+
   const existingEmail = await userModel.findByEmailOrPhone(email);
-  if (existingPhone || existingEmail) throw new AppError('An account with this email or phone already exists', 409);
+  if (existingEmail) {
+    throw new AppError('An account with this email address already exists', 409);
+  }
 
   const otp = createOtp();
-  await saveSession(phone, {
+  await saveSession(email, {
     name: req.body.name,
     email,
     phone,
     gender: req.body.gender,
     password: req.body.password,
-    otp
+    otp,
   });
 
-  return ok(res, { phone, otp }, 'Verification code sent');
+  await sendOtpEmail(email, otp, req.body.name);
+
+  // In development, expose OTP for easy testing without SMTP
+  const isDev = process.env.NODE_ENV !== 'production';
+  return ok(res, { email, ...(isDev ? { otp } : {}) }, 'Verification code sent to your email');
 }
 
+
+/**
+ * Registration Step 2: Verify the 6-digit EMAIL OTP → create account.
+ */
+async function verifyOtp(req, res) {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const { otp } = req.body;
+  if (!email || !otp) throw new AppError('Email and OTP are required', 422);
+
+  const session = await getSession(email);
+  if (!session) throw new AppError('Verification session expired. Please register again.', 410);
+
+  if (String(otp) !== String(session.otp)) {
+    throw new AppError('Invalid verification code. Please try again.', 422);
+  }
+
+  // Double-check uniqueness before account creation
+  const existingPhone = await userModel.findByEmailOrPhone(session.phone);
+  const existingEmail = await userModel.findByEmailOrPhone(email);
+  if (existingPhone || existingEmail) {
+    await deleteSession(email);
+    throw new AppError('An account with this email or phone already exists', 409);
+  }
+
+  const user = await userModel.create({ ...session, phoneVerified: true, emailVerified: true });
+  const onlineUser = await userModel.markOnline(user.id);
+  await deleteSession(email);
+  const token = signToken(onlineUser);
+  return created(res, { token, user: toPublicUser(onlineUser), emailVerified: true }, 'Account created');
+}
+
+/**
+ * Resend email OTP during registration flow.
+ */
+async function resendOtp(req, res) {
+  const email = (req.body.email || '').trim().toLowerCase();
+  if (!email) throw new AppError('Email is required', 422);
+
+  const session = await getSession(email);
+  if (!session) throw new AppError('Registration session not found. Please register again.', 410);
+
+  const otp = createOtp();
+  await saveSession(email, { ...session, otp });
+  await sendOtpEmail(email, otp, session.name);
+
+  const isDev = process.env.NODE_ENV !== 'production';
+  return ok(res, { email, ...(isDev ? { otp } : {}) }, 'Verification code resent to your email');
+}
+
+/**
+ * Login: email/phone + password. No OTP needed after registration.
+ */
 async function login(req, res) {
   const identifier = req.body.email || req.body.phone;
   if (!identifier) throw new AppError('Email or phone is required', 422);
@@ -221,60 +323,28 @@ async function heartbeat(req, res) {
   return ok(res, { user: toPublicUser(user) }, 'Active status refreshed');
 }
 
-async function verifyOtp(req, res) {
-  const phone = normalizePhone(req.body.phone);
-  const { otp } = req.body;
-  if (!phone || !otp) throw new AppError('Phone and OTP are required', 422);
-
-  const session = await getSession(phone);
-  if (!session) {
-    throw new AppError('Registration session expired. Please register again.', 410);
-  }
-
-  if (String(otp) !== String(session.otp)) {
-    throw new AppError('Invalid verification code. Please try again.', 422);
-  }
-
-  const existingPhone = await userModel.findByEmailOrPhone(phone);
-  const existingEmail = session.email ? await userModel.findByEmailOrPhone(session.email) : null;
-  if (existingPhone || existingEmail) {
-    await deleteSession(phone);
-    throw new AppError('An account with this email or phone already exists', 409);
-  }
-
-  const user = await userModel.create({ ...session, phoneVerified: true });
-  const onlineUser = await userModel.markOnline(user.id);
-  await deleteSession(phone);
-  const token = signToken(onlineUser);
-  return created(res, { token, user: toPublicUser(onlineUser), phoneVerified: true }, 'Account created');
-}
-
-async function resendOtp(req, res) {
-  const phone = normalizePhone(req.body.phone);
-  if (!phone) throw new AppError('Phone is required', 422);
-
-  const session = await getSession(phone);
-  if (!session) {
-    throw new AppError('Registration session not found. Please register again.', 410);
-  }
-
-  const otp = createOtp();
-  await saveSession(phone, { ...session, otp });
-
-  return ok(res, { phone, otp }, 'Verification code resent');
-}
-
 async function forgotPassword(req, res) {
   const email = (req.body.email || '').trim().toLowerCase();
   const user = await userModel.findByEmailOrPhone(email);
   if (user) {
     const token = randomBytes(32).toString('hex');
     await saveResetToken(email, token, user.id);
-    // In production: send email with reset link containing token
-    // For development: token is returned in the response
-    return ok(res, { resetToken: token }, 'Password reset instructions sent to your email');
+    try {
+      const transporter = createTransporter();
+      const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Saathika" <noreply@saathika.in>`,
+        to: email,
+        subject: 'Reset your Saathika password',
+        html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link expires in 30 minutes.</p>`,
+        text: `Reset your Saathika password: ${resetLink}`,
+      });
+    } catch (err) {
+      console.error('[Reset Email] Failed:', err.message);
+    }
+    const isDev = process.env.NODE_ENV !== 'production';
+    return ok(res, isDev ? { resetToken: token } : {}, 'Password reset instructions sent to your email');
   }
-  // Anti-enumeration: same response whether email exists or not
   return ok(res, {}, 'If this email is registered, you will receive reset instructions shortly');
 }
 

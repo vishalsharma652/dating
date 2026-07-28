@@ -37,12 +37,6 @@ export default function RegisterPage() {
 
     if (!formData.name.trim()) nextErrors.name = 'Enter your full name to continue.';
 
-    if (!formData.phone.trim()) {
-      nextErrors.phone = 'Mobile number is required.';
-    } else if (!/^\d{10,15}$/.test(formData.phone.replace(/\D/g, ''))) {
-      nextErrors.phone = 'Enter a valid mobile number.';
-    }
-
     if (!formData.email.trim()) {
       nextErrors.email = 'Email address is required.';
     } else if (!emailPattern.test(formData.email.trim())) {
@@ -86,9 +80,9 @@ export default function RegisterPage() {
         gender: formData.gender,
         password: formData.password,
       });
-      localStorage.setItem('onboardPhone', data.phone);
+      localStorage.setItem('onboardEmail', data.email);
       localStorage.setItem('onboardName', formData.name);
-      localStorage.setItem('backendOtp', data.otp);
+      if (data.otp) localStorage.setItem('backendOtp', data.otp);
       router.push('/verify-otp');
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Unable to create account');
@@ -127,21 +121,6 @@ export default function RegisterPage() {
                 </div>
               </label>
               {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                Mobile Number
-                <div className="relative mt-2">
-                  <Phone className="pointer-events-none absolute left-4 top-3 text-zinc-400" size={20} />
-                  <Input
-                    placeholder="9876543210"
-                    className="pl-12"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(event) => setFormData({ ...formData, phone: event.target.value.replace(/\D/g, '') })}
-                  />
-                </div>
-              </label>
-              {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
 
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                 Email
@@ -241,7 +220,7 @@ export default function RegisterPage() {
 
           <div className="mt-6 rounded-3xl bg-zinc-100/80 p-4 text-sm text-zinc-600 dark:bg-zinc-900/80 dark:text-zinc-300">
             <p className="font-semibold text-zinc-900 dark:text-white">What happens next?</p>
-            <p className="mt-1">We will verify your mobile number, confirm your age, and guide you through secure KYC and profile setup.</p>
+            <p className="mt-1">A 6-digit verification code will be sent to your email. Verify it to activate your account and complete onboarding.</p>
           </div>
 
           <div className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">

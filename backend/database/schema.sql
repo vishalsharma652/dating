@@ -270,18 +270,19 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
-('Starter', 100, 100, 0, FALSE),
-('Value', 500, 450, 0, TRUE),
-('Premium', 1000, 800, 0, FALSE)
+('Basic', 250, 50.00, 0, FALSE),
+('Popular', 600, 100.00, 0, TRUE),
+('Pro', 1250, 200.00, 0, FALSE),
+('VIP', 2500, 400.00, 0, FALSE)
 ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
 ('site_name', 'Saathika'),
 ('site_logo', '/uploads/saathika-logo.jpg'),
-('coin_rate_inr', '0.70'),
+('coin_rate_inr', '0.20'),
 ('chat_charge_per_minute', '10'),
-('female_earning_per_minute', '7'),
-('platform_commission_per_minute', '3')
+('female_earning_per_minute', '10'),
+('platform_commission_per_minute', '0')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 INSERT INTO categories (name, slug, description) VALUES

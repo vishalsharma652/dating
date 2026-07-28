@@ -348,20 +348,49 @@ function App() {
           </div>
           <div>
             <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{user.name}</h4>
-            <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: {user.id} &bull; Joined: {dateStr(user.created_at)}</p>
+            <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>
+              <strong>Unique ID: #{user.id}</strong> &bull; Joined: {dateStr(user.created_at)}
+            </p>
           </div>
         </div>
+
         <div style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', display: 'grid', gap: '16px' }}>
           <div>
-            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Contact Details</p>
-            <p style={{ margin: '6px 0 0' }}><strong>Email:</strong> {user.email || 'N/A'}</p>
-            <p style={{ margin: '4px 0 0' }}><strong>Phone:</strong> {user.phone || 'N/A'}</p>
+            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Account & Identity</p>
+            <p style={{ margin: '6px 0 0' }}><strong>Unique User ID:</strong> #{user.id}</p>
+            {user.unique_id && (
+              <p style={{ margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong>🆔 Saathika ID:</strong>
+                <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#10b981', fontSize: '14px', letterSpacing: '2px', background: 'rgba(16,185,129,0.1)', padding: '2px 10px', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.25)' }}>
+                  {user.unique_id}
+                </span>
+              </p>
+            )}
+            <p style={{ margin: '4px 0 0' }}><strong>Full Name:</strong> {user.name}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Role:</strong> {user.role || 'user'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Account Status:</strong> {statusBadge(user.status)}</p>
           </div>
+
+          <div>
+            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Contact Details</p>
+            <p style={{ margin: '6px 0 0' }}><strong>Phone Number:</strong> {user.phone || 'N/A'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Email Address:</strong> {user.email || 'N/A'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Phone Verified:</strong> {user.phone_verified ? 'Yes' : 'No'}</p>
+          </div>
+        </div>
+
+        <div style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', display: 'grid', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div>
             <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Verification & Activity</p>
-            <p style={{ margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}><strong>KYC:</strong> {statusBadge(user.kyc_status)}</p>
+            <p style={{ margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}><strong>KYC Status:</strong> {statusBadge(user.kyc_status)}</p>
+            {user.unique_id && (
+              <p style={{ margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong>Saathika ID:</strong>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '1px 8px', borderRadius: '12px', fontSize: '12px', letterSpacing: '1px' }}>{user.unique_id}</span>
+              </p>
+            )}
             <p style={{ margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <strong>Status:</strong>
+              <strong>Activity Status:</strong>
               {user.online_status ? (
                 <>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }}></span>
@@ -374,23 +403,34 @@ function App() {
                 </>
               )}
             </p>
+            <p style={{ margin: '4px 0 0' }}><strong>Last Active:</strong> {dateStr(user.last_seen_at || user.updated_at)}</p>
+          </div>
+
+          <div>
+            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Wallet & Earnings</p>
+            <p style={{ margin: '6px 0 0' }}><strong>Coins Balance:</strong> {user.coins || 0} Coins</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Earnings Balance:</strong> {rupees(user.earnings || 0)}</p>
           </div>
         </div>
+
         <div style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', display: 'grid', gap: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
           <div>
-            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Wallet Status</p>
-            <p style={{ margin: '6px 0 0' }}><strong>Coins Balance:</strong> {user.coins || 0}</p>
-            <p style={{ margin: '4px 0 0' }}><strong>Earning Balance:</strong> {rupees(user.earnings || 0)}</p>
-          </div>
-          <div>
-            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Profile Info</p>
+            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Personal & Demographics</p>
             <p style={{ margin: '6px 0 0' }}><strong>Gender:</strong> {user.gender || 'N/A'}</p>
             <p style={{ margin: '4px 0 0' }}><strong>Date of Birth:</strong> {dateStr(user.dob)}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Age:</strong> {user.age || 'N/A'}</p>
+          </div>
+
+          <div>
+            <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Location & About</p>
+            <p style={{ margin: '6px 0 0' }}><strong>City / Location:</strong> {user.city || 'N/A'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Occupation:</strong> {user.occupation || 'N/A'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Bio:</strong> {user.bio || 'N/A'}</p>
           </div>
         </div>
       </div>
     );
-    setDetailModal({ show: true, title: `User Profile: ${user.name}`, body: html });
+    setDetailModal({ show: true, title: `User Details (ID #${user.id}): ${user.name}`, body: html });
   };
 
   const openKycVerification = (user) => {
@@ -401,12 +441,12 @@ function App() {
           <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: {user.id} &bull; Phone: {user.phone || 'N/A'}</p>
         </div>
         <div>
-          <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Uploaded ID Documents (Aadhaar / Passport)</p>
+          <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Uploaded ID Documents (Photo ID / Passport)</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '10px' }}>
             <div style={{ border: '1px dashed var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)' }}>
               <p style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#a1a1aa' }}>ID Document Front</p>
               <div style={{ height: '140px', borderRadius: '8px', background: 'linear-gradient(135deg, #131326, #2d183d)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', position: 'relative', overflow: 'hidden' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>Aadhaar Front Side</span>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>ID Document Front</span>
                 <span style={{ fontSize: '10px', marginTop: '4px' }}>KYC_FRONT.jpg</span>
                 <div style={{ position: 'absolute', bottom: '8px', left: '8px', width: '30px', height: '20px', backgroundColor: '#fbbf24', opacity: 0.8, borderRadius: '3px' }}></div>
               </div>
@@ -414,7 +454,7 @@ function App() {
             <div style={{ border: '1px dashed var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)' }}>
               <p style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#a1a1aa' }}>ID Document Back</p>
               <div style={{ height: '140px', borderRadius: '8px', background: 'linear-gradient(135deg, #131326, #2d183d)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', position: 'relative', overflow: 'hidden' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>Aadhaar Back Side</span>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>ID Document Back</span>
                 <span style={{ fontSize: '10px', marginTop: '4px' }}>KYC_BACK.jpg</span>
                 <div style={{ position: 'absolute', bottom: '8px', right: '8px', width: '50px', height: '6px', backgroundColor: '#6b7280', opacity: 0.6, borderRadius: '2px' }}></div>
               </div>

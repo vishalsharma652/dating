@@ -114,18 +114,18 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  register: (body: { name: string; phone: string; email?: string; password: string; gender: string }) =>
-    apiRequest<{ phone: string; otp: string }>('/auth/register', {
+  register: (body: { name: string; phone: string; email: string; password: string; gender: string }) =>
+    apiRequest<{ email: string; otp?: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  verifyOtp: (body: { phone: string; otp: string }) =>
-    apiRequest<{ token: string; user: any; phoneVerified: boolean }>('/auth/verify-otp', {
+  verifyOtp: (body: { email: string; otp: string }) =>
+    apiRequest<{ token: string; user: any; emailVerified: boolean }>('/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  resendOtp: (body: { phone: string }) =>
-    apiRequest<{ phone: string; otp: string }>('/auth/resend-otp', {
+  resendOtp: (body: { email: string }) =>
+    apiRequest<{ email: string; otp?: string }>('/auth/resend-otp', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -183,6 +183,7 @@ export const userApi = {
       body: formData,
     }),
   discover: () => apiRequest<{ profiles: any[] }>('/user/discover'),
+  searchUsers: (query: string) => apiRequest<{ users: any[] }>(`/user/search?q=${encodeURIComponent(query)}`),
   reactToProfile: (id: number | string, action: 'like' | 'pass' | 'super_like') =>
     apiRequest<null>(`/user/discover/${id}/action`, {
       method: 'POST',

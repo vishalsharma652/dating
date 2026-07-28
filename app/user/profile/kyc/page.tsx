@@ -21,24 +21,19 @@ export default function KYCPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: '',
-    aadhaar: '',
-    pan: '',
   });
   const [files, setFiles] = useState({
-    aadhaarFront: '',
-    aadhaarBack: '',
-    panCard: '',
+    idFront: '',
+    idBack: '',
     selfie: '',
   });
   const [selectedFiles, setSelectedFiles] = useState<Record<keyof typeof files, File | null>>({
-    aadhaarFront: null,
-    aadhaarBack: null,
-    panCard: null,
+    idFront: null,
+    idBack: null,
     selfie: null,
   });
   const [statuses, setStatuses] = useState({
-    aadhaar: 'Under review',
-    pan: 'Pending',
+    idProof: 'Pending',
     selfie: 'Pending',
   });
   const [error, setError] = useState('');
@@ -57,8 +52,6 @@ export default function KYCPage() {
   const allComplete = useMemo(
     () =>
       Boolean(formData.fullName.trim()) &&
-      /^\d{12}$/.test(formData.aadhaar) &&
-      /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan) &&
       Object.values(files).every(Boolean),
     [formData, files]
   );
@@ -66,7 +59,7 @@ export default function KYCPage() {
   const handleFileChange = (key: keyof typeof files, file: File | null) => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
-    const statusKey = key === 'panCard' ? 'pan' : key;
+    const statusKey = key === 'selfie' ? 'selfie' : 'idProof';
 
     setFiles((current) => ({ ...current, [key]: preview }));
     setSelectedFiles((current) => ({ ...current, [key]: file }));
@@ -85,8 +78,6 @@ export default function KYCPage() {
     try {
       const payload = new FormData();
       payload.append('fullName', formData.fullName);
-      payload.append('aadhaar', formData.aadhaar);
-      payload.append('pan', formData.pan);
       Object.values(selectedFiles).forEach((file) => {
         if (file) payload.append('documents', file);
       });
@@ -108,7 +99,7 @@ export default function KYCPage() {
               <ArrowLeft size={16} /> Age verification
             </Link>
             <h1 className="mt-4 text-3xl font-bold">KYC verification</h1>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">Upload ID documents and a selfie to confirm your profile identity.</p>
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400">Upload identity document and a selfie to confirm your profile identity.</p>
           </div>
           <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">Pending review</Badge>
         </div>
@@ -119,12 +110,8 @@ export default function KYCPage() {
               <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Document status</p>
               <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
                 <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/80 px-4 py-3 dark:bg-zinc-900/80">
-                  <span>Aadhaar</span>
-                  <span className={statusClasses[statuses.aadhaar] || statusClasses.Pending}>{statuses.aadhaar}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/80 px-4 py-3 dark:bg-zinc-900/80">
-                  <span>PAN</span>
-                  <span className={statusClasses[statuses.pan] || statusClasses.Pending}>{statuses.pan}</span>
+                  <span>ID Proof</span>
+                  <span className={statusClasses[statuses.idProof] || statusClasses.Pending}>{statuses.idProof}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/80 px-4 py-3 dark:bg-zinc-900/80">
                   <span>Selfie</span>
@@ -155,48 +142,21 @@ export default function KYCPage() {
                 />
               </label>
 
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                Aadhaar number
-                <input
-                  type="text"
-                  value={formData.aadhaar}
-                  onChange={(event) => setFormData({ ...formData, aadhaar: event.target.value.replace(/\D/g, '').slice(0, 12) })}
-                  placeholder="123412341234"
-                  maxLength={12}
-                  className="mt-2 w-full rounded-[1.75rem] border border-zinc-200 bg-white/90 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-white dark:focus:border-pink-400 dark:focus:ring-pink-500/20"
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                PAN number
-                <input
-                  type="text"
-                  value={formData.pan}
-                  onChange={(event) => setFormData({ ...formData, pan: event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) })}
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                  className="mt-2 w-full rounded-[1.75rem] border border-zinc-200 bg-white/90 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-white dark:focus:border-pink-400 dark:focus:ring-pink-500/20"
-                />
-              </label>
               <div className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/70">
                 <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">What we need</p>
                 <ul className="mt-3 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <li>• Clear Aadhaar front/back images</li>
-                  <li>• PAN card scan</li>
+                  <li>• Clear Government-issued ID / Photo ID</li>
                   <li>• Selfie with visible face</li>
                 </ul>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               {(
                 [
-                  { label: 'Upload Aadhaar front', key: 'aadhaarFront' as const },
-                  { label: 'Upload Aadhaar back', key: 'aadhaarBack' as const },
-                  { label: 'Upload PAN card', key: 'panCard' as const },
-                  { label: 'Upload selfie', key: 'selfie' as const },
+                  { label: 'Upload ID Front', key: 'idFront' as const },
+                  { label: 'Upload ID Back', key: 'idBack' as const },
+                  { label: 'Upload Selfie', key: 'selfie' as const },
                 ] as const
               ).map((item) => (
                 <label key={item.key} className="group relative flex min-h-[160px] flex-col justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-zinc-300 bg-white/90 p-4 text-center transition hover:border-pink-500 dark:border-zinc-700 dark:bg-zinc-950/70">

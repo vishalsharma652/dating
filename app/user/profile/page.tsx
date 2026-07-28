@@ -23,7 +23,9 @@ import {
   Eye,
   Lock,
   Compass,
-  ArrowUpRight
+  ArrowUpRight,
+  Fingerprint,
+  Copy
 } from 'lucide-react';
 import { userApi, apiAssetUrl } from '@/lib/api';
 
@@ -97,6 +99,23 @@ export default function ProfilePage() {
             <p className="text-zinc-400 text-sm font-semibold">
               This is how other users see your profile
             </p>
+            {/* Unique ID Badge — only shown after KYC approved */}
+            {user.unique_id && (
+              <button
+                type="button"
+                title="Click to copy your Unique ID"
+                onClick={() => {
+                  navigator.clipboard.writeText(user.unique_id);
+                  setMessage('Unique ID copied to clipboard!');
+                  setTimeout(() => setMessage(''), 2000);
+                }}
+                className="inline-flex items-center gap-2 mt-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#10B981]/15 to-[#6366f1]/15 border border-[#10B981]/30 hover:border-[#10B981]/60 transition-all duration-200 cursor-pointer group"
+              >
+                <Fingerprint size={13} className="text-[#10B981]" />
+                <span className="text-[11px] font-black text-[#10B981] tracking-widest uppercase">Your ID: {user.unique_id}</span>
+                <Copy size={11} className="text-[#10B981]/60 group-hover:text-[#10B981] transition" />
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-4">
@@ -427,6 +446,27 @@ export default function ProfilePage() {
                   </Badge>
                 </div>
               </div>
+
+              {/* Unique ID display — shown after KYC approval */}
+              {user.unique_id && (
+                <div className="mt-4 flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-[#10B981]/10 to-[#6366f1]/10 border border-[#10B981]/20">
+                  <div className="flex items-center gap-3">
+                    <Fingerprint size={16} className="text-[#10B981]" />
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Unique ID</p>
+                      <p className="text-sm font-black text-white tracking-widest">{user.unique_id}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(user.unique_id); setMessage('Unique ID copied!'); setTimeout(() => setMessage(''), 2000); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-[10px] font-black uppercase tracking-wider hover:bg-[#10B981]/25 transition-all"
+                  >
+                    <Copy size={11} />
+                    Copy ID
+                  </button>
+                </div>
+              )}
             </Card>
 
             {/* Profile Action Buttons & Premium Boost Banner */}

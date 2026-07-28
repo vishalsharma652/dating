@@ -9,16 +9,18 @@ import {
   Bell,
   Wallet,
   User,
+  Search,
   Settings,
   HelpCircle,
   LogOut,
   Menu,
 } from 'lucide-react';
-import { authApi, clearAuthSession, userApi } from '@/lib/api';
+import { authApi, clearAuthSession, getStoredUser, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
 
 const sidebarItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: Home },
+  { label: 'Search ID', href: '/user/search', icon: Search },
   { label: 'Chat', href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
   { label: 'Notifications', href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
   { label: 'Wallet', href: '/user/wallet', icon: Wallet },
@@ -137,10 +139,30 @@ export function UserNav() {
         </div>
 
         {/* Bottom Section */}
-        <div className="p-4 space-y-4 border-t border-white/5 bg-[#070B18]">
+        <div className="p-4 space-y-3 border-t border-white/5 bg-[#070B18]">
+          {/* Logged in User Card */}
+          {(() => {
+            const u = getStoredUser();
+            if (!u) return null;
+            const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
+            const symbol = isFemaleUser ? '💎' : '🪙';
+            const displayId = u.unique_id || `STK-${String(u.id).padStart(6, '0')}`;
+            return (
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-white truncate flex items-center gap-1">
+                    <span>{u.name || 'User'}</span>
+                    <span title={isFemaleUser ? 'Female Diamond Badge' : 'Male Golden Badge'}>{symbol}</span>
+                  </p>
+                  <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">🆔 {displayId}</p>
+                </div>
+              </div>
+            );
+          })()}
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.03] transition text-sm font-semibold"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.03] transition text-sm font-semibold"
           >
             <LogOut size={16} />
             <span>Logout</span>
@@ -209,6 +231,7 @@ export function UserNav() {
             </div>
 
             {[
+              { label: 'Search ID', href: '/user/search', icon: Search },
               { label: 'Wallet', href: '/user/wallet', icon: Wallet },
               { label: 'Settings', href: '/user/settings', icon: Settings },
               { label: 'Help & Support', href: '/user/help', icon: HelpCircle },

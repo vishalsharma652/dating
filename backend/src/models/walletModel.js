@@ -6,14 +6,47 @@ async function transactions(userId) {
 }
 
 async function wallet(userId) {
-  const rows = await query(
-    `SELECT w.balance AS coins, w.total_purchased AS totalPurchased, w.total_spent AS totalSpent,
+  let rows = await query(
+    `SELECT w.id AS walletRowId, w.wallet_id AS walletId, w.balance AS coins, w.total_purchased AS totalPurchased, w.total_spent AS totalSpent,
       w.total_earned AS totalEarned, w.withdrawal_balance AS withdrawalBalance,
-      u.earnings
-     FROM wallets w JOIN users u ON u.id = w.user_id WHERE w.user_id = :userId LIMIT 1`,
+      u.earnings, u.coins AS userCoins
+     FROM users u LEFT JOIN wallets w ON w.user_id = u.id WHERE u.id = :userId LIMIT 1`,
     { userId }
   );
-  return rows[0] || null;
+  if (!rows[0]) return null;
+
+  // Auto-create wallet record if user doesn't have one in wallets table yet
+  if (!rows[0].walletRowId) {
+    const initialCoins = rows[0].userCoins || 0;
+    const res = await query(
+      `INSERT INTO wallets (user_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance)
+       VALUES (:userId, :initialCoins, 0, 0, 0, 0)
+       ON DUPLICATE KEY UPDATE balance = balance`,
+      { userId, initialCoins }
+    );
+    const walletRowId = res.insertId;
+    const walletId = `WLT-${String(walletRowId).padStart(6, '0')}`;
+    await query('UPDATE wallets SET wallet_id = :walletId WHERE id = :id', { walletId, id: walletRowId });
+
+    return {
+      walletRowId,
+      walletId,
+      coins: initialCoins,
+      totalPurchased: 0,
+      totalSpent: 0,
+      totalEarned: 0,
+      withdrawalBalance: 0,
+      earnings: rows[0].earnings || 0
+    };
+  }
+
+  // Auto-assign walletId if missing (for legacy records)
+  if (!rows[0].walletId) {
+    const walletId = `WLT-${String(rows[0].walletRowId).padStart(6, '0')}`;
+    await query('UPDATE wallets SET wallet_id = :walletId WHERE id = :id', { walletId, id: rows[0].walletRowId });
+    rows[0].walletId = walletId;
+  }
+  return rows[0];
 }
 
 async function coinPackages() {
@@ -39,10 +72,15 @@ async function purchase(userId, packageId, payment = {}) {
       'SELECT id FROM wallet_transactions WHERE payment_reference = :reference LIMIT 1', { reference: payment.reference }
     );
     if (duplicate[0]) throw new AppError('This payment has already been processed', 409);
-    await connection.execute(
-      `INSERT INTO wallets (user_id, balance) VALUES (:userId, 0)
-       ON DUPLICATE KEY UPDATE user_id = user_id`, { userId }
-    );
+    // Ensure wallet exists with auto wallet_id
+    const [existingWallet] = await connection.execute('SELECT id FROM wallets WHERE user_id = :userId LIMIT 1', { userId });
+    if (!existingWallet[0]) {
+      const [inserted] = await connection.execute(
+        'INSERT INTO wallets (user_id, balance) VALUES (:userId, 0)', { userId }
+      );
+      const newWalletId = `WLT-${String(inserted.insertId).padStart(6, '0')}`;
+      await connection.execute('UPDATE wallets SET wallet_id = :walletId WHERE id = :id', { walletId: newWalletId, id: inserted.insertId });
+    }
     await connection.execute(
       'UPDATE wallets SET balance = balance + :totalCoins, total_purchased = total_purchased + :totalCoins WHERE user_id = :userId',
       { totalCoins, userId }

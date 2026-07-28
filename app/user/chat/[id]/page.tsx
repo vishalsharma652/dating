@@ -16,6 +16,7 @@ type ActiveCall = 'voice' | 'video' | null;
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [chatUser, setChatUser] = useState<any>({ name: 'User', photo: '/placeholder.svg', online: false });
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,10 +25,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const call = useCall();
 
-  const currentUser = getStoredUser();
-  const currentUserGender = String(currentUser?.gender || '').toLowerCase();
-  const isBoy = currentUserGender === 'male';
+  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,7 +47,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           setMessages(data.messages || []);
           const otherUser = data.chat?.otherUser || { id, name: 'User', photo: '', online: false };
           // Gender-based default avatar: boy sees girl photo, girl sees boy photo
-          const isBoyUser = String(currentUser?.gender || '').toLowerCase() === 'male';
+          const storedUser = getStoredUser();
+          const isBoyUser = String(storedUser?.gender || '').toLowerCase() === 'male';
           const defaultAvatar = isBoyUser ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
           const resolvedPhoto = otherUser.photo && otherUser.photo.trim()
             ? (apiAssetUrl(otherUser.photo) || otherUser.photo)

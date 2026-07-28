@@ -299,7 +299,7 @@ function PaymentContent() {
   };
 
   const copyUpiHandle = () => {
-    const handle = 'emberdating@paytm';
+    const handle = 'triok@upi';
     navigator.clipboard.writeText(handle);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
@@ -902,7 +902,7 @@ function PaymentContent() {
                     </div>
 
                     <div className="flex items-center gap-2 mb-2 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-xl">
-                      <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300">emberdating@paytm</span>
+                      <span className="text-xs font-mono font-bold text-[#EC4899]">triok@upi</span>
                       <button
                         onClick={copyUpiHandle}
                         className="text-pink-500 hover:text-pink-600 text-xs flex items-center gap-1 font-semibold"

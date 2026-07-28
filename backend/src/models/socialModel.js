@@ -141,11 +141,65 @@ async function messages(chatId, readerUserId) {
 }
 
 async function sendMessage(chatId, senderId, body, type = 'text') {
-  const result = await query('INSERT INTO messages (chat_id, sender_id, body, type) VALUES (:chatId, :senderId, :body, :type)', { chatId, senderId, body, type });
-  await query('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId });
   const chat = chatRows[0];
-  const recipientUserId = Number(chat?.user_one_id) === Number(senderId) ? chat?.user_two_id : chat?.user_one_id;
+  if (!chat) throw new AppError('Chat not found', 404);
+  const recipientUserId = Number(chat.user_one_id) === Number(senderId) ? chat.user_two_id : chat.user_one_id;
+
+  let messageId;
+  await transaction(async (connection) => {
+    // Check sender gender
+    const [senders] = await connection.execute('SELECT id, name, gender, coins FROM users WHERE id = :senderId LIMIT 1 FOR UPDATE', { senderId });
+    const sender = senders[0];
+    const isMalePayer = ['male', 'man', 'boy', 'men'].includes(String(sender?.gender || '').toLowerCase());
+
+    if (isMalePayer) {
+      const COIN_COST = 10;
+      if (Number(sender.coins || 0) < COIN_COST) {
+        throw new AppError('Insufficient coins. You need 10 coins per message.', 402);
+      }
+
+      // Deduct 10 coins from male sender
+      await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
+      await connection.execute(
+        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
+         ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
+        { senderId, cost: COIN_COST }
+      );
+      await connection.execute(
+        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+         VALUES (:senderId, 'chat_charge', 'Message Sent', :desc, 0, :coins, 'completed')`,
+        { senderId, desc: `Message in chat #${chatId}`, coins: -COIN_COST }
+      );
+
+      // Credit 10 coins to female recipient if applicable
+      if (recipientUserId) {
+        const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
+        const recipient = recipients[0];
+        const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
+
+        if (isFemaleEarner) {
+          const EARNING_COINS = 10;
+          await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
+          await connection.execute(
+            `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
+             VALUES (:recipientUserId, :earn, :earn, :earn)
+             ON DUPLICATE KEY UPDATE balance = balance + :earn, total_earned = total_earned + :earn, withdrawal_balance = withdrawal_balance + :earn`,
+            { recipientUserId, earn: EARNING_COINS }
+          );
+          await connection.execute(
+            `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+             VALUES (:recipientUserId, 'earning', 'Message Received Earning', :desc, 0, :coins, 'completed')`,
+            { recipientUserId, desc: `Earned 10 coins from message in chat #${chatId}`, coins: EARNING_COINS }
+          );
+        }
+      }
+    }
+
+    const [msgRes] = await connection.execute('INSERT INTO messages (chat_id, sender_id, body, type) VALUES (:chatId, :senderId, :body, :type)', { chatId, senderId, body, type });
+    messageId = msgRes.insertId;
+    await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
+  });
 
   if (recipientUserId) {
     const senderRows = await query('SELECT name FROM users WHERE id = :senderId LIMIT 1', { senderId });
@@ -158,11 +212,13 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
       title: senderName,
       message: preview || 'Sent you a message',
       linkUrl: `/user/chat/${senderId}`,
-      metadata: { chatId, messageId: result.insertId }
+      metadata: { chatId, messageId }
     });
   }
-  return { id: result.insertId, senderId, text: body, type, deliveryStatus: 'sent' };
+
+  return { id: messageId, senderId, text: body, type, deliveryStatus: 'sent' };
 }
+
 
 async function startChatSession(chatId, payerUserId, earnerUserId, settings) {
   const chargePerMinute = Number(settings.chatChargePerMinute || 10);

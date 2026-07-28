@@ -74,7 +74,7 @@ window.Users = function Users({
             </span>
             <input
               className="input"
-              placeholder="Search by name, email, or mobile..."
+              placeholder="Search by Unique ID, name, email, or mobile..."
               value={search}
               onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
               style={{ paddingLeft: '38px', paddingRight: '38px', height: '44px', width: '100%', borderRadius: '8px' }}
