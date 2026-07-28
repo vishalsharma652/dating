@@ -74,7 +74,7 @@ window.Users = function Users({
             </span>
             <input
               className="input"
-              placeholder="Search by Unique ID, name, email, or mobile..."
+              placeholder="Search by Unique ID, name, or email..."
               value={search}
               onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
               style={{ paddingLeft: '38px', paddingRight: '38px', height: '44px', width: '100%', borderRadius: '8px' }}
@@ -162,7 +162,7 @@ window.Users = function Users({
                 <thead>
                   <tr>
                     <th>User Profile Info</th>
-                    <th>Mobile / Contact</th>
+                    <th>Unique ID / Contact</th>
                     <th>Activity Status</th>
                     <th>KYC Option</th>
                     <th>Actions</th>
@@ -171,6 +171,7 @@ window.Users = function Users({
                 <tbody>
                   {users.map((u) => {
                     const avatarLetter = u.name ? u.name.charAt(0).toUpperCase() : '?';
+                    const displayId = u.unique_id || `STK-${String(u.id).padStart(6, '0')}`;
                     return (
                       <tr key={u.id}>
                         <td>
@@ -187,14 +188,24 @@ window.Users = function Users({
                             <div>
                               <strong style={{ color: '#f4f4f5', fontSize: '14px' }}>{u.name}</strong>
                               <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>
-                                ID: {u.id} &bull; Reg: {dateStr(u.created_at)}
+                                Reg: {dateStr(u.created_at)}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <strong>Phone:</strong> {u.phone || '-'}<br />
-                          <span className="muted" style={{ fontSize: '12px' }}>Email: {u.email || '-'}</span>
+                          <span style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            color: '#10b981',
+                            background: 'rgba(16,185,129,0.1)',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            border: '1px solid rgba(16,185,129,0.2)'
+                          }}>🆔 {displayId}</span>
+                          <br />
+                          <span className="muted" style={{ fontSize: '12px', marginTop: '3px', display: 'inline-block' }}>✉ {u.email || '-'}</span>
                         </td>
                         <td>
                           {u.online_status ? (

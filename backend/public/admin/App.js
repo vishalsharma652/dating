@@ -373,9 +373,8 @@ function App() {
 
           <div>
             <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--primary)' }}>Contact Details</p>
-            <p style={{ margin: '6px 0 0' }}><strong>Phone Number:</strong> {user.phone || 'N/A'}</p>
-            <p style={{ margin: '4px 0 0' }}><strong>Email Address:</strong> {user.email || 'N/A'}</p>
-            <p style={{ margin: '4px 0 0' }}><strong>Phone Verified:</strong> {user.phone_verified ? 'Yes' : 'No'}</p>
+            <p style={{ margin: '6px 0 0' }}><strong>Email Address:</strong> {user.email || 'N/A'}</p>
+            <p style={{ margin: '4px 0 0' }}><strong>Email Verified:</strong> {user.email_verified ? 'Yes' : 'Yes'}</p>
           </div>
         </div>
 
