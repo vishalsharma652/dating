@@ -63,12 +63,19 @@ async function deleteSession(email) {
 // ─────────────────────────────────────────────────────────────────────────────
 function createTransporter() {
   if (process.env.SMTP_HOST) {
-    return nodemailer.createTransport({
+    const portNum = Number(process.env.SMTP_PORT || 587);
+    const isPort25 = portNum === 25;
+    const config = {
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
+      port: portNum,
       secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
+      tls: { rejectUnauthorized: false },
+      ignoreTLS: isPort25,
+    };
+    if (process.env.SMTP_USER && process.env.SMTP_USER.trim()) {
+      config.auth = { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS };
+    }
+    return nodemailer.createTransport(config);
   }
   // Fallback: no-op transport (OTP still returned in dev mode)
   return { sendMail: async () => {} };
