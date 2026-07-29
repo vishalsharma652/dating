@@ -24,6 +24,11 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
 
   useEffect(() => {
     userApi.wallet()
@@ -48,12 +53,6 @@ export default function WalletPage() {
     </div>
   );
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  useEffect(() => {
-    setCurrentUser(getStoredUser());
-  }, []);
 
   const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
 
