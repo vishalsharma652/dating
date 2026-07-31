@@ -64,35 +64,25 @@ async function deleteSession(email) {
 // ─────────────────────────────────────────────────────────────────────────────
 function createTransporter() {
   if (process.env.SMTP_HOST) {
-    const hostStr = String(process.env.SMTP_HOST || '').toLowerCase();
     const cleanUser = String(process.env.SMTP_USER || '').replace(/["'\s]/g, '');
     const cleanPass = String(process.env.SMTP_PASS || '').replace(/["'\s]/g, '');
 
-    if (hostStr.includes('gmail')) {
-      return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: cleanUser,
-          pass: cleanPass,
-        },
-      });
-    }
-    const portNum = Number(process.env.SMTP_PORT || 587);
-    const isPort25 = portNum === 25;
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: portNum,
-      secure: process.env.SMTP_SECURE === 'true' || portNum === 465,
-      tls: { rejectUnauthorized: false },
-      ignoreTLS: isPort25,
-    };
-    if (cleanUser) {
-      config.auth = { user: cleanUser, pass: cleanPass };
-    }
-    return nodemailer.createTransport(config);
+    return nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: cleanUser,
+        pass: cleanPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
   }
   return { sendMail: async () => {} };
 }
+
 
 
 
