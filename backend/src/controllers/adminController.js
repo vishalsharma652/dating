@@ -9,7 +9,7 @@ const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
 
 const loginRules = [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body('email').notEmpty().withMessage('Email or Phone is required'),
   body('password').notEmpty().withMessage('Password is required')
 ];
 
@@ -44,15 +44,21 @@ async function availableAdminPhone() {
 }
 
 async function login(req, res) {
+  const inputIdentifier = String(req.body.email || '').trim().toLowerCase();
+  const inputPassword = String(req.body.password || '').trim();
+
   const admin = await ensureEnvAdmin();
-  let passwordMatches = await bcrypt.compare(req.body.password, admin.password_hash);
-  if (!passwordMatches && req.body.email === env.adminEmail && req.body.password === env.adminPassword) {
+  let passwordMatches = await bcrypt.compare(inputPassword, admin.password_hash);
+  if (!passwordMatches && (inputIdentifier === String(env.adminEmail).toLowerCase() || inputIdentifier === String(env.adminPhone).trim()) && inputPassword === env.adminPassword) {
     const refreshedAdmin = await userModel.updatePassword(admin.id, env.adminPassword);
     admin.password_hash = refreshedAdmin.password_hash;
     passwordMatches = true;
   }
 
-  if (req.body.email !== admin.email || !passwordMatches) {
+  const matchesEmailOrPhone = (admin.email && admin.email.toLowerCase() === inputIdentifier) ||
+                              (admin.phone && String(admin.phone).trim() === inputIdentifier);
+
+  if (!matchesEmailOrPhone || !passwordMatches) {
     throw new AppError('Invalid admin credentials', 401);
   }
   const token = signToken(admin);

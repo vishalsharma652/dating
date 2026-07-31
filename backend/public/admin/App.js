@@ -549,6 +549,11 @@ function App() {
   };
 
   if (!token) {
+    const fillDefaultCredentials = () => {
+      setEmail('admin@ember.local');
+      setPassword('Admin@12345');
+    };
+
     return (
       <section className="login-page">
         <form className="login-card" onSubmit={handleLogin}>
@@ -561,14 +566,25 @@ function App() {
           </div>
           <h1>Sign in</h1>
           <p className="muted" style={{ marginTop: '8px' }}>Manage users, KYC verification, wallets, chats, withdrawals, and reports.</p>
+
+          <div style={{ marginTop: '16px', padding: '12px 14px', background: 'rgba(129, 140, 248, 0.08)', border: '1px solid rgba(129, 140, 248, 0.2)', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Default Credentials</span>
+              <button type="button" onClick={fillDefaultCredentials} style={{ background: 'rgba(129, 140, 248, 0.2)', border: '1px solid rgba(129, 140, 248, 0.4)', color: '#c7d2fe', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}>
+                ⚡ Auto-Fill
+              </button>
+            </div>
+            <p style={{ fontSize: '12px', color: '#cbd5e1', margin: 0 }}><strong>Email:</strong> admin@ember.local</p>
+            <p style={{ fontSize: '12px', color: '#cbd5e1', margin: '2px 0 0' }}><strong>Password:</strong> Admin@12345</p>
+          </div>
           
           <label className="field">
-            <span>Email</span>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <span>Email or Phone</span>
+            <input className="input" type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@ember.local" required />
           </label>
           <label className="field">
             <span>Password</span>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </label>
 
           {notice.message && notice.type === 'error' && (

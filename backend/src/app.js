@@ -39,6 +39,9 @@ app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
 app.get('/health', (req, res) => ok(res, { status: 'healthy' }, 'API is running'));
 app.get('/admin', (req, res) => {
+  if (!req.originalUrl.endsWith('/')) {
+    return res.redirect('/admin/');
+  }
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
