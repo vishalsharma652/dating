@@ -433,38 +433,59 @@ function App() {
   };
 
   const openKycVerification = (user) => {
+    const livePhoto = user.selfieUrl || (user.photos && user.photos[0]) || '/avatar-priya.jpg';
     const html = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-          <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{user.name}</h4>
-          <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: {user.id} &bull; Email: {user.email || 'N/A'}</p>
+        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{user.name}</h4>
+            <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: #{user.id} &bull; Email: {user.email || 'N/A'} &bull; Phone: {user.phone || 'N/A'}</p>
+          </div>
+          {user.unique_id ? (
+            <span className="badge green" style={{ fontSize: '12px', fontWeight: 800 }}>{user.unique_id}</span>
+          ) : (
+            <span className="badge yellow" style={{ fontSize: '11px' }}>Pending Unique ID Assignment</span>
+          )}
         </div>
         <div>
-          <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Uploaded ID Documents (Photo ID / Passport)</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '10px' }}>
-            <div style={{ border: '1px dashed var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#a1a1aa' }}>ID Document Front</p>
-              <div style={{ height: '140px', borderRadius: '8px', background: 'linear-gradient(135deg, #131326, #2d183d)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', position: 'relative', overflow: 'hidden' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>ID Document Front</span>
-                <span style={{ fontSize: '10px', marginTop: '4px' }}>KYC_FRONT.jpg</span>
-                <div style={{ position: 'absolute', bottom: '8px', left: '8px', width: '30px', height: '20px', backgroundColor: '#fbbf24', opacity: 0.8, borderRadius: '3px' }}></div>
-              </div>
-            </div>
-            <div style={{ border: '1px dashed var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#a1a1aa' }}>ID Document Back</p>
-              <div style={{ height: '140px', borderRadius: '8px', background: 'linear-gradient(135deg, #131326, #2d183d)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', position: 'relative', overflow: 'hidden' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>ID Document Back</span>
-                <span style={{ fontSize: '10px', marginTop: '4px' }}>KYC_BACK.jpg</span>
-                <div style={{ position: 'absolute', bottom: '8px', right: '8px', width: '50px', height: '6px', backgroundColor: '#6b7280', opacity: 0.6, borderRadius: '2px' }}></div>
+          <p className="muted" style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '10px' }}>📸 Submitted Live Selfie Photo</p>
+          <div style={{ border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+              <img
+                src={livePhoto}
+                alt="Uploaded Live Selfie"
+                style={{
+                  maxHeight: '300px',
+                  width: 'auto',
+                  maxWidth: '100%',
+                  borderRadius: '12px',
+                  objectFit: 'cover',
+                  border: '2px solid rgba(236,72,153,0.4)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                }}
+              />
+              <div style={{ marginTop: '10px' }}>
+                <a
+                  href={livePhoto}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-action btn-outline"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 14px' }}
+                >
+                  🔍 View Full Size Image
+                </a>
               </div>
             </div>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', backgroundColor: 'rgba(255,179,0,0.05)', borderRadius: '8px', padding: '12px', border: '1px solid rgba(255,179,0,0.15)' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: '#fef08a' }}><strong>Verification Notice:</strong> Ensure the user name matching the card detail matches with registered user profile name.</p>
+        <div style={{ backgroundColor: 'rgba(45,226,230,0.08)', borderRadius: '10px', padding: '12px', border: '1px solid rgba(45,226,230,0.2)' }}>
+          <p style={{ margin: 0, fontSize: '12px', color: '#2de2e6' }}>
+            <strong>Note:</strong> Approving this KYC request will verify the user profile and automatically assign a Unique ID (e.g. <code>STK-000123</code>).
+          </p>
         </div>
       </div>
     );
+
     setDetailModal({
       show: true,
       title: `KYC Verification: ${user.name}`,

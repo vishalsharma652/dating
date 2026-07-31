@@ -100,20 +100,35 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
     params.status = status;
   }
   try {
-    return await query(
-      `SELECT id, unique_id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
-       FROM users WHERE ${filters.join(' AND ')}
-       ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+    const rows = await query(
+      `SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at, p.photos
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id = u.id
+       WHERE ${filters.map(f => f.includes('=') ? `u.${f}` : f).join(' AND ')}
+       ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
       params
     );
+    return rows.map((u) => {
+      let photosArr = [];
+      try { photosArr = typeof u.photos === 'string' ? JSON.parse(u.photos) : (u.photos || []); } catch {}
+      return { ...u, photos: photosArr, selfieUrl: photosArr[0] || null };
+    });
   } catch (err) {
-    return await query(
-      `SELECT id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
-       FROM users WHERE ${filters.join(' AND ')}
-       ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+    const rows = await query(
+      `SELECT u.id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at, p.photos
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id = u.id
+       WHERE ${filters.map(f => f.includes('=') ? `u.${f}` : f).join(' AND ')}
+       ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
       params
     );
+    return rows.map((u) => {
+      let photosArr = [];
+      try { photosArr = typeof u.photos === 'string' ? JSON.parse(u.photos) : (u.photos || []); } catch {}
+      return { ...u, photos: photosArr, selfieUrl: photosArr[0] || null };
+    });
   }
+
 }
 
 async function updateKyc(id, { status }) {

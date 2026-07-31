@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Upload, CheckCircle2, ShieldAlert, Sparkles, User, Heart, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, CheckCircle2, Clock, ShieldAlert, Sparkles, User, Heart, Shield } from 'lucide-react';
+
 import { userApi, setAuthSession, getToken, apiAssetUrl } from '@/lib/api';
 
 export default function EditProfilePage() {
@@ -21,7 +22,9 @@ export default function EditProfilePage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [gender, setGender] = useState('');
+  const [kycStatus, setKycStatus] = useState('not_submitted');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -59,8 +62,10 @@ export default function EditProfilePage() {
           bio: data.profile?.bio || '',
           photo: photoVal,
         });
+        setKycStatus(data.user?.kyc_status || 'not_submitted');
         setInterests(data.profile?.interests || []);
       })
+
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load profile'))
       .finally(() => setLoading(false));
   }, []);
@@ -291,18 +296,38 @@ export default function EditProfilePage() {
             <span>Verification Settings</span>
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Button variant="outline" className="rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11 flex items-center justify-center gap-2 transition duration-300" asChild>
-              <Link href="/user/profile/kyc">KYC Verification</Link>
-            </Button>
-            <Button variant="outline" className="rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11 flex items-center justify-center gap-2 transition duration-300" asChild>
-              <Link href="/user/profile/age-verify">Age Verification</Link>
-            </Button>
-            <Button variant="outline" className="rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11 flex items-center justify-center gap-2 transition duration-300" asChild>
-              <Link href="/auth/verify-otp">Email Verification</Link>
-            </Button>
+          <div>
+            {kycStatus === 'approved' ? (
+              <Button
+                variant="outline"
+                disabled
+                className="w-full rounded-xl border-green-500/20 bg-green-500/10 text-green-400 font-bold py-3.5 h-11 flex items-center justify-center gap-2 cursor-not-allowed opacity-90"
+              >
+                <CheckCircle2 size={16} className="text-green-500" />
+                Done KYC (Verified ✓)
+              </Button>
+            ) : kycStatus === 'pending' ? (
+              <Button
+                variant="outline"
+                disabled
+                className="w-full rounded-xl border-yellow-500/20 bg-yellow-500/10 text-yellow-400 font-bold py-3.5 h-11 flex items-center justify-center gap-2 cursor-not-allowed opacity-90"
+              >
+                <Clock size={16} className="text-yellow-500 animate-pulse" />
+                KYC Submitted (Pending Review)
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11 flex items-center justify-center gap-2 transition duration-300"
+                asChild
+              >
+                <Link href="/user/profile/kyc">KYC Verification</Link>
+              </Button>
+            )}
           </div>
         </Card>
+
+
 
         {/* Page Save Trigger Actions */}
         <div className="flex gap-4">

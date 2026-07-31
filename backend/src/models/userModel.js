@@ -20,8 +20,8 @@ async function create({ name, email = null, phone, password, role = 'user', phon
       { name, email, phone, passwordHash, role, phoneVerified, emailVerified: emailVerified ? 1 : 0, gender, coins: isBoy ? 100 : 0 }
     );
     const userId = created.insertId;
-    const uniqueId = `STK-${String(userId).padStart(6, '0')}`;
-    await connection.execute('UPDATE users SET unique_id = :uniqueId WHERE id = :userId', { uniqueId, userId });
+    // Note: Unique ID (STK-XXXXXX) is NOT generated at signup. It is generated ONLY after KYC is approved.
+
 
     // Insert wallet and auto-generate wallet_id
     const [walletResult] = await connection.execute(

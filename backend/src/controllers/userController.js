@@ -87,9 +87,24 @@ async function ageVerify(req, res) {
 }
 
 async function submitKyc(req, res) {
+  let photoUrl = null;
+  if (req.files && req.files.length > 0) {
+    photoUrl = `/uploads/${req.files[0].filename}`;
+  } else if (req.file) {
+    photoUrl = `/uploads/${req.file.filename}`;
+  }
+
+  if (photoUrl) {
+    const profile = await profileModel.getForUser(req.user.id);
+    const photos = profile?.photos || [];
+    const newPhotos = [photoUrl, ...photos.filter(p => p !== photoUrl).slice(0, 5)];
+    await profileModel.upsert(req.user.id, { photos: newPhotos });
+  }
+
   const user = await userModel.update(req.user.id, { kyc_status: 'pending' });
-  return created(res, { user, files: req.files || [] }, 'KYC submitted for review');
+  return created(res, { user, files: req.files || [], photoUrl }, 'KYC submitted for review');
 }
+
 
 async function discover(req, res) {
   const profiles = await profileModel.discover(req.user.id, req.query);

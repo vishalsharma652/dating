@@ -6,36 +6,35 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Upload, Camera, CheckCircle2, RefreshCw, X, ShieldCheck, Sparkles } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Camera, 
+  CheckCircle2, 
+  RefreshCw, 
+  X, 
+  ShieldCheck, 
+  Lock, 
+  Sparkles, 
+  UserCheck, 
+  Zap,
+  Smile
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { userApi } from '@/lib/api';
+import { userApi, authApi, getStoredUser } from '@/lib/api';
 
 const statusClasses: Record<string, string> = {
-  Pending: 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100',
-  'Under review': 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
-  Verified: 'bg-green-500/10 text-green-700 dark:text-green-300',
-  Rejected: 'bg-red-500/10 text-red-700 dark:text-red-300',
+  Pending: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  'Under review': 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
+  Verified: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  Rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
 };
 
 export default function KYCPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    fullName: '',
-  });
-  const [files, setFiles] = useState({
-    idFront: '',
-    idBack: '',
-    selfie: '',
-  });
-  const [selectedFiles, setSelectedFiles] = useState<Record<keyof typeof files, File | null>>({
-    idFront: null,
-    idBack: null,
-    selfie: null,
-  });
-  const [statuses, setStatuses] = useState({
-    idProof: 'Pending',
-    selfie: 'Pending',
-  });
+  const [fullName, setFullName] = useState('');
+  const [selfiePreview, setSelfiePreview] = useState('');
+  const [selectedSelfieFile, setSelectedSelfieFile] = useState<File | null>(null);
+  const [selfieStatus, setSelfieStatus] = useState('Pending');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -46,13 +45,25 @@ export default function KYCPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Auto-fill Full Name from User API / Cache and lock it
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('onboardName');
-      if (storedName) {
-        setFormData((current) => ({ ...current, fullName: storedName }));
-      }
+    const storedUser = getStoredUser();
+    if (storedUser?.name) {
+      setFullName(storedUser.name);
     }
+
+    authApi.me()
+      .then((res) => {
+        if (res?.user?.name) {
+          setFullName(res.user.name);
+        }
+      })
+      .catch(() => {
+        if (typeof window !== 'undefined') {
+          const storedName = localStorage.getItem('onboardName');
+          if (storedName) setFullName(storedName);
+        }
+      });
   }, []);
 
   // Cleanup camera stream on unmount
@@ -62,21 +73,17 @@ export default function KYCPage() {
     };
   }, []);
 
-  const allComplete = useMemo(
-    () =>
-      Boolean(formData.fullName.trim()) &&
-      Object.values(files).every(Boolean),
-    [formData, files]
+  const isReady = useMemo(
+    () => Boolean(fullName.trim()) && Boolean(selfiePreview) && Boolean(selectedSelfieFile),
+    [fullName, selfiePreview, selectedSelfieFile]
   );
 
-  const handleFileChange = (key: keyof typeof files, file: File | null) => {
+  const handleSelfieChange = (file: File | null) => {
     if (!file) return;
     const preview = URL.createObjectURL(file);
-    const statusKey = key === 'selfie' ? 'selfie' : 'idProof';
-
-    setFiles((current) => ({ ...current, [key]: preview }));
-    setSelectedFiles((current) => ({ ...current, [key]: file }));
-    setStatuses((current) => ({ ...current, [statusKey]: 'Under review' }));
+    setSelfiePreview(preview);
+    setSelectedSelfieFile(file);
+    setSelfieStatus('Under review');
   };
 
   // Start live webcam / camera stream
@@ -94,7 +101,7 @@ export default function KYCPage() {
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      setCameraError('Unable to access camera. Please allow camera permissions or upload a selfie file.');
+      setCameraError('Unable to access camera. Please check camera permissions or select a photo file.');
     }
   };
 
@@ -125,7 +132,7 @@ export default function KYCPage() {
     canvas.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], 'live_selfie.jpg', { type: 'image/jpeg' });
-        handleFileChange('selfie', file);
+        handleSelfieChange(file);
         stopCamera();
       }
     }, 'image/jpeg', 0.9);
@@ -133,8 +140,8 @@ export default function KYCPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!allComplete) {
-      setError('Complete all fields and uploads to proceed.');
+    if (!isReady || !selectedSelfieFile) {
+      setError('Please capture or upload your live selfie photo to proceed.');
       return;
     }
 
@@ -142,12 +149,11 @@ export default function KYCPage() {
     setLoading(true);
     try {
       const payload = new FormData();
-      payload.append('fullName', formData.fullName);
-      Object.values(selectedFiles).forEach((file) => {
-        if (file) payload.append('documents', file);
-      });
+      payload.append('fullName', fullName);
+      payload.append('documents', selectedSelfieFile);
+
       await userApi.submitKyc(payload);
-      router.push('/user/profile/setup');
+      router.push('/user/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to submit KYC.');
     } finally {
@@ -156,158 +162,162 @@ export default function KYCPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.1),_transparent_40%),radial-gradient(circle_at_bottom_right,_rgba(236,72,153,0.08),_transparent_35%)] p-4">
-      <Container>
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <Link href="/user/profile/age-verify" className="inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white">
-              <ArrowLeft size={16} /> Age verification
-            </Link>
-            <h1 className="mt-4 text-3xl font-bold flex items-center gap-2">
-              KYC verification <ShieldCheck className="text-pink-500" size={28} />
-            </h1>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">Upload identity document and take a live selfie photo to verify your profile.</p>
+    <div className="min-h-screen bg-[#070B18] text-white p-4 sm:p-6 relative overflow-hidden flex flex-col justify-center items-center">
+      {/* Glowing Radial Background Accents */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-[#EC4899]/15 to-[#7C3AED]/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <Container className="max-w-xl relative z-10 w-full my-auto">
+        {/* Top Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link 
+            href="/user/profile" 
+            className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-all duration-300 backdrop-blur-md"
+          >
+            <ArrowLeft size={14} /> Back to Profile
+          </Link>
+          
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping" />
+            <span className="text-xs font-bold text-pink-400 uppercase tracking-widest">Instant Verification</span>
           </div>
-          <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">Pending review</Badge>
         </div>
 
-        <Card className="p-6">
-          <div className="mb-8 grid gap-4 lg:grid-cols-3">
-            <div className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
-              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Document status</p>
-              <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/80 px-4 py-3 dark:bg-zinc-900/80">
-                  <span>ID Proof</span>
-                  <span className={statusClasses[statuses.idProof] || statusClasses.Pending}>{statuses.idProof}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/80 px-4 py-3 dark:bg-zinc-900/80">
-                  <span>Selfie Photo</span>
-                  <span className={statusClasses[statuses.selfie] || statusClasses.Pending}>{statuses.selfie}</span>
-                </div>
-              </div>
-            </div>
+        {/* Main Card */}
+        <Card className="bg-[#101827]/70 backdrop-blur-2xl border border-white/10 rounded-[32px] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
+          {/* Card Top Banner Glow */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#EC4899] via-[#7C3AED] to-[#3B82F6]" />
 
-            <div className="lg:col-span-2 rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
-              <p className="text-sm uppercase tracking-[0.24em] text-pink-500 font-semibold">Secure onboarding</p>
-              <h2 className="mt-3 text-2xl font-semibold">Complete the final verification step</h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                Your ID documents and live selfie photo are submitted securely to the backend for admin verification.
-              </p>
+          {/* Title Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center mx-auto mb-4 backdrop-blur-md shadow-[0_0_25px_rgba(236,72,153,0.3)]">
+              <ShieldCheck className="text-pink-500" size={32} />
             </div>
+            
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-100 to-zinc-400">
+              Identity Verification
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-2 max-w-sm mx-auto font-medium leading-relaxed">
+              Take a quick live selfie photo to verify your profile and earn the <span className="text-pink-400 font-bold">Verified Badge ✓</span>
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                Full name
-                <input
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(event) => setFormData({ ...formData, fullName: event.target.value })}
-                  placeholder="Aarav Patel"
-                  className="mt-2 w-full rounded-[1.75rem] border border-zinc-200 bg-white/90 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-white dark:focus:border-pink-400 dark:focus:ring-pink-500/20"
-                />
-              </label>
+            {/* Auto-filled & Locked User Name */}
+            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 mb-1">
+                  <UserCheck size={13} className="text-pink-500" />
+                  <span>Account Holder Name</span>
+                  <Lock size={11} className="text-zinc-500 ml-1" />
+                </label>
+                <div className="text-base font-bold text-white tracking-wide">
+                  {fullName || 'Loading Profile...'}
+                </div>
+              </div>
 
-              <div className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/70">
-                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Verification Guidelines</p>
-                <ul className="mt-3 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <li>• Clear Government-issued ID (Aadhaar / PAN / Passport)</li>
-                  <li>• Live selfie photo with face clearly visible</li>
-                </ul>
+              <div className="hidden sm:flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/20 px-3 py-1.5 rounded-full text-[11px] font-bold text-pink-400">
+                <Zap size={12} /> Auto-Verified Name
               </div>
             </div>
 
-            {/* Document Upload Grid */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              {/* ID Front */}
-              <label className="group relative flex min-h-[180px] flex-col justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-zinc-300 bg-white/90 p-4 text-center transition hover:border-pink-500 dark:border-zinc-700 dark:bg-zinc-950/70 cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-20"
-                  onChange={(event) => handleFileChange('idFront', event.target.files?.[0] ?? null)}
-                />
-                <div className="relative z-10 flex h-full flex-col items-center justify-center gap-3">
-                  <Upload size={28} className="text-pink-500" />
-                  <p className="font-semibold text-zinc-900 dark:text-white">ID Front</p>
-                  {files.idFront ? (
-                    <img src={files.idFront} alt="ID Front" className="mx-auto h-24 w-24 rounded-2xl object-cover border border-pink-500/50 shadow-md" />
-                  ) : (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Tap to upload front</p>
-                  )}
-                </div>
-              </label>
+            {/* Live Selfie Box */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                  <Smile size={14} className="text-pink-500" />
+                  <span>Live Photo Verification</span>
+                </label>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${statusClasses[selfieStatus] || statusClasses.Pending}`}>
+                  {selfieStatus}
+                </span>
+              </div>
 
-              {/* ID Back */}
-              <label className="group relative flex min-h-[180px] flex-col justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-zinc-300 bg-white/90 p-4 text-center transition hover:border-pink-500 dark:border-zinc-700 dark:bg-zinc-950/70 cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0 z-20"
-                  onChange={(event) => handleFileChange('idBack', event.target.files?.[0] ?? null)}
-                />
-                <div className="relative z-10 flex h-full flex-col items-center justify-center gap-3">
-                  <Upload size={28} className="text-pink-500" />
-                  <p className="font-semibold text-zinc-900 dark:text-white">ID Back</p>
-                  {files.idBack ? (
-                    <img src={files.idBack} alt="ID Back" className="mx-auto h-24 w-24 rounded-2xl object-cover border border-pink-500/50 shadow-md" />
-                  ) : (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Tap to upload back</p>
-                  )}
-                </div>
-              </label>
-
-              {/* Live Selfie Box with Camera Capture */}
-              <div className="relative flex min-h-[180px] flex-col justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-pink-500/60 bg-pink-500/5 p-4 text-center transition hover:border-pink-500 dark:bg-pink-500/10">
-                <div className="relative z-10 flex h-full flex-col items-center justify-center gap-3">
-                  <Camera size={28} className="text-pink-500 animate-pulse" />
-                  <p className="font-semibold text-zinc-900 dark:text-white">Live Selfie Photo</p>
-                  
-                  {files.selfie ? (
-                    <div className="relative group">
-                      <img src={files.selfie} alt="Live Selfie" className="mx-auto h-24 w-24 rounded-2xl object-cover border-2 border-green-500 shadow-md" />
-                      <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 shadow-lg">
-                        <CheckCircle2 size={16} />
+              <div className="relative group flex flex-col justify-center items-center rounded-3xl border-2 border-dashed border-pink-500/40 bg-gradient-to-b from-pink-500/[0.04] to-transparent p-6 text-center transition-all duration-300 hover:border-pink-500 hover:bg-pink-500/[0.07]">
+                
+                {selfiePreview ? (
+                  <div className="flex flex-col items-center">
+                    <div className="relative">
+                      <img 
+                        src={selfiePreview} 
+                        alt="Live Selfie" 
+                        className="w-36 h-36 rounded-2xl object-cover border-2 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]" 
+                      />
+                      <div className="absolute -top-3 -right-3 bg-emerald-500 text-white rounded-full p-2 shadow-lg">
+                        <CheckCircle2 size={20} />
                       </div>
-                      <button
-                        type="button"
-                        onClick={startCamera}
-                        className="mt-2 text-xs font-semibold text-pink-600 hover:underline flex items-center justify-center gap-1 mx-auto"
-                      >
-                        <RefreshCw size={12} /> Retake Live Photo
-                      </button>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-2 w-full">
+
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={14} /> Live Photo Captured
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="mt-3 text-xs font-bold text-pink-400 hover:text-pink-300 flex items-center gap-1.5 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 px-4 py-2 rounded-xl transition duration-300"
+                    >
+                      <RefreshCw size={13} /> Retake Live Photo
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(236,72,153,0.2)]">
+                      <Camera size={30} className="text-pink-500 animate-pulse" />
+                    </div>
+
+                    <h4 className="font-bold text-sm text-white mb-1">Take a Live Selfie</h4>
+                    <p className="text-xs text-zinc-400 max-w-xs mb-5 font-normal leading-relaxed">
+                      Look directly at the camera with clear lighting to instantly complete identity check.
+                    </p>
+
+                    <div className="flex flex-col gap-3 w-full max-w-xs">
                       <Button
                         type="button"
                         onClick={startCamera}
-                        className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold py-2 rounded-xl shadow-md flex items-center justify-center gap-1.5 hover:opacity-90"
+                        className="w-full bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                       >
-                        <Camera size={14} /> 📸 Take Live Selfie Photo
+                        <Camera size={16} /> 📸 Take Live Selfie Photo
                       </Button>
                       
-                      <label className="text-[11px] text-zinc-500 dark:text-zinc-400 underline cursor-pointer hover:text-pink-500">
-                        Or upload selfie file
+                      <label className="text-[11px] font-semibold text-zinc-400 hover:text-pink-400 underline cursor-pointer transition">
+                        Or select photo file from device
                         <input
                           type="file"
                           accept="image/*"
                           capture="user"
                           className="hidden"
-                          onChange={(event) => handleFileChange('selfie', event.target.files?.[0] ?? null)}
+                          onChange={(event) => handleSelfieChange(event.target.files?.[0] ?? null)}
                         />
                       </label>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {error && <p className="rounded-3xl bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
+            {error && (
+              <div className="rounded-2xl bg-red-500/10 border border-red-500/20 p-4 text-xs font-semibold text-red-400 text-center">
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={!allComplete || loading}>
-              {loading ? 'Submitting verification...' : 'Continue to profile setup'}
+            <Button 
+              type="submit" 
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-extrabold text-sm uppercase tracking-wider border-0 shadow-[0_10px_30px_rgba(236,72,153,0.3)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed" 
+              disabled={!isReady || loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <RefreshCw className="animate-spin" size={16} /> Submitting Verification...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Sparkles size={16} /> Submit Verification
+                </span>
+              )}
             </Button>
           </form>
         </Card>
@@ -315,45 +325,49 @@ export default function KYCPage() {
 
       {/* Live Camera Modal Overlay */}
       {showCameraModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md rounded-3xl bg-zinc-900 border border-zinc-800 p-6 shadow-2xl text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-sm rounded-[32px] bg-[#101827] border border-white/10 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.8)] text-center overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 to-purple-600" />
+            
             <button
               type="button"
               onClick={stopCamera}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full p-2 bg-zinc-800/80"
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white rounded-full p-2 bg-white/5 hover:bg-white/10 transition"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center gap-2">
-              <Camera className="text-pink-500" size={24} /> Take Live Selfie Photo
-            </h3>
-            <p className="text-xs text-zinc-400 mb-4">Position your face in the center and click snap.</p>
+            <div className="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mx-auto mb-3">
+              <Camera className="text-pink-500" size={24} />
+            </div>
+
+            <h3 className="text-lg font-bold text-white mb-1">Take Live Selfie</h3>
+            <p className="text-xs text-zinc-400 mb-5">Position your face inside the oval frame below.</p>
 
             {cameraError ? (
-              <div className="p-4 rounded-2xl bg-red-500/10 text-red-400 text-sm mb-4">
+              <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium mb-5">
                 {cameraError}
               </div>
             ) : (
-              <div className="relative mx-auto mb-6 w-full max-w-xs aspect-square overflow-hidden rounded-3xl border-2 border-pink-500 bg-black shadow-inner">
+              <div className="relative mx-auto mb-6 w-64 h-64 overflow-hidden rounded-full border-4 border-pink-500/80 bg-black shadow-[0_0_40px_rgba(236,72,153,0.4)] flex items-center justify-center">
                 <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover transform -scale-x-100" />
-                <div className="pointer-events-none absolute inset-0 rounded-3xl border-2 border-dashed border-pink-500/40 opacity-70" />
+                <div className="pointer-events-none absolute inset-0 rounded-full border-2 border-dashed border-pink-400/60 animate-pulse" />
               </div>
             )}
 
             <canvas ref={canvasRef} className="hidden" />
 
             <div className="flex gap-3 justify-center">
-              <Button type="button" variant="outline" onClick={stopCamera} className="rounded-xl">
+              <Button type="button" variant="outline" onClick={stopCamera} className="rounded-xl text-xs font-bold border-white/10 text-zinc-300">
                 Cancel
               </Button>
               {!cameraError && (
                 <Button
                   type="button"
                   onClick={captureLivePhoto}
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl px-6"
+                  className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs uppercase tracking-wider rounded-xl px-6 shadow-md"
                 >
-                  <Camera className="mr-2" size={18} /> Snap Photo
+                  <Camera className="mr-1.5" size={15} /> Snap Photo
                 </Button>
               )}
             </div>
