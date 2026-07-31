@@ -95,7 +95,8 @@ export default function OTPPage() {
       localStorage.removeItem('backendOtp');
       localStorage.removeItem('onboardEmail');
       localStorage.removeItem('onboardName');
-      router.push('/user/profile/age-verify');
+      router.push('/user/dashboard');
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid code. Please try again.');
       clearOtp();

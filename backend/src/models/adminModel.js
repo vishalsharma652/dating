@@ -93,43 +93,36 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
   const pageNumber = Math.max(Number(page) || 1, 1);
   const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const offset = (pageNumber - 1) * limitNumber;
-  const filters = ['role = "user"'];
+  const filters = ['u.role = "user"'];
   const params = {};
   if (status) {
-    filters.push('kyc_status = :status');
+    filters.push('u.kyc_status = :status');
     params.status = status;
   }
-  try {
-    const rows = await query(
-      `SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at, p.photos
-       FROM users u
-       LEFT JOIN profiles p ON p.user_id = u.id
-       WHERE ${filters.map(f => f.includes('=') ? `u.${f}` : f).join(' AND ')}
-       ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
-      params
-    );
-    return rows.map((u) => {
-      let photosArr = [];
-      try { photosArr = typeof u.photos === 'string' ? JSON.parse(u.photos) : (u.photos || []); } catch {}
-      return { ...u, photos: photosArr, selfieUrl: photosArr[0] || null };
-    });
-  } catch (err) {
-    const rows = await query(
-      `SELECT u.id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at, p.photos
-       FROM users u
-       LEFT JOIN profiles p ON p.user_id = u.id
-       WHERE ${filters.map(f => f.includes('=') ? `u.${f}` : f).join(' AND ')}
-       ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
-      params
-    );
-    return rows.map((u) => {
-      let photosArr = [];
-      try { photosArr = typeof u.photos === 'string' ? JSON.parse(u.photos) : (u.photos || []); } catch {}
-      return { ...u, photos: photosArr, selfieUrl: photosArr[0] || null };
-    });
-  }
 
+  const sql = `
+    SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at,
+           (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1) AS selfieUrl
+    FROM users u
+    WHERE ${filters.join(' AND ')}
+    ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}
+  `;
+
+  try {
+    const rows = await query(sql, params);
+    return rows.map((u) => ({ ...u, selfieUrl: u.selfieUrl || null }));
+  } catch (err) {
+    const fallbackSql = `
+      SELECT u.id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at
+      FROM users u
+      WHERE ${filters.join(' AND ')}
+      ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}
+    `;
+    const rows = await query(fallbackSql, params);
+    return rows.map((u) => ({ ...u, selfieUrl: null }));
+  }
 }
+
 
 async function updateKyc(id, { status }) {
   if (status === 'approved') {
