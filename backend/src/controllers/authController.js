@@ -124,8 +124,9 @@ async function sendOtpEmail(toEmail, otp, name) {
       `,
       text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 10 minutes.`,
     });
-    console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${toEmail}. MessageId: ${info?.messageId}`);
+    console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${toEmail}. MessageId: ${info?.messageId} | Generated OTP: [ ${otp} ]`);
   } catch (err) {
+
     console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
   }
 }
