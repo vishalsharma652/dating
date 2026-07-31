@@ -4,8 +4,14 @@ require('dotenv').config({ path: __dirname + '/.env' });
 async function testEmail() {
   const cleanUser = String(process.env.SMTP_USER || '').replace(/["'\s]/g, '');
   const cleanPass = String(process.env.SMTP_PASS || '').replace(/["'\s]/g, '');
+  const targetEmail = process.argv[2] || cleanUser;
 
-  console.log('Testing SMTP with User:', cleanUser);
+  if (!cleanUser || !cleanPass) {
+    console.error('Error: SMTP_USER or SMTP_PASS missing in .env');
+    process.exit(1);
+  }
+
+  console.log('Testing SMTP Sender:', cleanUser, '| Target Recipient:', targetEmail);
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -17,8 +23,8 @@ async function testEmail() {
 
   try {
     const info = await transporter.sendMail({
-      from: `"Saathika Dating" <${cleanUser}>`,
-      to: 'vishalsharma823951@gmail.com',
+      from: cleanUser,
+      to: targetEmail,
       subject: 'Test Saathika Verification Code 123456',
       text: 'Your verification code is 123456',
       html: '<h2>Your verification code is <b>123456</b></h2>',
