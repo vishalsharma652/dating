@@ -1,4 +1,18 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return `${window.location.origin}/api`;
+    }
+  }
+  return 'http://localhost:5000/api';
+}
+
+export const API_BASE_URL = getApiBaseUrl();
+
 const TOKEN_KEY = 'userToken';
 const USER_KEY = 'user';
 
@@ -46,6 +60,7 @@ export class RateLimitError extends Error {
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}) {
+  const baseUrl = getApiBaseUrl();
   const token = getToken();
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers);
@@ -58,7 +73,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
+
     ...options,
     headers,
     cache: 'no-store',
