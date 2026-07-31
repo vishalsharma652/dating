@@ -16,20 +16,36 @@ const loginRules = [
 async function ensureEnvAdmin() {
   let admin = await userModel.findByEmailOrPhone(env.adminEmail);
   if (!admin) {
-    const phone = await availableAdminPhone();
-    admin = await userModel.create({
-      name: 'Admin',
-      email: env.adminEmail,
-      phone,
-      password: env.adminPassword,
-      role: 'admin'
-    });
-  } else if (admin.role !== 'admin' || admin.status !== 'active') {
-    await userModel.update(admin.id, { role: 'admin', status: 'active' });
+    const existingAdminRows = await userModel.list({ role: 'admin', limit: 1 });
+    if (existingAdminRows && existingAdminRows.length > 0) {
+      const existingId = existingAdminRows[0].id;
+      await userModel.update(existingId, {
+        email: env.adminEmail,
+        role: 'admin',
+        status: 'active'
+      });
+      await userModel.updatePassword(existingId, env.adminPassword);
+      admin = await userModel.findById(existingId);
+    } else {
+      const phone = await availableAdminPhone();
+      admin = await userModel.create({
+        name: 'Admin',
+        email: env.adminEmail,
+        phone,
+        password: env.adminPassword,
+        role: 'admin'
+      });
+    }
+  } else {
+    if (admin.role !== 'admin' || admin.status !== 'active') {
+      await userModel.update(admin.id, { role: 'admin', status: 'active' });
+    }
+    await userModel.updatePassword(admin.id, env.adminPassword);
     admin = await userModel.findById(admin.id);
   }
   return admin;
 }
+
 
 async function availableAdminPhone() {
   const preferred = String(env.adminPhone || '9999999999');
