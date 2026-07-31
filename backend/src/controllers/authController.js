@@ -63,12 +63,22 @@ async function deleteSession(email) {
 // ─────────────────────────────────────────────────────────────────────────────
 function createTransporter() {
   if (process.env.SMTP_HOST) {
+    const hostStr = String(process.env.SMTP_HOST || '').toLowerCase();
+    if (hostStr.includes('gmail')) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+    }
     const portNum = Number(process.env.SMTP_PORT || 587);
     const isPort25 = portNum === 25;
     const config = {
       host: process.env.SMTP_HOST,
       port: portNum,
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true' || portNum === 465,
       tls: { rejectUnauthorized: false },
       ignoreTLS: isPort25,
     };
@@ -77,9 +87,9 @@ function createTransporter() {
     }
     return nodemailer.createTransport(config);
   }
-  // Fallback: no-op transport (OTP still returned in dev mode)
   return { sendMail: async () => {} };
 }
+
 
 async function sendOtpEmail(toEmail, otp, name) {
   try {
