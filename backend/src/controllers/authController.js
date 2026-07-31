@@ -83,9 +83,13 @@ function createTransporter() {
 
 async function sendOtpEmail(toEmail, otp, name) {
   try {
+    if (!process.env.SMTP_HOST) {
+      console.warn(`[OTP EMAIL NOTICE] SMTP_HOST not set in .env. Email not sent via network. Generated OTP for ${toEmail}: ${otp}`);
+      return;
+    }
     const transporter = createTransporter();
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Saathika" <noreply@saathika.in>`,
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"Saathika" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject: 'Your Saathika Verification Code',
       html: `
@@ -106,11 +110,12 @@ async function sendOtpEmail(toEmail, otp, name) {
       `,
       text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 10 minutes.`,
     });
+    console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${toEmail}. MessageId: ${info?.messageId}`);
   } catch (err) {
-    console.error('[OTP Email] Failed to send email:', err.message);
-    // Don't throw — OTP is also returned in dev mode
+    console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Password-reset tokens (DB-backed)

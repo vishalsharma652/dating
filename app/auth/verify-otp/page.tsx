@@ -32,13 +32,8 @@ export default function OTPPage() {
     const storedName  = typeof window !== 'undefined' ? localStorage.getItem('onboardName')  : null;
     if (storedEmail) setEmail(storedEmail);
     if (storedName)  setName(storedName);
-
-    // Dev mode: auto-fill OTP if backend returned it
-    const devOtp = typeof window !== 'undefined' ? localStorage.getItem('backendOtp') : null;
-    if (devOtp && devOtp.length === OTP_LENGTH) {
-      setOtp(devOtp.split(''));
-    }
   }, []);
+
 
   // Countdown timer
   useEffect(() => {
