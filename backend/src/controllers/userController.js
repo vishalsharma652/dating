@@ -94,16 +94,16 @@ async function submitKyc(req, res) {
     photoUrl = `/uploads/${req.file.filename}`;
   }
 
+  // Save live selfie purely for KYC verification (DO NOT update profile avatar)
+  const updateData = { kyc_status: 'pending' };
   if (photoUrl) {
-    const profile = await profileModel.getForUser(req.user.id);
-    const photos = profile?.photos || [];
-    const newPhotos = [photoUrl, ...photos.filter(p => p !== photoUrl).slice(0, 5)];
-    await profileModel.upsert(req.user.id, { photos: newPhotos });
+    updateData.kyc_document_url = photoUrl;
   }
 
-  const user = await userModel.update(req.user.id, { kyc_status: 'pending' });
+  const user = await userModel.update(req.user.id, updateData);
   return created(res, { user, files: req.files || [], photoUrl }, 'KYC submitted for review');
 }
+
 
 
 async function discover(req, res) {

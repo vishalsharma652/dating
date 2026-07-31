@@ -102,11 +102,12 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
 
   const sql = `
     SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at,
-           (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1) AS selfieUrl
+           COALESCE(u.kyc_document_url, (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1)) AS selfieUrl
     FROM users u
     WHERE ${filters.join(' AND ')}
     ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}
   `;
+
 
   try {
     const rows = await query(sql, params);

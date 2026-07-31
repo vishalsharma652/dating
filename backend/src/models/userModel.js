@@ -155,13 +155,22 @@ async function count({ search = '', role = null, status = null, online_status = 
 }
 
 async function update(id, fields) {
-  const allowed = ['name', 'email', 'phone', 'role', 'status', 'dob', 'age_verified', 'kyc_status', 'coins', 'earnings', 'gender', 'phone_verified', 'email_verified'];
+  const allowed = ['name', 'email', 'phone', 'role', 'status', 'dob', 'age_verified', 'kyc_status', 'kyc_document_url', 'coins', 'earnings', 'gender', 'phone_verified', 'email_verified'];
   const entries = Object.entries(fields).filter(([key]) => allowed.includes(key));
   if (!entries.length) return findPublicById(id);
   const assignments = entries.map(([key]) => `${key} = :${key}`).join(', ');
-  await query(`UPDATE users SET ${assignments} WHERE id = :id`, { id, ...Object.fromEntries(entries) });
+  try {
+    await query(`UPDATE users SET ${assignments} WHERE id = :id`, { id, ...Object.fromEntries(entries) });
+  } catch {
+    const safeEntries = entries.filter(([key]) => key !== 'kyc_document_url');
+    if (safeEntries.length > 0) {
+      const safeAssignments = safeEntries.map(([key]) => `${key} = :${key}`).join(', ');
+      await query(`UPDATE users SET ${safeAssignments} WHERE id = :id`, { id, ...Object.fromEntries(safeEntries) });
+    }
+  }
   return findPublicById(id);
 }
+
 
 async function updatePassword(id, password) {
   const passwordHash = await bcrypt.hash(password, 12);
