@@ -100,29 +100,40 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
     params.status = status;
   }
 
+  try {
+    await query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
+  } catch {}
+
   const sql = `
-    SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at,
-           COALESCE(u.kyc_document_url, (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1)) AS selfieUrl
+    SELECT u.id, u.unique_id, u.name, u.email, u.phone, u.kyc_status, u.kyc_document_url, u.status AS account_status, u.created_at, u.updated_at,
+           (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1) AS profilePhotoUrl
     FROM users u
     WHERE ${filters.join(' AND ')}
     ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}
   `;
 
-
   try {
     const rows = await query(sql, params);
-    return rows.map((u) => ({ ...u, selfieUrl: u.selfieUrl || null }));
+    return rows.map((u) => {
+      const url = u.kyc_document_url || u.profilePhotoUrl || null;
+      return { ...u, selfieUrl: url, kyc_document_url: url };
+    });
   } catch (err) {
     const fallbackSql = `
-      SELECT u.id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at
+      SELECT u.id, u.name, u.email, u.phone, u.kyc_status, u.status AS account_status, u.created_at, u.updated_at,
+             (SELECT ph.url FROM profile_photos ph JOIN profiles pr ON pr.id = ph.profile_id WHERE pr.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1) AS profilePhotoUrl
       FROM users u
       WHERE ${filters.join(' AND ')}
       ORDER BY u.updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}
     `;
     const rows = await query(fallbackSql, params);
-    return rows.map((u) => ({ ...u, selfieUrl: null }));
+    return rows.map((u) => {
+      const url = u.profilePhotoUrl || null;
+      return { ...u, selfieUrl: url, kyc_document_url: url };
+    });
   }
 }
+
 
 
 async function updateKyc(id, { status }) {

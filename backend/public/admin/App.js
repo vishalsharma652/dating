@@ -433,7 +433,11 @@ function App() {
   };
 
   const openKycVerification = (user) => {
-    const livePhoto = user.selfieUrl || (user.photos && user.photos[0]) || '/avatar-priya.jpg';
+    let livePhoto = user.kyc_document_url || user.selfieUrl || (user.photos && user.photos[0]) || '/avatar-priya.jpg';
+    if (livePhoto && !livePhoto.startsWith('http') && !livePhoto.startsWith('/')) {
+      livePhoto = '/' + livePhoto;
+    }
+
     const html = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

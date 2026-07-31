@@ -8,6 +8,10 @@ const { setupCallSignaling } = require('./services/callSignaling');
 
 async function start() {
   await pool.query('SELECT 1');
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
+  } catch {}
+
 
   // Create HTTP server so Socket.IO can share the same port as Express
   const httpServer = http.createServer(app);
