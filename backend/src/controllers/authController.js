@@ -107,10 +107,10 @@ async function sendOtpEmail(toEmail, otp, name) {
     const transporter = createTransporter();
 
     const info = await transporter.sendMail({
-      from: `"Saathika Dating" <${cleanUser}>`,
+      from: cleanUser,
       to: cleanTo,
-      replyTo: cleanUser,
       subject: `Your Saathika Verification Code: ${otp}`,
+
       headers: {
         'X-Priority': '1',
         'X-MSMail-Priority': 'High',
