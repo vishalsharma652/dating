@@ -275,10 +275,14 @@ async function register(req, res) {
     otp,
   });
 
-  await sendOtpEmail(email, otp, req.body.name);
+  sendOtpEmail(email, otp, req.body.name).catch((err) =>
+    console.error('[OTP EMAIL BG ERROR]', err.message || err)
+  );
 
   return ok(res, { email }, 'Verification code sent to your email');
 }
+
+
 
 
 
@@ -324,10 +328,15 @@ async function resendOtp(req, res) {
 
   const otp = createOtp();
   await saveSession(email, { ...session, otp });
-  await sendOtpEmail(email, otp, session.name);
+
+  sendOtpEmail(email, otp, session.name).catch((err) =>
+    console.error('[OTP EMAIL BG ERROR]', err.message || err)
+  );
 
   return ok(res, { email }, 'Verification code resent to your email');
 }
+
+
 
 
 /**
