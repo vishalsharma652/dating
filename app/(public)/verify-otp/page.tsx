@@ -155,8 +155,9 @@ export default function OTPPage() {
             <p className="text-zinc-600 dark:text-zinc-400 text-sm">
               {name && <span>Hi <strong className="text-zinc-900 dark:text-zinc-100">{name}</strong>! </span>}
               We&apos;ve sent a 6-digit code to{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{maskedEmail || 'your email'}</span>
+              <span className="font-semibold text-pink-600 underline">{email || 'your email'}</span>
             </p>
+
           </div>
 
           <form className="space-y-6" onSubmit={handleVerify}>

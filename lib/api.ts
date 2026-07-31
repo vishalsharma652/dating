@@ -61,7 +61,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
+    cache: 'no-store',
   });
+
   const payload = (await response.json().catch(() => ({
     success: false,
     message: 'Unable to read server response',
