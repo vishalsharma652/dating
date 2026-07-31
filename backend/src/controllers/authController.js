@@ -139,13 +139,8 @@ async function sendOtpEmail(toEmail, otp, name) {
   }
 }
 
-
-    console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
-  }
-}
-
-
 // ─────────────────────────────────────────────────────────────────────────────
+
 // Password-reset tokens (DB-backed)
 // ─────────────────────────────────────────────────────────────────────────────
 let _resetTableReady = false;
