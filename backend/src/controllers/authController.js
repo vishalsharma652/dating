@@ -313,8 +313,14 @@ async function resendOtp(req, res) {
   const email = (req.body.email || '').trim().toLowerCase();
   if (!email) throw new AppError('Email is required', 422);
 
-  const session = await getSession(email);
-  if (!session) throw new AppError('Registration session not found. Please register again.', 410);
+  let session = await getSession(email);
+  if (!session) {
+    const existingUser = await userModel.findByEmailOrPhone(email);
+    if (existingUser && existingUser.email_verified) {
+      throw new AppError('An account with this email address is already verified and active. Please log in.', 409);
+    }
+    session = { email, name: req.body.name || 'User', phone: '', gender: 'male' };
+  }
 
   const otp = createOtp();
   await saveSession(email, { ...session, otp });
@@ -325,6 +331,7 @@ async function resendOtp(req, res) {
 
   return ok(res, { email }, 'Verification code resent to your email');
 }
+
 
 
 
