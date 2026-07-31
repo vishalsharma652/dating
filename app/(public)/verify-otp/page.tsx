@@ -115,14 +115,8 @@ export default function OTPPage() {
     setResendSuccess('');
     setResending(true);
     try {
-      const data = await authApi.resendOtp({ email });
-      if (data.otp) {
-        localStorage.setItem('backendOtp', data.otp);
-        setOtp(data.otp.split(''));
-        setResendSuccess(`Code resent! (Dev OTP: ${data.otp})`);
-      } else {
-        setResendSuccess('Verification code has been resent to your email.');
-      }
+      await authApi.resendOtp({ email });
+      setResendSuccess('Verification code has been resent to your email.');
       setTimeLeft(RESEND_COOLDOWN);
       clearOtp();
     } catch (err) {
@@ -131,6 +125,7 @@ export default function OTPPage() {
       setResending(false);
     }
   };
+
 
   const canResend = timeLeft === 0 && !resending;
 

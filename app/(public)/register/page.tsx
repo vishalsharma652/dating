@@ -82,8 +82,8 @@ export default function RegisterPage() {
       });
       localStorage.setItem('onboardEmail', data.email);
       localStorage.setItem('onboardName', formData.name);
-      if (data.otp) localStorage.setItem('backendOtp', data.otp);
       router.push('/verify-otp');
+
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Unable to create account');
     } finally {

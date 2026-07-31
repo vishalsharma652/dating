@@ -247,10 +247,9 @@ async function register(req, res) {
 
   await sendOtpEmail(email, otp, req.body.name);
 
-  // In development, expose OTP for easy testing without SMTP
-  const isDev = process.env.NODE_ENV !== 'production';
-  return ok(res, { email, ...(isDev ? { otp } : {}) }, 'Verification code sent to your email');
+  return ok(res, { email }, 'Verification code sent to your email');
 }
+
 
 
 /**
@@ -297,9 +296,9 @@ async function resendOtp(req, res) {
   await saveSession(email, { ...session, otp });
   await sendOtpEmail(email, otp, session.name);
 
-  const isDev = process.env.NODE_ENV !== 'production';
-  return ok(res, { email, ...(isDev ? { otp } : {}) }, 'Verification code resent to your email');
+  return ok(res, { email }, 'Verification code resent to your email');
 }
+
 
 /**
  * Login: email/phone + password. No OTP needed after registration.
