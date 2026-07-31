@@ -9,7 +9,8 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail, RefreshCcw, ShieldCheck, TimerR
 import { authApi, setAuthSession } from '@/lib/api';
 
 const OTP_LENGTH = 6;
-const RESEND_COOLDOWN = 60; // 60 seconds timer
+const RESEND_COOLDOWN = 180; // 3 minutes (180 seconds) timer
+
 
 
 export default function OTPPage() {

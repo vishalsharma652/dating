@@ -30,7 +30,7 @@ async function ensureSessionTable() {
   _tableReady = true;
 }
 
-async function saveSession(email, payload, ttlMs = 10 * 60 * 1000) {
+async function saveSession(email, payload, ttlMs = 3 * 60 * 1000) {
   await ensureSessionTable();
   const expiresAt = Date.now() + ttlMs;
   await query(
@@ -40,6 +40,7 @@ async function saveSession(email, payload, ttlMs = 10 * 60 * 1000) {
     { email, otp: payload.otp, data: JSON.stringify(payload), expiresAt }
   );
 }
+
 
 async function getSession(email) {
   await ensureSessionTable();
@@ -123,7 +124,7 @@ async function sendOtpEmail(toEmail, otp, name) {
           </div>
           <div style="padding:32px">
             <p style="color:#374151;font-size:16px">Hi <strong>${name || 'there'}</strong>,</p>
-            <p style="color:#6b7280;font-size:14px">Use the code below to verify your email address. It expires in <strong>10 minutes</strong>.</p>
+            <p style="color:#6b7280;font-size:14px">Use the code below to verify your email address. It expires in <strong>3 minutes</strong>.</p>
             <div style="text-align:center;margin:28px 0">
               <span style="display:inline-block;background:#f9fafb;border:2px dashed #e5e7eb;border-radius:12px;padding:16px 40px;font-size:36px;font-weight:bold;letter-spacing:10px;color:#111827">${otp}</span>
             </div>
@@ -131,8 +132,9 @@ async function sendOtpEmail(toEmail, otp, name) {
           </div>
         </div>
       `,
-      text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 10 minutes.`,
+      text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 3 minutes.`,
     });
+
     console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${cleanTo}. MessageId: ${info?.messageId} | Generated OTP: [ ${otp} ]`);
   } catch (err) {
     console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
