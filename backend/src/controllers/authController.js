@@ -101,11 +101,20 @@ async function sendOtpEmail(toEmail, otp, name) {
       console.warn(`[OTP EMAIL NOTICE] SMTP_HOST not set in .env. Email not sent via network. Generated OTP for ${toEmail}: ${otp}`);
       return;
     }
+    const cleanUser = String(process.env.SMTP_USER || '').replace(/["'\s]/g, '');
+    const cleanTo = String(toEmail || '').replace(/["'\s]/g, '');
     const transporter = createTransporter();
+
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Saathika" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: 'Your Saathika Verification Code',
+      from: `"Saathika Dating" <${cleanUser}>`,
+      to: cleanTo,
+      replyTo: cleanUser,
+      subject: `Your Saathika Verification Code: ${otp}`,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'High',
+      },
       html: `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
           <div style="background:linear-gradient(135deg,#ec4899,#6366f1);padding:32px;text-align:center">
@@ -124,8 +133,12 @@ async function sendOtpEmail(toEmail, otp, name) {
       `,
       text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 10 minutes.`,
     });
-    console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${toEmail}. MessageId: ${info?.messageId} | Generated OTP: [ ${otp} ]`);
+    console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${cleanTo}. MessageId: ${info?.messageId} | Generated OTP: [ ${otp} ]`);
   } catch (err) {
+    console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
+  }
+}
+
 
     console.error(`[OTP EMAIL ERROR] Failed to send email to ${toEmail}:`, err.message || err);
   }
