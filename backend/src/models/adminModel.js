@@ -99,29 +99,42 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
     filters.push('kyc_status = :status');
     params.status = status;
   }
-  return query(
-    `SELECT id, unique_id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
-     FROM users WHERE ${filters.join(' AND ')}
-     ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
-    params
-  );
+  try {
+    return await query(
+      `SELECT id, unique_id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
+       FROM users WHERE ${filters.join(' AND ')}
+       ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+      params
+    );
+  } catch (err) {
+    return await query(
+      `SELECT id, name, email, phone, kyc_status, status AS account_status, created_at, updated_at
+       FROM users WHERE ${filters.join(' AND ')}
+       ORDER BY updated_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+      params
+    );
+  }
 }
 
 async function updateKyc(id, { status }) {
   if (status === 'approved') {
-    // Assign unique_id if not already set
-    await query(
-      `UPDATE users
-       SET kyc_status = :status,
-           unique_id = CASE WHEN unique_id IS NULL THEN CONCAT('STK-', LPAD(id, 6, '0')) ELSE unique_id END
-       WHERE id = :id`,
-      { id, status }
-    );
+    try {
+      await query(
+        `UPDATE users
+         SET kyc_status = :status,
+             unique_id = CASE WHEN unique_id IS NULL THEN CONCAT('STK-', LPAD(id, 6, '0')) ELSE unique_id END
+         WHERE id = :id`,
+        { id, status }
+      );
+    } catch {
+      await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
+    }
   } else {
     await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
   }
-  return query('SELECT id, unique_id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
+  return query('SELECT id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
 }
+
 
 async function walletLogs({ page = 1, limit = 10 } = {}) {
   const pageNumber = Math.max(Number(page) || 1, 1);

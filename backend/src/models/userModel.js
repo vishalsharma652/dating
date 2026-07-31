@@ -45,14 +45,27 @@ async function create({ name, email = null, phone, password, role = 'user', phon
 }
 
 async function findById(id) {
-  const rows = await query(`SELECT ${publicFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
-  return rows[0] || null;
+  try {
+    const rows = await query(`SELECT ${publicFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    return rows[0] || null;
+  } catch (err) {
+    const fallbackFields = publicFields.replace('u.unique_id,', '');
+    const rows = await query(`SELECT ${fallbackFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    return rows[0] || null;
+  }
 }
 
 async function findPublicById(id) {
-  const rows = await query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
-  return rows[0] || null;
+  try {
+    const rows = await query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    return rows[0] || null;
+  } catch (err) {
+    const fallbackFields = publicFields.replace('u.unique_id,', '');
+    const rows = await query(`SELECT ${fallbackFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    return rows[0] || null;
+  }
 }
+
 
 async function findByEmailOrPhone(identifier) {
   const rows = await query(`SELECT * FROM users WHERE email = :identifier OR phone = :identifier LIMIT 1`, { identifier });

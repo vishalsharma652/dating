@@ -16,9 +16,11 @@ async function authenticate(req, res, next) {
     req.user = { ...user, online_status: 1, last_seen_at: new Date() };
     next();
   } catch (error) {
+    console.error('[AUTH ERROR]', error.message || error);
     next(error.statusCode ? error : new AppError('Invalid authentication token', 401));
   }
 }
+
 
 function authorize(...roles) {
   return (req, res, next) => {
