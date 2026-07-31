@@ -190,12 +190,12 @@ export default function ProfilePage() {
                 <div className="absolute bottom-6 left-6 right-6 text-left space-y-1.5 z-10">
                   <div className="flex items-baseline gap-2.5">
                     <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-[#EC4899] tracking-tight">{user.name || 'User'}</h2>
-                    <span className="text-xl font-bold text-zinc-300">{profile.age || '24'}</span>
+                    <span className="text-xl font-bold text-zinc-300">{profile.age}</span>
                   </div>
                   
                   <div className="flex items-center gap-1 text-zinc-350 text-xs font-semibold">
                     <MapPin size={11} className="text-[#EC4899]" />
-                    <span>{profile.city || 'Delhi'}, India</span>
+                    <span>{profile.city}, India</span>
                   </div>
                   
                   <div className="flex items-center gap-2 pt-1.5">
