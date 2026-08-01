@@ -54,7 +54,9 @@ export default function WalletPage() {
   );
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
-  const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
+  const userGender = String(currentUser?.gender || currentUser?.role || '').toLowerCase();
+  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const isBoy = !isFemale;
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] min-h-screen text-white">
@@ -131,12 +133,14 @@ export default function WalletPage() {
             <p className="text-xs font-bold text-emerald-300/70 uppercase tracking-wider mb-2">Earnings</p>
             <p className="text-4xl font-black text-white mb-0.5">₹{Number(wallet.earnings ?? 0).toFixed(0)}</p>
             <p className="text-xs text-zinc-500">Available to withdraw</p>
-            <Link
-              href="/user/withdraw"
-              className="inline-flex items-center gap-1.5 mt-3 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition"
-            >
-              <ArrowUpRight size={12} /> Withdraw
-            </Link>
+            {isFemale && (
+              <Link
+                href="/user/withdraw"
+                className="inline-flex items-center gap-1.5 mt-3 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition"
+              >
+                <ArrowUpRight size={12} /> Withdraw
+              </Link>
+            )}
           </div>
 
           {/* Total Stats */}
@@ -184,18 +188,22 @@ export default function WalletPage() {
                   Transaction History
                 </Link>
               </Button>
-              <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-white/10 text-zinc-300 hover:bg-white/5" asChild>
-                <Link href="/user/earnings">
-                  <TrendingUp size={16} />
-                  View Earnings
-                </Link>
-              </Button>
-              <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10" asChild>
-                <Link href="/user/withdraw">
-                  <BadgeIndianRupee size={16} />
-                  Withdraw
-                </Link>
-              </Button>
+              {isFemale && (
+                <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-white/10 text-zinc-300 hover:bg-white/5" asChild>
+                  <Link href="/user/earnings">
+                    <TrendingUp size={16} />
+                    View Earnings
+                  </Link>
+                </Button>
+              )}
+              {isFemale && (
+                <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10" asChild>
+                  <Link href="/user/withdraw">
+                    <BadgeIndianRupee size={16} />
+                    Withdraw
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </Card>

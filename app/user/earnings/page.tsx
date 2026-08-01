@@ -1,25 +1,54 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
-import { userApi } from '@/lib/api';
+import { Loader } from '@/components/ui/loader';
+import { userApi, getStoredUser } from '@/lib/api';
 import { DollarSign, ArrowUpRight } from 'lucide-react';
 
 export default function EarningsPage() {
   const [earnings, setEarnings] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const router = useRouter();
+
   const earningsData = [
     { month: 'Current', amount: earnings },
   ];
 
   useEffect(() => {
+    const checkBoyUser = (u: any) => {
+      const userGender = String(u?.gender || u?.role || '').toLowerCase();
+      const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+      return !isFemale;
+    };
+
+    const storedUser = getStoredUser();
+    if (storedUser && checkBoyUser(storedUser)) {
+      setIsRedirecting(true);
+      router.replace('/user/wallet');
+      return;
+    }
+
+    userApi.profile()
+      .then((res) => {
+        if (checkBoyUser(res?.user)) {
+          setIsRedirecting(true);
+          router.replace('/user/wallet');
+        }
+      })
+      .catch(() => undefined);
+
     userApi.wallet()
       .then((data) => setEarnings(Number(data.earnings) || 0))
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load earnings'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
+
+  if (isRedirecting) return <Loader text="Redirecting..." />;
 
   if (loading) return <div className="p-8 text-center text-zinc-500">Loading earnings...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;

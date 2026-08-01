@@ -70,8 +70,9 @@ export default function DashboardPage() {
   const matches = data?.matches || [];
   const activeUsers = data?.activeUsers || data?.activeGirls || [];
 
-  const isFemale = user.gender === 'female';
-  const targetLabel = isFemale ? 'Active Boys' : (user.gender === 'male' ? 'Active Girls' : 'Active Users');
+  const userGender = String(user.gender || user.role || '').toLowerCase();
+  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const targetLabel = isFemale ? 'Active Boys' : (userGender === 'male' ? 'Active Girls' : 'Active Users');
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -369,16 +370,18 @@ export default function DashboardPage() {
               </h3>
 
               <div className="space-y-3">
-                {/* Buy Coins button */}
-                <Button
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 border-0 shadow-md transition-transform hover:scale-[1.01]"
-                  asChild
-                >
-                  <Link href="/user/wallet/coins">
-                    <Coins size={15} />
-                    <span>Buy Coins</span>
-                  </Link>
-                </Button>
+                {/* Buy Coins button - Hidden for girl/female role */}
+                {!isFemale && (
+                  <Button
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 border-0 shadow-md transition-transform hover:scale-[1.01]"
+                    asChild
+                  >
+                    <Link href="/user/wallet/coins">
+                      <Coins size={15} />
+                      <span>Buy Coins</span>
+                    </Link>
+                  </Button>
+                )}
 
                 {/* Search Unique ID button */}
                 <Button
@@ -392,17 +395,19 @@ export default function DashboardPage() {
                   </Link>
                 </Button>
 
-                {/* Withdraw Earnings button */}
-                <Button
-                  variant="outline"
-                  className="w-full h-11 rounded-xl border-purple-500/30 hover:border-purple-500 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
-                  asChild
-                >
-                  <Link href="/user/withdraw">
-                    <BadgeIndianRupee size={15} />
-                    <span>Withdraw Earnings</span>
-                  </Link>
-                </Button>
+                {/* Withdraw Earnings button - Hidden for boy/male role */}
+                {isFemale && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 rounded-xl border-purple-500/30 hover:border-purple-500 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
+                    asChild
+                  >
+                    <Link href="/user/withdraw">
+                      <BadgeIndianRupee size={15} />
+                      <span>Withdraw Earnings</span>
+                    </Link>
+                  </Button>
+                )}
 
                 {/* Edit Profile button */}
                 <Button

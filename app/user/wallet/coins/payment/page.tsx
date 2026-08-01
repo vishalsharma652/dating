@@ -22,7 +22,7 @@ import {
   Sparkles,
   Globe
 } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, getStoredUser } from '@/lib/api';
 
 // Custom components for UPI Provider logos
 const GooglePayLogo = () => (
@@ -83,6 +83,17 @@ function PaymentContent() {
   const [reference, setReference] = useState('');
 
   useEffect(() => {
+    const checkFemaleUser = (u: any) => {
+      const userGender = String(u?.gender || u?.role || '').toLowerCase();
+      return ['female', 'woman', 'girl', 'women'].includes(userGender);
+    };
+
+    const storedUser = getStoredUser();
+    if (checkFemaleUser(storedUser)) {
+      router.replace('/user/wallet');
+      return;
+    }
+
     if (!packageId) {
       router.push('/user/wallet/coins');
       return;

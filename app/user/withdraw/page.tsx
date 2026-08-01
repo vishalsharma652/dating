@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
 import { BadgeIndianRupee, Building2, CreditCard, History, Phone, Wallet } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, getStoredUser } from '@/lib/api';
 
 const inputCls =
   'w-full px-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-500/20 transition';
@@ -28,12 +30,38 @@ export default function WithdrawPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
+    const checkBoyUser = (u: any) => {
+      const userGender = String(u?.gender || u?.role || '').toLowerCase();
+      const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+      return !isFemale;
+    };
+
+    const storedUser = getStoredUser();
+    if (storedUser && checkBoyUser(storedUser)) {
+      setIsRedirecting(true);
+      router.replace('/user/wallet');
+      return;
+    }
+
+    userApi.profile()
+      .then((res) => {
+        if (checkBoyUser(res?.user)) {
+          setIsRedirecting(true);
+          router.replace('/user/wallet');
+        }
+      })
+      .catch(() => undefined);
+
     userApi.wallet().catch(() => undefined).then((data: any) => {
       if (data) setWallet(data);
     });
-  }, []);
+  }, [router]);
+
+  if (isRedirecting) return <Loader text="Redirecting..." />;
 
   const set = (key: string, value: string) =>
     setFormData((prev) => ({ ...prev, [key]: value }));

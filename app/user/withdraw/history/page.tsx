@@ -1,23 +1,51 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Loader } from '@/components/ui/loader';
 import { Check, Clock, AlertCircle } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, getStoredUser } from '@/lib/api';
 
 export default function WithdrawalHistoryPage() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
+    const checkBoyUser = (u: any) => {
+      const userGender = String(u?.gender || u?.role || '').toLowerCase();
+      const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+      return !isFemale;
+    };
+
+    const storedUser = getStoredUser();
+    if (storedUser && checkBoyUser(storedUser)) {
+      setIsRedirecting(true);
+      router.replace('/user/wallet');
+      return;
+    }
+
+    userApi.profile()
+      .then((res) => {
+        if (checkBoyUser(res?.user)) {
+          setIsRedirecting(true);
+          router.replace('/user/wallet');
+        }
+      })
+      .catch(() => undefined);
+
     userApi.withdrawals()
       .then((data) => setWithdrawals(data.withdrawals || []))
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load withdrawals'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
+
+  if (isRedirecting) return <Loader text="Redirecting..." />;
 
   if (loading) return <div className="p-8 text-center text-zinc-500">Loading withdrawals...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;

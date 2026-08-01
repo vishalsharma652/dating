@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader } from '@/components/ui/loader';
 import { Check } from 'lucide-react';
-import { userApi } from '@/lib/api';
+import { userApi, getStoredUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 export default function CoinPurchasePage() {
@@ -16,19 +16,42 @@ export default function CoinPurchasePage() {
   const [purchasingId, setPurchasingId] = useState<number | string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    const checkFemaleUser = (u: any) => {
+      const userGender = String(u?.gender || u?.role || '').toLowerCase();
+      return ['female', 'woman', 'girl', 'women'].includes(userGender);
+    };
+
+    const storedUser = getStoredUser();
+    if (checkFemaleUser(storedUser)) {
+      setIsRedirecting(true);
+      router.replace('/user/wallet');
+      return;
+    }
+
+    userApi.profile()
+      .then((res) => {
+        if (checkFemaleUser(res?.user)) {
+          setIsRedirecting(true);
+          router.replace('/user/wallet');
+        }
+      })
+      .catch(() => undefined);
+
     userApi.coinPackages()
       .then((data) => setCoinPackages(data.packages || []))
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load coin packages'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const purchase = (packageId: number | string) => {
     router.push(`/user/wallet/coins/payment?packageId=${packageId}`);
   };
 
+  if (isRedirecting) return <Loader text="Redirecting..." />;
   if (loading) return <Loader text="Loading coin packages..." />;
 
   return (
