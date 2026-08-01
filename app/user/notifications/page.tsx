@@ -79,7 +79,14 @@ export default function NotificationsPage() {
     }
   };
 
-  if (loading) return <Loading />;
+  if (loading) return (
+    <div className="p-8 text-center min-h-screen flex items-center justify-center">
+      <div className="space-y-3">
+        <Loading />
+      </div>
+    </div>
+  );
+
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (

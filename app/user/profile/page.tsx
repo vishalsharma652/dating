@@ -52,9 +52,13 @@ export default function ProfilePage() {
       .catch(() => undefined);
   }, []);
 
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return (
+    <div className="p-8 text-center min-h-screen flex items-center justify-center">
+      <div className="space-y-3">
+        <Loading />
+      </div>
+    </div>
+  );
 
   if (error) {
     return <div className="p-8 text-center text-red-500 bg-[#070B18] min-h-screen flex items-center justify-center">{error}</div>;
@@ -423,8 +427,8 @@ export default function ProfilePage() {
                     <span className="text-xs font-bold text-white">Profile Security</span>
                   </div>
                   <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.status === 'active'
-                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
-                      : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                    ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
+                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                     }`}>
                     {user.status || 'pending'}
                   </Badge>
@@ -440,8 +444,8 @@ export default function ProfilePage() {
                     <span className="text-xs font-bold text-white">Identity KYC</span>
                   </div>
                   <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.kyc_status === 'approved'
-                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
-                      : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                    ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
+                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                     }`}>
                     {user.kyc_status || 'pending'}
                   </Badge>

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle } from 'lucide-react';
 import { userApi } from '@/lib/api';
+import Loading from '@/app/loading';
 
 export default function MatchesPage() {
   const router = useRouter();
@@ -29,7 +30,14 @@ export default function MatchesPage() {
     }
   }, [loading, matches, router]);
 
-  if (loading) return <div className="p-8 text-center text-zinc-500">Loading matches...</div>;
+  if (loading) return (
+    <div className="p-8 text-center min-h-screen flex items-center justify-center">
+      <div className="space-y-3">
+        <Loading />
+      </div>
+    </div>
+  );
+
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   const mutual = matches.filter((m) => m.status === 'matched');
