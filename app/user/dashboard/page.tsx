@@ -17,13 +17,13 @@ import {
   Shield,
   Search,
   BadgeIndianRupee,
-  Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
+import Loading from '@/app/loading';
 
 export default function DashboardPage() {
   const [data, setData] = useState<{
@@ -55,12 +55,8 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center">
-        <Loader2 size={18} className="animate-spin" />
-      </div>
-    );
-  }
+  return <Loading />;
+}
 
   if (error) {
     return <div className="p-8 text-center text-red-500 bg-[#070B18] min-h-screen flex items-center justify-center">{error}</div>;
