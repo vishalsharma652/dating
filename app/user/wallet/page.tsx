@@ -10,6 +10,7 @@ import {
   ArrowDownRight, ArrowUpRight, Coins, BadgeIndianRupee, ShieldCheck
 } from 'lucide-react';
 import { getStoredUser, userApi } from '@/lib/api';
+import Loading from '@/app/loading';
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<any>({
@@ -47,8 +48,7 @@ export default function WalletPage() {
   if (loading) return (
     <div className="p-8 text-center min-h-screen flex items-center justify-center">
       <div className="space-y-3">
-        <Wallet className="mx-auto text-pink-500 animate-pulse" size={40} />
-        <p className="text-zinc-500">Loading wallet...</p>
+        <Loading />
       </div>
     </div>
   );
