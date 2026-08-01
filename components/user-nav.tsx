@@ -49,7 +49,34 @@ export function UserNav() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    setCurrentUser(getStoredUser());
+    let active = true;
+    const initialUser = getStoredUser();
+    if (initialUser) setCurrentUser(initialUser);
+
+    userApi.profile()
+      .then((data) => {
+        if (active && data?.user) {
+          setCurrentUser(data.user);
+          if (typeof window !== 'undefined') {
+            const currentStored = getStoredUser() || {};
+            localStorage.setItem('ember_user', JSON.stringify({ ...currentStored, ...data.user }));
+          }
+        }
+      })
+      .catch(() => undefined);
+
+    const handleProfileUpdate = (event: Event) => {
+      const updated = (event as CustomEvent)?.detail || getStoredUser();
+      if (updated && active) {
+        setCurrentUser(updated);
+      }
+    };
+
+    window.addEventListener('user:profile-updated', handleProfileUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener('user:profile-updated', handleProfileUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -153,7 +180,7 @@ export function UserNav() {
             const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(currentUser.gender || '').toLowerCase());
             const IconSymbol = isFemaleUser ? Gem : Coins;
             const symbolColor = isFemaleUser ? 'text-cyan-400' : 'text-amber-400';
-            const displayId = currentUser.unique_id;
+            const displayId = currentUser.unique_id || currentUser.uniqueId || (currentUser.id ? `STK-${String(currentUser.id).padStart(6, '0')}` : '');
             return (
               <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1">
@@ -161,7 +188,9 @@ export function UserNav() {
                     <span>{currentUser.name || 'User'}</span>
                     <IconSymbol size={14} className={`${symbolColor} flex-shrink-0`} />
                   </p>
-                  <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">🆔 {displayId}</p>
+                  {displayId && (
+                    <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">id {displayId}</p>
+                  )}
                 </div>
               </div>
             );
