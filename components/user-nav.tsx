@@ -189,7 +189,7 @@ export function UserNav() {
                     <IconSymbol size={14} className={`${symbolColor} flex-shrink-0`} />
                   </p>
                   {displayId && (
-                    <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">id {displayId}</p>
+                    <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">ID {displayId}</p>
                   )}
                 </div>
               </div>
