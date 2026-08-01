@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
+import Loading from '@/app/loading';
 
 export default function ChatListPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -55,7 +56,7 @@ export default function ChatListPage() {
     [chats, search]
   );
 
-  if (loading) return <div className="p-8 text-center text-zinc-500">Loading chat history...</div>;
+  if (loading) return  <Loading />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (

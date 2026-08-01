@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, MessageCircle, Gift } from 'lucide-react';
 import { userApi } from '@/lib/api';
+import Loading from '@/app/loading';
+
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -77,7 +79,7 @@ export default function NotificationsPage() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-zinc-500">Loading notifications...</div>;
+  if (loading) return <Loading />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (

@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck, Gem, Coins } from 'lucide-react';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
+import Loading from '@/app/loading';
 
 export default function UserSearchPage() {
   const [query, setQuery] = useState('');
@@ -75,9 +76,7 @@ export default function UserSearchPage() {
 
         {/* Results Section */}
         {loading && (
-          <div className="p-12 text-center text-zinc-400">
-            Searching for user details...
-          </div>
+          <Loading />
         )}
 
         {!loading && searched && results.length === 0 && (

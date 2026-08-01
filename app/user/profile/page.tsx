@@ -7,15 +7,15 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Edit2, 
-  Share2, 
-  Flag, 
-  Heart, 
-  Sparkles, 
-  Shield, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Edit2,
+  Share2,
+  Flag,
+  Heart,
+  Sparkles,
+  Shield,
+  CheckCircle2,
+  Clock,
   User,
   MapPin,
   Sparkle,
@@ -28,6 +28,8 @@ import {
   Copy
 } from 'lucide-react';
 import { userApi, apiAssetUrl } from '@/lib/api';
+import Loading from '@/app/loading';
+
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -51,7 +53,7 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500 bg-[#070B18] min-h-screen flex items-center justify-center">Loading profile...</div>;
+    return <Loading />;
   }
 
   if (error) {
@@ -63,10 +65,10 @@ export default function ProfilePage() {
   const isFemale = user.gender === 'female';
   const defaultProfileAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
 
-  const photos = profile.photos?.length 
-    ? profile.photos.map((p: string) => apiAssetUrl(p) || p) 
+  const photos = profile.photos?.length
+    ? profile.photos.map((p: string) => apiAssetUrl(p) || p)
     : [user.photo || defaultProfileAvatar];
-    
+
   const interests = profile.interests || [];
 
   const calculateProfileStrength = (usr: any, prof: any) => {
@@ -78,18 +80,18 @@ export default function ProfilePage() {
     if (prof.interests?.length >= 3) score += 10;
     return score;
   };
-  
+
   const profileStrength = calculateProfileStrength(user, profile);
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] text-white min-h-screen relative overflow-hidden">
-      
+
       {/* Background Glow Blobs */}
       <div className="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-[#EC4899]/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#7C3AED]/5 rounded-full blur-[140px] pointer-events-none" />
 
       <Container className="max-w-7xl relative z-10 space-y-8">
-        
+
         {/* Title Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
           <div className="space-y-1">
@@ -117,14 +119,14 @@ export default function ProfilePage() {
               </button>
             )}
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Circular Profile Strength Meter */}
             <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/5 shadow-inner">
               <div className="relative w-8 h-8 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="16" cy="16" r="14" stroke="currentColor" className="text-white/5" strokeWidth="2" fill="transparent" />
-                  <circle cx="16" cy="16" r="14" stroke="currentColor" className="text-[#EC4899]" strokeWidth="2" fill="transparent" 
+                  <circle cx="16" cy="16" r="14" stroke="currentColor" className="text-[#EC4899]" strokeWidth="2" fill="transparent"
                     strokeDasharray={88} strokeDashoffset={88 - (88 * profileStrength) / 100} />
                 </svg>
                 <span className="absolute text-[8px] font-black text-white">{profileStrength}%</span>
@@ -135,8 +137,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <Button 
-              className="rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 flex items-center gap-2 border-0 shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]" 
+            <Button
+              className="rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 flex items-center gap-2 border-0 shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               asChild
             >
               <Link href="/user/profile/edit">
@@ -157,20 +159,20 @@ export default function ProfilePage() {
 
         {/* Full-Width Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT COLUMN: Tinder Preview + Analytics + Safety Tips (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* Tinder-style Profile Preview Card */}
             <Card className="bg-[#101827]/72 backdrop-blur-2xl border border-white/5 rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] group relative transition-all duration-500 hover:border-white/10 hover:shadow-[0_0_50px_rgba(236,72,153,0.12)]">
               {/* Photo Area */}
               <div className="relative aspect-[3/4] overflow-hidden">
-                <img 
-                  src={photos[0]} 
-                  alt={user.name} 
+                <img
+                  src={photos[0]}
+                  alt={user.name}
                   className="w-full h-full object-cover transition duration-700 group-hover:scale-102"
                 />
-                
+
                 {/* Dark Vignette Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#070B18] via-transparent to-black/30" />
 
@@ -192,12 +194,13 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-[#EC4899] tracking-tight">{user.name || 'User'}</h2>
                     <span className="text-xl font-bold text-zinc-300">{profile.age}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-1 text-zinc-350 text-xs font-semibold">
-                    <MapPin size={11} className="text-[#EC4899]" />
-                    <span>{profile.city}, India</span>
-                  </div>
-                  
+                  {profile.city && (
+                    <div className="flex items-center gap-1 text-zinc-350 text-xs font-semibold">
+                      <MapPin size={11} className="text-[#EC4899]" />
+                      {profile.city ? `${profile.city}, India` : ""}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 pt-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                     <span className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">Active Now</span>
@@ -212,7 +215,7 @@ export default function ProfilePage() {
                 <TrendingUp size={13} className="text-[#EC4899]" />
                 <span>Match Performance</span>
               </h3>
-              
+
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/[0.01] border border-white/5 rounded-xl p-2.5">
                   <Eye size={12} className="text-zinc-400 mx-auto mb-1" />
@@ -261,10 +264,10 @@ export default function ProfilePage() {
 
           {/* RIGHT COLUMN: Details & Action items (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* Upper Details Sub-Grid (About Me & Profile completeness checklist side-by-side) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* About Me */}
               <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300 flex flex-col justify-between">
                 <div className="absolute top-0 left-0 w-1 h-full bg-[#EC4899]" />
@@ -286,7 +289,7 @@ export default function ProfilePage() {
                   <Compass size={13} className="text-[#7C3AED]" />
                   <span>Optimization Checklist</span>
                 </h3>
-                
+
                 <div className="space-y-2.5 text-[10px] font-bold text-left">
                   <div className="flex items-center gap-2">
                     {profile.photos?.length >= 3 ? (
@@ -340,9 +343,9 @@ export default function ProfilePage() {
                   <span className="text-xs text-zinc-400 font-semibold">No interests selected.</span>
                 ) : (
                   interests.map((interest: string) => (
-                    <Badge 
-                      key={interest} 
-                      variant="pink" 
+                    <Badge
+                      key={interest}
+                      variant="pink"
                       className="px-4 py-2 rounded-xl bg-[#EC4899]/10 border border-[#EC4899]/20 text-[11px] font-bold text-[#EC4899] hover:bg-[#EC4899]/15 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_0_15px_rgba(236,72,153,0.15)]"
                     >
                       {interest}
@@ -359,15 +362,15 @@ export default function ProfilePage() {
                 <Sparkles size={14} className="text-[#EC4899]" />
                 <span>My Photos</span>
               </h3>
-              
+
               <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-stretch">
                 {/* Left Side: Single Portrait Photo */}
-                <div 
+                <div
                   className="w-40 aspect-[3/4] rounded-[20px] overflow-hidden border border-white/10 hover:border-[#EC4899]/30 transition duration-300 relative group bg-[#070B18] shadow-lg cursor-pointer flex-shrink-0"
                 >
-                  <img 
-                    src={photos[0]} 
-                    alt="Current Profile Cover" 
+                  <img
+                    src={photos[0]}
+                    alt="Current Profile Cover"
                     className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -412,18 +415,17 @@ export default function ProfilePage() {
                 <Shield size={14} className="text-[#EC4899]" />
                 <span>Verification Checklist</span>
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 size={16} className="text-[#10B981]" />
                     <span className="text-xs font-bold text-white">Profile Security</span>
                   </div>
-                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                    user.status === 'active' 
-                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20' 
+                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.status === 'active'
+                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
                       : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-                  }`}>
+                    }`}>
                     {user.status || 'pending'}
                   </Badge>
                 </div>
@@ -437,11 +439,10 @@ export default function ProfilePage() {
                     )}
                     <span className="text-xs font-bold text-white">Identity KYC</span>
                   </div>
-                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                    user.kyc_status === 'approved' 
-                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20' 
+                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.kyc_status === 'approved'
+                      ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
                       : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-                  }`}>
+                    }`}>
                     {user.kyc_status || 'pending'}
                   </Badge>
                 </div>
@@ -471,11 +472,11 @@ export default function ProfilePage() {
 
             {/* Profile Action Buttons & Premium Boost Banner */}
             <div className="space-y-6">
-              
+
               {/* Action Buttons Row */}
               <div className="flex flex-wrap gap-4 justify-start">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="rounded-xl border-[#EC4899]/30 hover:border-[#EC4899] text-[#EC4899] hover:bg-[#EC4899]/5 text-xs font-bold px-6 py-2.5 h-11.5 flex items-center gap-2 transition duration-300"
                   asChild
                 >
@@ -484,15 +485,15 @@ export default function ProfilePage() {
                     <span>Edit Details</span>
                   </Link>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold px-6 py-2.5 h-11.5 flex items-center gap-2 transition duration-300"
                 >
                   <Share2 size={14} />
                   <span>Share Profile</span>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="rounded-xl border-white/5 hover:border-white/10 text-red-400 hover:bg-red-500/5 text-xs font-bold px-6 py-2.5 h-11.5 flex items-center gap-2 transition duration-300 ml-auto md:ml-0"
                 >
                   <Flag size={14} />
@@ -505,7 +506,7 @@ export default function ProfilePage() {
           </div>
 
         </div>
-        
+
       </Container>
     </div>
   );

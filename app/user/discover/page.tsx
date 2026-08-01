@@ -6,6 +6,8 @@ import { Container } from '@/components/ui/container';
 import { DiscoverCard } from '@/components/user/discover-card';
 import { AnimatePresence } from 'framer-motion';
 import { userApi } from '@/lib/api';
+import Loading from '@/app/loading';
+
 
 export default function DiscoverPage() {
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function DiscoverPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500">Loading profiles...</div>;
+    return <Loading />;
   }
 
   if (error) {
