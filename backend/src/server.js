@@ -14,6 +14,17 @@ async function start() {
   try {
     await pool.query("UPDATE users SET status = 'active' WHERE status = 'inactive'");
   } catch {}
+  try {
+    await pool.query(`
+      INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
+      ('Basic', 250, 50.00, 0, FALSE),
+      ('Popular', 600, 100.00, 0, TRUE),
+      ('Pro', 1250, 200.00, 0, FALSE),
+      ('VIP', 2500, 400.00, 0, FALSE)
+      ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
+    `);
+    await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Basic', 'Popular', 'Pro', 'VIP')");
+  } catch {}
 
 
   // Create HTTP server so Socket.IO can share the same port as Express
