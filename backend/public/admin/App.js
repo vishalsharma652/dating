@@ -229,8 +229,11 @@ function App() {
       'Delete User',
       async () => {
         await apiRequest(`/admin/users/${id}`, { method: 'DELETE' });
+        setUsersList((prev) => prev.filter((u) => u.id !== id));
+        setUsersTotal((prev) => Math.max(0, prev - 1));
         showNotice('User deleted successfully.');
-        loadData();
+        await loadUsersList();
+        await loadAllData();
       },
       true
     );
