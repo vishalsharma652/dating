@@ -310,7 +310,7 @@ function PaymentContent() {
   };
 
   const copyUpiHandle = () => {
-    const handle = 'triok@upi';
+    const handle = '9352692626@kotakbank';
     navigator.clipboard.writeText(handle);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
@@ -878,52 +878,48 @@ function PaymentContent() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center text-center max-w-sm mx-auto">
-                    <div className="p-3 bg-white border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-md mb-3">
-                      <svg className="w-44 h-44" viewBox="0 0 100 100">
-                        <rect width="100" height="100" fill="#ffffff" />
-                        <rect x="5" y="5" width="25" height="25" fill="#18181b" />
-                        <rect x="8" y="8" width="19" height="19" fill="#ffffff" />
-                        <rect x="12" y="12" width="11" height="11" fill="#18181b" />
+                    {/* Kotak 811 QR Card Container */}
+                    <div className="w-full rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl p-6 text-white relative flex flex-col items-center">
+                      {/* Kotak 811 Header */}
+                      <div className="flex flex-col items-center gap-1 mb-4">
+                        <div className="flex items-center gap-1 text-2xl font-extrabold tracking-tight">
+                          <span className="text-white">kotak</span>
+                          <span className="text-white bg-[#be123c] px-2 py-0.5 rounded-lg text-base font-black">811</span>
+                        </div>
+                        <p className="text-xs text-zinc-300 font-semibold mt-1">Scan to pay with any UPI app</p>
+                      </div>
 
-                        <rect x="70" y="5" width="25" height="25" fill="#18181b" />
-                        <rect x="73" y="8" width="19" height="19" fill="#ffffff" />
-                        <rect x="77" y="12" width="11" height="11" fill="#18181b" />
+                      {/* QR Code Image Container */}
+                      <div className="p-3.5 bg-white rounded-2xl shadow-xl mb-4 border border-white/20 relative group">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`upi://pay?pa=9352692626@kotakbank&pn=SNEHA%20GOYAL&am=${pkg?.price || ''}&cu=INR`)}`}
+                          alt="Kotak 811 UPI QR Code - SNEHA GOYAL"
+                          className="w-48 h-48 rounded-xl object-contain"
+                        />
+                      </div>
 
-                        <rect x="5" y="70" width="25" height="25" fill="#18181b" />
-                        <rect x="8" y="73" width="19" height="19" fill="#ffffff" />
-                        <rect x="12" y="77" width="11" height="11" fill="#18181b" />
-
-                        <rect x="35" y="10" width="8" height="8" fill="#ec4899" />
-                        <rect x="48" y="10" width="12" height="6" fill="#18181b" />
-                        <rect x="35" y="25" width="15" height="6" fill="#18181b" />
-                        <rect x="55" y="25" width="10" height="10" fill="#ec4899" />
-
-                        <rect x="10" y="38" width="12" height="12" fill="#18181b" />
-                        <rect x="28" y="38" width="20" height="8" fill="#18181b" />
-                        <rect x="54" y="40" width="14" height="14" fill="#18181b" />
-                        <rect x="72" y="38" width="18" height="8" fill="#ec4899" />
-
-                        <rect x="36" y="58" width="8" height="18" fill="#18181b" />
-                        <rect x="48" y="60" width="18" height="10" fill="#ec4899" />
-                        <rect x="70" y="56" width="12" height="12" fill="#18181b" />
-                        <rect x="72" y="74" width="18" height="18" fill="#18181b" />
-
-                        <circle cx="50" cy="50" r="8" fill="#ec4899" />
-                      </svg>
+                      {/* Bottom Red Card Details */}
+                      <div className="w-full rounded-2xl bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] p-4 text-left shadow-lg border border-red-400/30">
+                        <p className="text-[10px] uppercase tracking-widest font-black text-white/80">Account Holder</p>
+                        <h4 className="text-lg font-black text-white tracking-wide mt-0.5">SNEHA GOYAL</h4>
+                        <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] text-white/70 font-semibold uppercase">UPI ID</p>
+                            <p className="text-xs font-mono font-bold text-white tracking-wider">9352692626@kotakbank</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={copyUpiHandle}
+                            className="px-3 py-1.5 rounded-xl bg-white text-[#be123c] font-bold text-xs hover:bg-zinc-100 transition shadow-sm flex items-center gap-1"
+                          >
+                            <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-2 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-xl">
-                      <span className="text-xs font-mono font-bold text-[#EC4899]">triok@upi</span>
-                      <button
-                        onClick={copyUpiHandle}
-                        className="text-pink-500 hover:text-pink-600 text-xs flex items-center gap-1 font-semibold"
-                      >
-                        <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
-
-                    <p className="text-xs text-zinc-500 mb-1">
-                      QR Code expires in:{' '}
+                    <p className="text-xs text-zinc-500 mt-4 mb-1">
+                      QR Code active for:{' '}
                       <span className="font-mono font-bold text-pink-500">
                         {Math.floor(qrTimeLeft / 60)}:{(qrTimeLeft % 60).toString().padStart(2, '0')}
                       </span>
