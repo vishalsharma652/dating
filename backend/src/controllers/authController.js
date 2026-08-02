@@ -346,6 +346,9 @@ async function login(req, res) {
   if (!user || !(await userModel.verifyPassword(user, req.body.password))) {
     throw new AppError('Invalid credentials', 401);
   }
+  if (user.status && user.status !== 'active') {
+    throw new AppError('Your account is currently inactive or suspended', 403);
+  }
   const onlineUser = await userModel.markOnline(user.id);
   const token = signToken(onlineUser);
   return ok(res, { token, user: toPublicUser(onlineUser) }, 'Logged in');
