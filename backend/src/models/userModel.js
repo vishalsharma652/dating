@@ -231,4 +231,8 @@ async function remove(id) {
   });
 }
 
+async function verifyPassword(user, password) {
+  return bcrypt.compare(password, user.password_hash);
+}
+
 module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword, remove };
