@@ -285,4 +285,6 @@ export const userApi = {
     apiRequest<{ unread: number }>(`/user/notifications/${id}/read`, { method: 'PATCH' }),
   markNotificationsRead: () =>
     apiRequest<{ unread: number }>('/user/notifications/read-all', { method: 'PATCH' }),
+  deleteAccount: () =>
+    apiRequest<null>('/user/account', { method: 'DELETE' }),
 };

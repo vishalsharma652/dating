@@ -97,7 +97,9 @@ async function updateUser(req, res) {
 }
 
 async function deleteUser(req, res) {
-  return ok(res, { user: await userModel.update(Number(req.params.id), { status: 'deleted' }) }, 'User deleted');
+  const id = Number(req.params.id);
+  await userModel.remove(id);
+  return ok(res, null, 'User deleted permanently');
 }
 
 async function kycRequests(req, res) {

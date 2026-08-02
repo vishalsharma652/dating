@@ -69,5 +69,6 @@ router.get('/notifications/count', asyncHandler(user.notificationCount));
 router.patch('/notifications/read-all', asyncHandler(user.markNotificationsRead));
 router.patch('/notifications/:id/read', [param('id').isInt()], validate, asyncHandler(user.markNotificationRead));
 router.get('/settings', asyncHandler(user.settings));
+router.delete('/account', asyncHandler(user.deleteAccount));
 
 module.exports = router;

@@ -188,8 +188,47 @@ async function markOffline(id) {
   return findPublicById(id);
 }
 
-async function verifyPassword(user, password) {
-  return bcrypt.compare(password, user.password_hash);
+async function remove(id) {
+  return await transaction(async (connection) => {
+    // 1. Find chats involving this user
+    const [userChats] = await connection.execute(
+      'SELECT id FROM chats WHERE user_one_id = :id OR user_two_id = :id',
+      { id }
+    );
+    if (userChats.length > 0) {
+      for (const c of userChats) {
+        await connection.execute('DELETE FROM messages WHERE chat_id = :chatId', { chatId: c.id });
+        await connection.execute('DELETE FROM chat_sessions WHERE chat_id = :chatId', { chatId: c.id });
+      }
+      await connection.execute('DELETE FROM chats WHERE user_one_id = :id OR user_two_id = :id', { id });
+    }
+
+    // 2. Delete chat requests, likes, matches, notifications
+    await connection.execute('DELETE FROM chat_requests WHERE requester_id = :id OR receiver_id = :id', { id });
+    await connection.execute('DELETE FROM likes WHERE user_id = :id OR target_user_id = :id', { id });
+    await connection.execute('DELETE FROM matches WHERE user_one_id = :id OR user_two_id = :id', { id });
+    await connection.execute('DELETE FROM notifications WHERE user_id = :id OR actor_user_id = :id', { id });
+
+    // 3. Delete wallet, transactions, bank_accounts, withdrawals, orders
+    await connection.execute('DELETE FROM wallet_transactions WHERE user_id = :id', { id });
+    await connection.execute('DELETE FROM wallets WHERE user_id = :id', { id });
+    await connection.execute('DELETE FROM bank_accounts WHERE user_id = :id', { id });
+    await connection.execute('DELETE FROM withdrawals WHERE user_id = :id', { id });
+    await connection.execute('DELETE FROM orders WHERE user_id = :id', { id });
+
+    // 4. Delete profiles & profile_photos
+    const [userProfiles] = await connection.execute('SELECT id FROM profiles WHERE user_id = :id', { id });
+    if (userProfiles.length > 0) {
+      for (const p of userProfiles) {
+        await connection.execute('DELETE FROM profile_photos WHERE profile_id = :profileId', { profileId: p.id });
+      }
+      await connection.execute('DELETE FROM profiles WHERE user_id = :id', { id });
+    }
+
+    // 5. Delete user from users table
+    await connection.execute('DELETE FROM users WHERE id = :id', { id });
+    return true;
+  });
 }
 
-module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword };
+module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword, remove };

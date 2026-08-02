@@ -459,6 +459,11 @@ async function settings(req, res) {
   });
 }
 
+async function deleteAccount(req, res) {
+  await userModel.remove(req.user.id);
+  return ok(res, null, 'Account deleted permanently');
+}
+
 module.exports = {
   profileRules,
   dashboard,
@@ -495,5 +500,6 @@ module.exports = {
   notificationCount,
   markNotificationRead,
   markNotificationsRead,
-  settings
+  settings,
+  deleteAccount
 };

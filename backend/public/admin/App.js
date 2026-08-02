@@ -225,11 +225,12 @@ function App() {
     const user = usersList.find((u) => u.id === id);
     confirmAction(
       'Delete User?',
-      `Are you sure you want to delete ${user.name}? This will remove them from active views.`,
+      `Are you sure you want to delete ${user ? user.name : 'this user'}? This will permanently delete them and all their data.`,
       'Delete User',
       async () => {
         await apiRequest(`/admin/users/${id}`, { method: 'DELETE' });
         showNotice('User deleted successfully.');
+        loadData();
       },
       true
     );

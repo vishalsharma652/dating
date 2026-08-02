@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { authApi, clearAuthSession } from '@/lib/api';
+import { authApi, clearAuthSession, userApi } from '@/lib/api';
 import {
   Lock,
   Bell,
@@ -70,6 +70,19 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) {
+      try {
+        await userApi.deleteAccount();
+      } catch {
+        // Continue clearing session
+      } finally {
+        clearAuthSession();
+        router.push('/');
+      }
+    }
+  };
+
   return (
     <div className="p-4 md:p-8">
       <Container>
@@ -130,7 +143,15 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          <Card className="p-4 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer">
+          <Card
+            className="p-4 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={handleDeleteAccount}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') handleDeleteAccount();
+            }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center">
