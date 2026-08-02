@@ -15,8 +15,8 @@ async function create({ name, email = null, phone, password, role = 'user', phon
   const isBoy = ['male', 'man', 'boy', 'men'].includes(String(gender || '').toLowerCase());
   const result = await transaction(async (connection) => {
     const [created] = await connection.execute(
-      `INSERT INTO users (name, email, phone, password_hash, role, phone_verified, email_verified, gender, coins)
-       VALUES (:name, :email, :phone, :passwordHash, :role, :phoneVerified, :emailVerified, :gender, :coins)`,
+      `INSERT INTO users (name, email, phone, password_hash, role, status, phone_verified, email_verified, gender, coins)
+       VALUES (:name, :email, :phone, :passwordHash, :role, 'active', :phoneVerified, :emailVerified, :gender, :coins)`,
       { name, email, phone, passwordHash, role, phoneVerified, emailVerified: emailVerified ? 1 : 0, gender, coins: isBoy ? 100 : 0 }
     );
     const userId = created.insertId;

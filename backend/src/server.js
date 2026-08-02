@@ -11,6 +11,9 @@ async function start() {
   try {
     await pool.query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
   } catch {}
+  try {
+    await pool.query("UPDATE users SET status = 'active' WHERE status = 'inactive'");
+  } catch {}
 
 
   // Create HTTP server so Socket.IO can share the same port as Express
