@@ -6,17 +6,23 @@ async function authenticate(req, res, next) {
   try {
     const header = req.headers.authorization || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    if (!token) throw new AppError('Authentication token is required', 401);
+    if (!token) return next(new AppError('Authentication token is required', 401));
 
-    const payload = verifyToken(token);
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch {
+      return next(new AppError('Invalid authentication token', 401));
+    }
+
     const user = await userModel.findById(payload.id);
-    if (!user || user.status !== 'active') throw new AppError('Invalid or inactive account', 401);
+    if (!user || user.status !== 'active') return next(new AppError('Invalid or inactive account', 401));
+
     await userModel.markOnline(user.id);
     delete user.password_hash;
     req.user = { ...user, online_status: 1, last_seen_at: new Date() };
     next();
   } catch (error) {
-    console.error('[AUTH ERROR]', error.message || error);
     next(error.statusCode ? error : new AppError('Invalid authentication token', 401));
   }
 }
