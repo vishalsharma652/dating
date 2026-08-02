@@ -12,8 +12,8 @@ import { Brand } from '@/components/brand';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const genderOptions = [
-  { label: 'Boy', value: 'male' },
-  { label: 'Girl', value: 'female' },
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
 ];
 
 export default function RegisterPage() {
