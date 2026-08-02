@@ -6,8 +6,12 @@ let socket: Socket | null = null;
 const SOCKET_URL = (() => {
   const envBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (envBase) return envBase.replace(/\/api\/?$/, '');
-  
+
   if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
+    if (isHttps) {
+      return `https://${window.location.host}`;
+    }
     return `http://${window.location.hostname}:5000`;
   }
   return 'http://localhost:5000';

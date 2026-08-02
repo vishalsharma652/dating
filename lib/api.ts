@@ -88,6 +88,14 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
 
   if (response.status === 401) {
     clearAuthSession();
+    if (
+      typeof window !== 'undefined' &&
+      !window.location.pathname.startsWith('/login') &&
+      !window.location.pathname.startsWith('/register') &&
+      !window.location.pathname.startsWith('/forgot-password')
+    ) {
+      window.location.href = '/login';
+    }
   }
 
   if (response.status === 429) {
