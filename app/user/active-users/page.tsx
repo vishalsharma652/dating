@@ -1,0 +1,193 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Heart, MessageCircle, Search, ArrowLeft, Sparkles, Shield } from 'lucide-react';
+import Link from 'next/link';
+import { userApi } from '@/lib/api';
+import Loading from '@/app/loading';
+
+export default function ActiveUsersPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    userApi.dashboard()
+      .then(setData)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load active users'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]">
+      <Loading />
+    </div>
+  );
+
+  if (error) return (
+    <div className="p-8 text-center text-red-500 bg-[#070B18] min-h-screen flex items-center justify-center">
+      {error}
+    </div>
+  );
+
+  const user = data?.user || {};
+  const activeUsers = data?.activeUsers || data?.activeGirls || [];
+
+  const userGender = String(user.gender || user.role || '').toLowerCase();
+  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const targetLabel = isFemale ? 'Active Boys' : (userGender === 'male' ? 'Active Girls' : 'Active Users');
+
+  const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
+  const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
+  const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
+
+  const formattedUsers = activeUsers.map((u: any, idx: number) => ({
+    id: u.id,
+    uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
+    name: u.name || 'User',
+    age: u.age || 24,
+    location: u.location || 'Delhi',
+    status: u.isOnline !== false ? 'Online' : 'Away',
+    photo: u.photo || fallbacks[idx % fallbacks.length],
+    bio: u.bio || 'Looking for meaningful connections'
+  }));
+
+  const filteredUsers = formattedUsers.filter((u: any) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      u.name.toLowerCase().includes(query) ||
+      u.location.toLowerCase().includes(query) ||
+      u.uniqueId.toLowerCase().includes(query)
+    );
+  });
+
+  return (
+    <div className="p-4 md:p-8 bg-[#070B18] text-white min-h-screen relative overflow-hidden">
+      {/* Background Glow Blobs */}
+      <div className="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-[#EC4899]/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#7C3AED]/5 rounded-full blur-[140px] pointer-events-none" />
+
+      <Container className="max-w-7xl relative z-10 space-y-8">
+        {/* Navigation & Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/user/dashboard"
+              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition"
+            >
+              <ArrowLeft size={18} className="text-zinc-300" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
+                <Heart size={24} className="text-[#EC4899]" />
+                <span>All {targetLabel}</span>
+              </h1>
+              <p className="text-zinc-400 text-sm font-medium mt-1">
+                Browse all active members online right now ({filteredUsers.length})
+              </p>
+            </div>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full md:w-80">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search by Name, City or Unique ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#101827]/80 border border-white/10 rounded-full pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#EC4899]/50 transition"
+            />
+          </div>
+        </div>
+
+        {/* User Cards Grid */}
+        {filteredUsers.length === 0 ? (
+          <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/20 flex items-center justify-center mx-auto text-[#EC4899]">
+              <Search size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-white">No active members found</h3>
+            <p className="text-zinc-400 text-xs max-w-sm mx-auto">
+              We couldn't find any active users matching "{searchQuery}". Try searching with a different name or Unique ID!
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setSearchQuery('')}
+              className="rounded-full border-white/10 text-xs"
+            >
+              Clear Search Filter
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredUsers.map((u: any) => (
+              <Card
+                key={u.id}
+                className="bg-[#0D1424]/90 border border-white/10 rounded-[24px] p-4 hover:border-[#EC4899]/50 hover:-translate-y-1.5 transition-all duration-300 relative group flex flex-col justify-between shadow-xl overflow-hidden"
+              >
+                {/* Portrait Photo */}
+                <div className="relative aspect-[3/4] rounded-[18px] overflow-hidden mb-3.5 shadow-inner">
+                  <img
+                    src={u.photo}
+                    alt={u.name}
+                    className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+
+                  {/* Heart Action Badge */}
+                  <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
+                    <Heart size={14} className="fill-current text-white" />
+                  </div>
+                </div>
+
+                {/* Metadata Details */}
+                <div className="space-y-2 text-left px-1 pb-1">
+                  {/* Line 1: Full Name */}
+                  <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
+                    {u.name}
+                  </h3>
+
+                  {/* Line 2: Age & Location */}
+                  <p className="text-xs font-semibold text-zinc-400 truncate">
+                    {u.age} yrs • 📍 {u.location}
+                  </p>
+
+                  {/* Line 3: Online Status & Unique ID */}
+                  <div className="flex items-center justify-between gap-1 pt-2.5 border-t border-white/5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className={`w-2 h-2 rounded-full ${u.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
+                      <span className="text-[10px] font-extrabold text-zinc-300 uppercase tracking-wider">{u.status}</span>
+                    </div>
+
+                    <span className="text-[10px] font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20 shadow-sm whitespace-nowrap">
+                      {u.uniqueId}
+                    </span>
+                  </div>
+
+                  {/* Line 4: Chat Button */}
+                  <Button
+                    className="w-full mt-2 h-9 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide flex items-center justify-center gap-2 border-0 shadow-md transition-transform"
+                    asChild
+                  >
+                    <Link href={`/user/chat/${u.id}`}>
+                      <MessageCircle size={14} />
+                      <span>Start Chat</span>
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </Container>
+    </div>
+  );
+}

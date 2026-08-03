@@ -17,7 +17,7 @@ import {
   Gem,
   Coins,
 } from 'lucide-react';
-import { authApi, clearAuthSession, getStoredUser, getToken, userApi } from '@/lib/api';
+import { authApi, clearAuthSession, getStoredUser, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
 
 const sidebarItems = [
@@ -53,8 +53,6 @@ export function UserNav() {
     const initialUser = getStoredUser();
     if (initialUser) setCurrentUser(initialUser);
 
-    if (!getToken()) return;
-
     userApi.profile()
       .then((data) => {
         if (active && data?.user) {
@@ -85,8 +83,6 @@ export function UserNav() {
     let active = true;
 
     const loadCounts = () => {
-      if (!getToken()) return;
-
       userApi.notificationCount()
         .then((data) => {
           if (active) setNotificationCount(Number(data.unread) || 0);
@@ -193,7 +189,7 @@ export function UserNav() {
                     <IconSymbol size={14} className={`${symbolColor} flex-shrink-0`} />
                   </p>
                   {displayId && (
-                    <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">ID {displayId}</p>
+                    <p className="text-[10px] font-mono text-emerald-400 font-bold truncate">ID: {displayId}</p>
                   )}
                 </div>
               </div>

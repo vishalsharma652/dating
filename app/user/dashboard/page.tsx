@@ -79,7 +79,7 @@ export default function DashboardPage() {
   const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
   const defaultHeaderAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
 
-  const activeGirlsList = activeUsers.slice(0, 4).map((u: any, idx: number) => ({
+  const activeGirlsList = activeUsers.slice(0, 3).map((u: any, idx: number) => ({
     id: u.id,
     uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
     name: u.name || 'User',
@@ -255,7 +255,6 @@ export default function DashboardPage() {
           {/* LEFT COLUMN: Active Girls */}
           <div className="lg:col-span-8 space-y-6">
             <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 md:p-8 space-y-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)]">
-
               {/* Box Header */}
               <div className="flex justify-between items-center pb-2">
                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -268,7 +267,7 @@ export default function DashboardPage() {
                   className="rounded-full border-[#EC4899]/30 hover:border-[#EC4899] text-[#EC4899] hover:bg-[#EC4899]/5 text-xs px-4"
                   asChild
                 >
-                  <Link href="/user/discover">View All</Link>
+                  <Link href="/user/active-users">View All</Link>
                 </Button>
               </div>
 
@@ -304,60 +303,51 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {activeGirlsList.map((girl) => (
                       <Link
                         key={girl.id}
                         href={`/user/chat/${girl.id}`}
-                        className="group relative bg-[#0D1322] border border-white/10 rounded-[24px] overflow-hidden hover:border-[#EC4899]/50 hover:shadow-[0_15px_35px_rgba(236,72,153,0.2)] transition-all duration-500 flex flex-col justify-between"
+                        className="bg-[#0D1424]/90 border border-white/10 rounded-[22px] p-3.5 hover:border-[#EC4899]/50 hover:-translate-y-1 transition-all duration-300 relative group flex flex-col justify-between shadow-lg"
                       >
-                        {/* Main Image Container */}
-                        <div className="relative aspect-[3/4] w-full overflow-hidden">
-                          {/* Background Image */}
+                        {/* Portrait Image Container */}
+                        <div className="relative aspect-[3/4] rounded-[16px] overflow-hidden mb-3 shadow-inner">
                           <img
                             src={girl.photo}
                             alt={girl.name}
-                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
 
-                          {/* Dark Vignette Gradients */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#090D16] via-black/20 to-black/60 pointer-events-none" />
-
-                          {/* Top Badges */}
-                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                            {/* Unique ID Badge */}
-                            <div className="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-emerald-500/35 text-[10px] font-mono font-bold text-emerald-400 shadow-md flex items-center gap-1.5 whitespace-nowrap">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-                              <span>{girl.uniqueId}</span>
-                            </div>
-
-                            {/* Online / Away Status Pill */}
-                            <div className={`px-2.5 py-1 rounded-full backdrop-blur-md border text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-md ${
-                              girl.status === 'Online'
-                                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                                : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-emerald-400 shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
-                              <span>{girl.status}</span>
-                            </div>
+                          {/* Pink Heart Action Badge - Bottom Right */}
+                          <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
+                            <Heart size={13} className="fill-current text-white" />
                           </div>
+                        </div>
 
-                          {/* Bottom Content Overlay */}
-                          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-end justify-between">
-                            <div className="space-y-0.5 max-w-[70%] text-left">
-                              <h3 className="font-black text-base text-white truncate drop-shadow-md leading-tight group-hover:text-[#EC4899] transition-colors">
-                                {girl.name}, <span className="font-extrabold text-sm text-zinc-300">{girl.age}</span>
-                              </h3>
-                              <p className="text-[11px] font-semibold text-zinc-300 truncate drop-shadow flex items-center gap-1">
-                                <span>📍</span>
-                                <span>{girl.location}</span>
-                              </p>
+                        {/* Dedicated Metadata Section Below Image */}
+                        <div className="space-y-1.5 text-left px-0.5 pb-0.5">
+                          {/* Full Name (Line 1 - Full Width) */}
+                          <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
+                            {girl.name}
+                          </h3>
+
+                          {/* Age & Location (Line 2) */}
+                          <p className="text-xs font-semibold text-zinc-400 truncate">
+                            {girl.age} yrs • {girl.location}
+                          </p>
+
+                          {/* Online Status & Unique ID (Line 3 - Bottom Bar) */}
+                          <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/5">
+                            {/* Online Indicator */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
+                              <span className="text-[10px] font-extrabold text-zinc-300 uppercase tracking-wider">{girl.status}</span>
                             </div>
 
-                            {/* Action Chat Button */}
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg shadow-[#EC4899]/30 group-hover:scale-110 transition duration-300 border border-white/20">
-                              <MessageCircle size={15} className="fill-current text-white" />
-                            </div>
+                            {/* Unique ID Badge */}
+                            <span className="text-[10px] font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 shadow-sm whitespace-nowrap">
+                              {girl.uniqueId}
+                            </span>
                           </div>
                         </div>
                       </Link>
@@ -365,14 +355,10 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Bottom alert banner */}
-                  <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-zinc-400 text-xs font-semibold relative z-10 overflow-hidden">
-                    <Sparkles size={14} className="text-[#EC4899]" />
-                    <span>No active {isFemale ? 'boys' : 'girls'} are online right now. Check back later!</span>
-
-                    {/* Floating hearts */}
-                    <div className="absolute right-6 flex items-center gap-1.5 text-[#EC4899]/30">
-                      <Heart size={10} className="fill-current" />
-                      <Heart size={14} className="fill-current" />
+                  <div className="flex items-center justify-between gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-zinc-400 text-xs font-semibold relative z-10 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={14} className="text-[#EC4899]" />
+                      <span>Showing active {isFemale ? 'boys' : 'girls'} online right now!</span>
                     </div>
                   </div>
                 </>
