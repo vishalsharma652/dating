@@ -81,6 +81,7 @@ export default function DashboardPage() {
 
   const activeGirlsList = activeUsers.slice(0, 4).map((u: any, idx: number) => ({
     id: u.id,
+    uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
     name: u.name || 'User',
     age: u.age || 24,
     location: u.location || 'Delhi',
@@ -317,6 +318,10 @@ export default function DashboardPage() {
                             alt={girl.name}
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
+                          {/* Unique ID Badge Overlay */}
+                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 shadow-sm">
+                            {girl.uniqueId}
+                          </div>
                           {/* Status Indicator Dot */}
                           <span
                             className={`absolute top-2.5 right-2.5 w-3 h-3 rounded-full border-2 border-[#101827] shadow-sm ${girl.status === 'Online' ? 'bg-[#10B981]' : 'bg-[#F59E0B]'
@@ -329,13 +334,18 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Metadata text */}
-                        <div className="px-1.5 space-y-0.5 text-left">
+                        <div className="px-1.5 space-y-1 text-left">
                           <p className="font-black text-sm text-white truncate group-hover:text-[#EC4899] transition-colors">{girl.name}</p>
                           <p className="text-[11px] text-zinc-400 font-bold truncate">{girl.age}, {girl.location}</p>
-                          <div className="flex items-center gap-1.5 pt-1">
-                            <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981]' : 'bg-[#F59E0B]'
-                              }`} />
-                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{girl.status}</span>
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981]' : 'bg-[#F59E0B]'
+                                }`} />
+                              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{girl.status}</span>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              ID: {girl.uniqueId}
+                            </span>
                           </div>
                         </div>
                       </Link>
