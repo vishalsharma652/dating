@@ -86,15 +86,18 @@ export default function DashboardPage() {
   const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
   const defaultHeaderAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
 
-  const activeGirlsList = activeUsers.slice(0, 3).map((u: any, idx: number) => ({
-    id: u.id,
-    uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
-    name: u.name || 'User',
-    age: u.age || 24,
-    location: u.location || 'Delhi',
-    status: (u.online === true || u.isOnline === true || u.online_status === true || u.status === 'Online') ? 'Online' : 'Offline',
-    photo: u.photo || fallbacks[idx % fallbacks.length]
-  }));
+  const activeGirlsList = activeUsers.slice(0, 3).map((u: any, idx: number) => {
+    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
+    return {
+      id: u.id,
+      uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
+      name: u.name || 'User',
+      age: u.age || 24,
+      location: u.location || 'Delhi',
+      status: isOnline ? 'Online' : 'Offline',
+      photo: u.photo || fallbacks[idx % fallbacks.length]
+    };
+  });
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] text-white min-h-screen space-y-8 relative overflow-hidden">

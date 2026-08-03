@@ -57,13 +57,15 @@ function ActiveUsersContent() {
     const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
     const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
 
+    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
+
     return {
       id: u.id,
       uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
       name: u.name || 'User',
       age: u.age || 24,
       location: u.location || 'Delhi',
-      status: (u.online === true || u.isOnline === true || u.online_status === true || u.status === 'Online') ? 'Online' : 'Offline',
+      status: isOnline ? 'Online' : 'Offline',
       kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
       photo: photoUrl,
       bio: u.bio || 'Looking for meaningful connections'
