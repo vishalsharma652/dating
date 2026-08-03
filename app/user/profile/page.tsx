@@ -269,71 +269,66 @@ export default function ProfilePage() {
           {/* RIGHT COLUMN: Details & Action items (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
 
-            {/* Upper Details Sub-Grid (About Me & Profile completeness checklist side-by-side) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* About Me */}
-              <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300 flex flex-col justify-between">
-                <div className="absolute top-0 left-0 w-1 h-full bg-[#EC4899]" />
-                <div>
-                  <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-3.5 flex items-center gap-2">
-                    <User size={13} className="text-[#EC4899]" />
-                    <span>About Me</span>
-                  </h3>
-                  <p className="text-zinc-300 text-xs leading-relaxed font-semibold text-left">
-                    {profile.bio || 'No bio added yet. Tell people about your interests and dreams by editing your profile!'}
-                  </p>
-                </div>
-              </Card>
-
-              {/* Profile Completion Checklist */}
-              <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
-                <div className="absolute top-0 left-0 w-1 h-full bg-[#7C3AED]" />
+            {/* Single Dedicated About Me Card */}
+            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#EC4899]" />
+              <div>
                 <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-3.5 flex items-center gap-2">
-                  <Compass size={13} className="text-[#7C3AED]" />
-                  <span>Optimization Checklist</span>
+                  <User size={13} className="text-[#EC4899]" />
+                  <span>About Me</span>
                 </h3>
+                <p className="text-zinc-300 text-xs leading-relaxed font-semibold text-left">
+                  {profile.bio || 'No bio added yet. Tell people about your interests and dreams by editing your profile!'}
+                </p>
+              </div>
+            </Card>
 
-                <div className="space-y-2.5 text-[10px] font-bold text-left">
-                  <div className="flex items-center gap-2">
-                    {profile.photos?.length >= 3 ? (
-                      <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
-                    ) : (
-                      <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
-                    )}
-                    <span className={profile.photos?.length >= 3 ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Upload 3+ Photos (+20%)</span>
-                  </div>
+            {/* Profile Completion Checklist */}
+            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#7C3AED]" />
+              <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-3.5 flex items-center gap-2">
+                <Compass size={13} className="text-[#7C3AED]" />
+                <span>Optimization Checklist</span>
+              </h3>
 
-                  <div className="flex items-center gap-2">
-                    {profile.bio ? (
-                      <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
-                    ) : (
-                      <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
-                    )}
-                    <span className={profile.bio ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Write bio description (+20%)</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {user.status === 'active' ? (
-                      <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
-                    ) : (
-                      <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
-                    )}
-                    <span className={user.status === 'active' ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Email Verified (+30%)</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {user.kyc_status === 'approved' ? (
-                      <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
-                    ) : (
-                      <div className="w-3 h-3 rounded-full border border-[#EC4899] flex-shrink-0" />
-                    )}
-                    <span className={user.kyc_status === 'approved' ? 'text-zinc-400 line-through' : 'text-[#EC4899]'}>KYC ID Verification (+30%)</span>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[10px] font-bold text-left">
+                <div className="flex items-center gap-2">
+                  {profile.photos?.length >= 3 ? (
+                    <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
+                  )}
+                  <span className={profile.photos?.length >= 3 ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Upload 3+ Photos (+20%)</span>
                 </div>
-              </Card>
 
-            </div>
+                <div className="flex items-center gap-2">
+                  {interests.length >= 3 ? (
+                    <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
+                  )}
+                  <span className={interests.length >= 3 ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Select 3+ Interests (+20%)</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {user.status === 'active' ? (
+                    <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0" />
+                  )}
+                  <span className={user.status === 'active' ? 'text-zinc-400 line-through' : 'text-zinc-300'}>Email Verified (+30%)</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {user.kyc_status === 'approved' ? (
+                    <CheckCircle2 size={12} className="text-[#10B981] flex-shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-[#EC4899] flex-shrink-0" />
+                  )}
+                  <span className={user.kyc_status === 'approved' ? 'text-zinc-400 line-through' : 'text-[#EC4899]'}>KYC ID Verification (+30%)</span>
+                </div>
+              </div>
+            </Card>
 
             {/* Hobbies & Interests Card */}
             <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6.5 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
