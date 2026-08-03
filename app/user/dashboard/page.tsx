@@ -309,40 +309,55 @@ export default function DashboardPage() {
                       <Link
                         key={girl.id}
                         href={`/user/chat/${girl.id}`}
-                        className="bg-[#101827]/60 border border-white/5 rounded-[20px] p-3.5 hover:border-white/10 hover:-translate-y-1 transition duration-300 relative group flex flex-col justify-between"
+                        className="group relative bg-[#0D1322] border border-white/10 rounded-[24px] overflow-hidden hover:border-[#EC4899]/50 hover:shadow-[0_15px_35px_rgba(236,72,153,0.2)] transition-all duration-500 flex flex-col justify-between"
                       >
-                        {/* Portrait Photo Container */}
-                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-inner">
+                        {/* Main Image Container */}
+                        <div className="relative aspect-[3/4] w-full overflow-hidden">
+                          {/* Background Image */}
                           <img
                             src={girl.photo}
                             alt={girl.name}
-                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                           />
-                          {/* Unique ID Badge Overlay */}
-                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 shadow-sm whitespace-nowrap">
-                            {girl.uniqueId}
-                          </div>
-                          {/* Status Indicator Dot */}
-                          <span
-                            className={`absolute top-2.5 right-2.5 w-3 h-3 rounded-full border-2 border-[#101827] shadow-sm ${girl.status === 'Online' ? 'bg-[#10B981]' : 'bg-[#F59E0B]'
-                              }`}
-                          />
-                          {/* Floating Pink Heart Badge */}
-                          <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-[#EC4899] flex items-center justify-center text-white shadow-md border border-white/10">
-                            <Heart size={13} className="fill-current" />
-                          </div>
-                        </div>
 
-                        {/* Metadata text */}
-                        <div className="px-1 space-y-1 text-left">
-                          <div className="flex items-center justify-between gap-1">
-                            <p className="font-black text-sm text-white truncate group-hover:text-[#EC4899] transition-colors">{girl.name}</p>
-                            <span className="text-[11px] text-zinc-400 font-bold truncate">{girl.age} yrs</span>
+                          {/* Dark Vignette Gradients */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#090D16] via-black/20 to-black/60 pointer-events-none" />
+
+                          {/* Top Badges */}
+                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                            {/* Unique ID Badge */}
+                            <div className="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-emerald-500/35 text-[10px] font-mono font-bold text-emerald-400 shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                              <span>{girl.uniqueId}</span>
+                            </div>
+
+                            {/* Online / Away Status Pill */}
+                            <div className={`px-2.5 py-1 rounded-full backdrop-blur-md border text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-md ${
+                              girl.status === 'Online'
+                                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                                : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-emerald-400 shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
+                              <span>{girl.status}</span>
+                            </div>
                           </div>
-                          <p className="text-[11px] text-zinc-400 font-medium truncate">{girl.location}</p>
-                          <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_6px_#10B981]' : 'bg-[#F59E0B]'}`} />
-                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{girl.status}</span>
+
+                          {/* Bottom Content Overlay */}
+                          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-end justify-between">
+                            <div className="space-y-0.5 max-w-[70%] text-left">
+                              <h3 className="font-black text-base text-white truncate drop-shadow-md leading-tight group-hover:text-[#EC4899] transition-colors">
+                                {girl.name}, <span className="font-extrabold text-sm text-zinc-300">{girl.age}</span>
+                              </h3>
+                              <p className="text-[11px] font-semibold text-zinc-300 truncate drop-shadow flex items-center gap-1">
+                                <span>📍</span>
+                                <span>{girl.location}</span>
+                              </p>
+                            </div>
+
+                            {/* Action Chat Button */}
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg shadow-[#EC4899]/30 group-hover:scale-110 transition duration-300 border border-white/20">
+                              <MessageCircle size={15} className="fill-current text-white" />
+                            </div>
                           </div>
                         </div>
                       </Link>
