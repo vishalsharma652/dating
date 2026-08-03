@@ -63,7 +63,7 @@ function ActiveUsersContent() {
       name: u.name || 'User',
       age: u.age || 24,
       location: u.location || 'Delhi',
-      status: (u.online === true || u.isOnline === true || u.online_status === true || u.status === 'Online') ? 'Online' : 'Away',
+      status: 'Online',
       kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
       photo: photoUrl,
       bio: u.bio || 'Looking for meaningful connections'
@@ -208,18 +208,11 @@ function ActiveUsersContent() {
                     )}
                   </div>
 
-                  {/* Online / Offline Status Badge - Top Right */}
-                  {u.status === 'Online' ? (
-                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#10B981]/60 text-[9.5px] font-black text-[#10B981] flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-10">
-                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                      <span>ONLINE</span>
-                    </div>
-                  ) : (
-                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9.5px] font-bold text-zinc-400 flex items-center gap-1.5 z-10">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      <span>AWAY</span>
-                    </div>
-                  )}
+                  {/* Online Status Badge - Top Right */}
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#10B981]/60 text-[9.5px] font-black text-[#10B981] flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-10">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                    <span>ONLINE</span>
+                  </div>
 
                   {/* Heart Action Badge - Bottom Right */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
@@ -242,8 +235,8 @@ function ActiveUsersContent() {
                   {/* Line 3: Online Status & Unique ID */}
                   <div className="flex items-center justify-between gap-1 pt-2.5 border-t border-white/5">
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className={`w-2 h-2 rounded-full ${u.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
-                      <span className="text-[10px] font-extrabold text-zinc-300 uppercase tracking-wider">{u.status}</span>
+                      <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]" />
+                      <span className="text-[10px] font-extrabold text-[#10B981] uppercase tracking-wider">Online</span>
                     </div>
 
                     <span className="text-[10px] font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20 shadow-sm whitespace-nowrap">

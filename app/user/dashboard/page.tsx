@@ -333,18 +333,11 @@ export default function DashboardPage() {
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
 
-                          {/* Online / Offline Status Badge - Top Right */}
-                          {girl.status === 'Online' ? (
-                            <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#10B981]/60 text-[9px] font-black text-[#10B981] flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-10">
-                              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                              <span>ONLINE</span>
-                            </div>
-                          ) : (
-                            <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-bold text-zinc-400 flex items-center gap-1.5 z-10">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              <span>AWAY</span>
-                            </div>
-                          )}
+                          {/* Online Status Badge - Top Right */}
+                          <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#10B981]/60 text-[9px] font-black text-[#10B981] flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-10">
+                            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                            <span>ONLINE</span>
+                          </div>
 
                           {/* Pink Heart Action Badge - Bottom Right */}
                           <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
@@ -368,8 +361,8 @@ export default function DashboardPage() {
                           <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/5">
                             {/* Online Indicator */}
                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
-                              <span className="text-[10px] font-extrabold text-zinc-300 uppercase tracking-wider">{girl.status}</span>
+                              <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]" />
+                              <span className="text-[10px] font-extrabold text-[#10B981] uppercase tracking-wider">Online</span>
                             </div>
 
                             {/* Unique ID Badge */}
