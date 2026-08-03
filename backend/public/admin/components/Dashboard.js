@@ -15,9 +15,25 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
   };
 
   // Helper to render metric card
-  const renderMetricCard = ({ title, value, badge, iconName, color, desc, wavePath, areaPath, id }) => {
+  const renderMetricCard = ({ title, value, badge, iconName, color, desc, wavePath, areaPath, id, onClick }) => {
     return (
-      <div className="metric" style={{ position: 'relative', display: 'flex', flexDirection: 'row', gap: '14px', padding: '20px 16px', alignItems: 'center', justifyContent: 'flex-start', minHeight: '130px', overflow: 'hidden' }}>
+      <div 
+        className="metric" 
+        onClick={onClick}
+        style={{ 
+          position: 'relative', 
+          display: 'flex', 
+          flexDirection: 'row', 
+          gap: '14px', 
+          padding: '20px 16px', 
+          alignItems: 'center', 
+          justify: 'flex-start', 
+          minHeight: '130px', 
+          overflow: 'hidden',
+          cursor: onClick ? 'pointer' : 'default',
+          transition: 'transform 0.2s ease, border-color 0.2s ease'
+        }}
+      >
         {/* Left Side: Large Icon Container */}
         <span style={{ 
           width: '52px', 
@@ -97,7 +113,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.users,
           desc: 'All time registered users',
           wavePath: 'M 0 22 Q 25 10 50 18 T 100 4',
-          areaPath: 'M 0 22 Q 25 10 50 18 T 100 4 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 22 Q 25 10 50 18 T 100 4 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('users')
         })}
         {renderMetricCard({
           id: 'revenue',
@@ -108,7 +125,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.revenue,
           desc: 'Total revenue earned',
           wavePath: 'M 0 18 Q 25 24 50 8 T 100 6',
-          areaPath: 'M 0 18 Q 25 24 50 8 T 100 6 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 18 Q 25 24 50 8 T 100 6 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('reports')
         })}
         {renderMetricCard({
           id: 'paid',
@@ -119,7 +137,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.paid,
           desc: 'Total amount paid',
           wavePath: 'M 0 24 Q 25 20 50 26 T 100 22',
-          areaPath: 'M 0 24 Q 25 20 50 26 T 100 22 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 24 Q 25 20 50 26 T 100 22 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('withdrawals')
         })}
         {renderMetricCard({
           id: 'kyc',
@@ -130,7 +149,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.kyc,
           desc: 'Pending verification',
           wavePath: 'M 0 8 Q 25 14 50 4 T 100 18',
-          areaPath: 'M 0 8 Q 25 14 50 4 T 100 18 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 8 Q 25 14 50 4 T 100 18 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('kyc')
         })}
       </div>
 
@@ -145,7 +165,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.withdraw,
           desc: 'Total withdrawal requests',
           wavePath: 'M 0 22 Q 25 18 50 24 T 100 8',
-          areaPath: 'M 0 22 Q 25 18 50 24 T 100 8 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 22 Q 25 18 50 24 T 100 8 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('withdrawals')
         })}
         {renderMetricCard({
           id: 'chats',
@@ -156,7 +177,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.chats,
           desc: 'Currently active chats',
           wavePath: 'M 0 18 Q 25 8 50 22 T 100 12',
-          areaPath: 'M 0 18 Q 25 8 50 22 T 100 12 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 18 Q 25 8 50 22 T 100 12 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('chats')
         })}
         {renderMetricCard({
           id: 'coins',
@@ -167,7 +189,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           color: colors.coins,
           desc: 'Total coins sold',
           wavePath: 'M 0 14 Q 25 26 50 10 T 100 4',
-          areaPath: 'M 0 14 Q 25 26 50 10 T 100 4 L 100 30 L 0 30 Z'
+          areaPath: 'M 0 14 Q 25 26 50 10 T 100 4 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('wallet')
         })}
         
         {/* Keep Growing Banner Card */}
