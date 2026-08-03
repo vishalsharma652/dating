@@ -155,6 +155,7 @@ export default function DashboardPage() {
               value: data?.userCounts?.totalUsers ?? (activeUsers.length || 0),
               icon: Users,
               change: 'Pending & KYC Done',
+              href: '/user/active-users?filter=all',
               color: '#EC4899',
             },
             {
@@ -162,14 +163,15 @@ export default function DashboardPage() {
               value: data?.userCounts?.pendingKycUsers ?? 0,
               icon: UserCheck,
               change: 'Pending KYC',
+              href: '/user/active-users?filter=new',
               color: '#F59E0B',
-              
             },
             {
               label: 'Verified Users',
               value: data?.userCounts?.verifiedUsers ?? 0,
               icon: ShieldCheck,
               change: 'KYC Approved',
+              href: '/user/active-users?filter=verified',
               color: '#10B981',
             },
             {
@@ -177,6 +179,7 @@ export default function DashboardPage() {
               value: activeGirlsList.filter(g => g.status === 'Online').length,
               icon: Heart,
               change: 'Online Now',
+              href: '/user/active-users?filter=active',
               color: '#EC4899',
             },
             {
@@ -184,84 +187,79 @@ export default function DashboardPage() {
               value: user.coins !== undefined ? user.coins : 0,
               icon: Coins,
               change: 'View wallet',
-              isLink: true,
+              href: '/user/wallet',
               color: '#7C3AED',
             }
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <Card
-                key={i}
-                className="relative bg-[#0E1526]/85 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-4.5 overflow-hidden hover:border-white/20 transition-all duration-300 group shadow-lg flex flex-col justify-between"
-              >
-                {/* Ambient Glow */}
-                <div
-                  className="absolute -right-6 -top-6 w-20 h-20 rounded-full blur-xl opacity-15 pointer-events-none group-hover:opacity-25 transition-opacity"
-                  style={{ backgroundColor: stat.color }}
-                />
+              <Link key={i} href={stat.href} className="block group">
+                <Card
+                  className="relative bg-[#0E1526]/85 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-4.5 overflow-hidden hover:border-white/25 hover:scale-[1.02] transition-all duration-300 shadow-lg flex flex-col justify-between cursor-pointer"
+                >
+                  {/* Ambient Glow */}
+                  <div
+                    className="absolute -right-6 -top-6 w-20 h-20 rounded-full blur-xl opacity-15 pointer-events-none group-hover:opacity-30 transition-opacity"
+                    style={{ backgroundColor: stat.color }}
+                  />
 
-                <div className="space-y-3 relative z-10">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] md:text-[11px] font-extrabold text-zinc-400 tracking-wider uppercase truncate">
-                      {stat.label}
-                    </p>
+                  <div className="space-y-3 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] md:text-[11px] font-extrabold text-zinc-400 tracking-wider uppercase truncate">
+                        {stat.label}
+                      </p>
 
-                    {/* Glowing Icon Container */}
-                    <div
-                      className="w-8.5 h-8.5 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${stat.color}18`, border: `1px solid ${stat.color}30` }}
-                    >
-                      <Icon size={17} style={{ color: stat.color, filter: `drop-shadow(0 0 6px ${stat.color}88)` }} />
+                      {/* Glowing Icon Container */}
+                      <div
+                        className="w-8.5 h-8.5 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition duration-300"
+                        style={{ backgroundColor: `${stat.color}18`, border: `1px solid ${stat.color}30` }}
+                      >
+                        <Icon size={17} style={{ color: stat.color, filter: `drop-shadow(0 0 6px ${stat.color}88)` }} />
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <h3 className="text-2xl xl:text-3xl font-black text-white leading-none tracking-tight">
-                      {stat.value}
-                    </h3>
-                  </div>
+                    <div>
+                      <h3 className="text-2xl xl:text-3xl font-black text-white leading-none tracking-tight">
+                        {stat.value}
+                      </h3>
+                    </div>
 
-                  <div className="text-[10px] md:text-[11px] font-bold truncate">
-                    {stat.isLink ? (
-                      <Link href="/user/wallet" className="text-[#7C3AED] hover:underline flex items-center gap-1">
-                        <span>{stat.change}</span>
-                        <span>→</span>
-                      </Link>
-                    ) : (
-                      <span className="flex items-center gap-1.5" style={{ color: stat.color }}>
+                    <div className="text-[10px] md:text-[11px] font-bold truncate flex items-center justify-between" style={{ color: stat.color }}>
+                      <span className="flex items-center gap-1.5 truncate">
                         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stat.color }} />
                         <span className="truncate">{stat.change}</span>
                       </span>
-                    )}
+                      <span className="group-hover:translate-x-1 transition duration-300">→</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Mini SVG line graph path */}
-                <div className="absolute bottom-0 left-0 right-0 h-8 opacity-15 pointer-events-none">
-                  <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
-                    <path
-                      d={i % 2 === 0
-                        ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10 L100,30 L0,30 Z"
-                        : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20 L100,30 L0,30 Z"}
-                      fill={`url(#grad-${i})`}
-                    />
-                    <path
-                      d={i % 2 === 0
-                        ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10"
-                        : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20"}
-                      fill="none"
-                      stroke={stat.color}
-                      strokeWidth="1.2"
-                    />
-                    <defs>
-                      <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={stat.color} />
-                        <stop offset="100%" stopColor="transparent" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </div>
-              </Card>
+                  {/* Mini SVG line graph path */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 opacity-15 pointer-events-none">
+                    <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+                      <path
+                        d={i % 2 === 0
+                          ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10 L100,30 L0,30 Z"
+                          : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20 L100,30 L0,30 Z"}
+                        fill={`url(#grad-${i})`}
+                      />
+                      <path
+                        d={i % 2 === 0
+                          ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10"
+                          : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20"}
+                        fill="none"
+                        stroke={stat.color}
+                        strokeWidth="1.2"
+                      />
+                      <defs>
+                        <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={stat.color} />
+                          <stop offset="100%" stopColor="transparent" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                </Card>
+              </Link>
             );
           })}
         </div>

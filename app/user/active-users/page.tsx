@@ -1,24 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Search, ArrowLeft, Sparkles, Shield } from 'lucide-react';
+import { Heart, MessageCircle, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 
-export default function ActiveUsersPage() {
+function ActiveUsersContent() {
+  const searchParams = useSearchParams();
+  const initialFilter = searchParams.get('filter') || 'all';
+
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState(initialFilter);
 
   useEffect(() => {
     userApi.dashboard()
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load active users'))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load users'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -52,11 +57,22 @@ export default function ActiveUsersPage() {
     age: u.age || 24,
     location: u.location || 'Delhi',
     status: u.isOnline !== false ? 'Online' : 'Away',
+    kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
     photo: u.photo || fallbacks[idx % fallbacks.length],
     bio: u.bio || 'Looking for meaningful connections'
   }));
 
   const filteredUsers = formattedUsers.filter((u: any) => {
+    // 1. Tab filter
+    if (activeFilter === 'new') {
+      if (u.kycStatus === 'approved') return false;
+    } else if (activeFilter === 'verified') {
+      if (u.kycStatus !== 'approved') return false;
+    } else if (activeFilter === 'active') {
+      if (u.status !== 'Online') return false;
+    }
+
+    // 2. Search query filter
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
     return (
@@ -85,10 +101,10 @@ export default function ActiveUsersPage() {
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
                 <Heart size={24} className="text-[#EC4899]" />
-                <span>All {targetLabel}</span>
+                <span>{activeFilter === 'all' ? 'All Users' : activeFilter === 'new' ? 'New Users (Pending KYC)' : activeFilter === 'verified' ? 'Verified Users (KYC Done)' : targetLabel}</span>
               </h1>
               <p className="text-zinc-400 text-sm font-medium mt-1">
-                Browse all active members online right now ({filteredUsers.length})
+                Showing {filteredUsers.length} members
               </p>
             </div>
           </div>
@@ -106,22 +122,49 @@ export default function ActiveUsersPage() {
           </div>
         </div>
 
+        {/* Interactive Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'all', label: 'All Users', icon: Users },
+            { id: 'new', label: 'New Users (Pending KYC)', icon: Clock },
+            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
+            { id: 'active', label: 'Active Online', icon: Heart },
+          ].map((tab) => {
+            const TabIcon = tab.icon;
+            const isActive = activeFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveFilter(tab.id)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 border ${
+                  isActive
+                    ? 'bg-[#EC4899] border-[#EC4899] text-white shadow-lg shadow-pink-500/20'
+                    : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <TabIcon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* User Cards Grid */}
         {filteredUsers.length === 0 ? (
           <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-12 text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/20 flex items-center justify-center mx-auto text-[#EC4899]">
               <Search size={24} />
             </div>
-            <h3 className="text-lg font-bold text-white">No active members found</h3>
+            <h3 className="text-lg font-bold text-white">No members found</h3>
             <p className="text-zinc-400 text-xs max-w-sm mx-auto">
-              We couldn't find any active users matching "{searchQuery}". Try searching with a different name or Unique ID!
+              We couldn't find any users matching your filter or search criteria.
             </p>
             <Button
               variant="outline"
-              onClick={() => setSearchQuery('')}
+              onClick={() => { setSearchQuery(''); setActiveFilter('all'); }}
               className="rounded-full border-white/10 text-xs"
             >
-              Clear Search Filter
+              Reset Filters
             </Button>
           </Card>
         ) : (
@@ -141,6 +184,21 @@ export default function ActiveUsersPage() {
 
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+
+                  {/* KYC Status Badge - Top Left */}
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-bold flex items-center gap-1">
+                    {u.kycStatus === 'approved' ? (
+                      <span className="text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={12} />
+                        KYC Done
+                      </span>
+                    ) : (
+                      <span className="text-amber-400 flex items-center gap-1">
+                        <Clock size={12} />
+                        Pending KYC
+                      </span>
+                    )}
+                  </div>
 
                   {/* Heart Action Badge */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
@@ -189,5 +247,17 @@ export default function ActiveUsersPage() {
         )}
       </Container>
     </div>
+  );
+}
+
+export default function ActiveUsersPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]">
+        <Loading />
+      </div>
+    }>
+      <ActiveUsersContent />
+    </Suspense>
   );
 }
