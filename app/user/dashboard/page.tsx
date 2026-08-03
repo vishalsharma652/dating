@@ -92,7 +92,7 @@ export default function DashboardPage() {
     name: u.name || 'User',
     age: u.age || 24,
     location: u.location || 'Delhi',
-    status: u.isOnline !== false ? 'Online' : 'Away',
+    status: (u.online === true || u.isOnline === true || u.online_status === true || u.status === 'Online') ? 'Online' : 'Offline',
     photo: u.photo || fallbacks[idx % fallbacks.length]
   }));
 
@@ -333,12 +333,6 @@ export default function DashboardPage() {
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
 
-                          {/* Online Status Badge - Top Right */}
-                          <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#10B981]/60 text-[9px] font-black text-[#10B981] flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.4)] z-10">
-                            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                            <span>ONLINE</span>
-                          </div>
-
                           {/* Pink Heart Action Badge - Bottom Right */}
                           <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                             <Heart size={13} className="fill-current text-white" />
@@ -361,8 +355,10 @@ export default function DashboardPage() {
                           <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/5">
                             {/* Online Indicator */}
                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]" />
-                              <span className="text-[10px] font-extrabold text-[#10B981] uppercase tracking-wider">Online</span>
+                              <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
+                              <span className={`text-[10px] font-extrabold uppercase tracking-wider ${girl.status === 'Online' ? 'text-[#10B981]' : 'text-zinc-400'}`}>
+                                {girl.status === 'Online' ? 'Online' : 'Offline'}
+                              </span>
                             </div>
 
                             {/* Unique ID Badge */}
