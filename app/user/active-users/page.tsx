@@ -40,7 +40,9 @@ function ActiveUsersContent() {
   );
 
   const user = data?.user || {};
-  const activeUsers = data?.activeUsers || data?.activeGirls || [];
+  const rawUsers = (data?.allUsers && Array.isArray(data.allUsers) && data.allUsers.length > 0) 
+    ? data.allUsers 
+    : (data?.activeUsers || data?.activeGirls || []);
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
@@ -50,13 +52,13 @@ function ActiveUsersContent() {
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
   const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
 
-  const formattedUsers = activeUsers.map((u: any, idx: number) => ({
+  const formattedUsers = rawUsers.map((u: any, idx: number) => ({
     id: u.id,
     uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
     name: u.name || 'User',
     age: u.age || 24,
     location: u.location || 'Delhi',
-    status: u.isOnline !== false ? 'Online' : 'Away',
+    status: (u.online === true || u.isOnline === true || u.online_status === true) ? 'Online' : 'Away',
     kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
     photo: u.photo || fallbacks[idx % fallbacks.length],
     bio: u.bio || 'Looking for meaningful connections'

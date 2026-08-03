@@ -28,6 +28,35 @@ async function dashboard(req, res) {
   const activeLabel = currentGender === 'female' ? 'Active Males' : 'Active Females';
   const assignedUser = activeUsers[0] || null;
 
+  const targetGender = currentGender === 'female' ? 'male' : 'female';
+  const allUsersRows = await query(
+    `SELECT u.id, COALESCE(u.unique_id, CONCAT('STK-', LPAD(u.id, 6, '0'))) AS unique_id, u.name,
+      COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age, 24) AS age,
+      COALESCE(p.city, 'Delhi') AS location, p.bio, COALESCE(pp.url, '') AS photo,
+      u.kyc_status, (u.kyc_status = 'approved') AS verified,
+      (u.online_status = true AND u.last_seen_at IS NOT NULL AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online
+     FROM users u
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE u.id <> :userId
+       AND u.role = 'user'
+       AND u.status = 'active'
+       AND (
+         :targetGender IS NULL OR
+         LOWER(COALESCE(u.gender, p.gender, '')) IN (:gender0, :gender1, :gender2, :gender3)
+       )
+     ORDER BY (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) DESC, u.created_at DESC
+     LIMIT 100`,
+    {
+      userId: req.user.id,
+      targetGender: targetGender || null,
+      gender0: targetGender === 'female' ? 'female' : 'male',
+      gender1: targetGender === 'female' ? 'woman' : 'man',
+      gender2: targetGender === 'female' ? 'girl' : 'boy',
+      gender3: targetGender === 'female' ? 'women' : 'men',
+    }
+  );
+
   const countRows = await query(`
     SELECT 
       COUNT(*) AS totalUsers,
@@ -43,6 +72,7 @@ async function dashboard(req, res) {
     profile,
     matches: matches.slice(0, 3),
     activeUsers,
+    allUsers: allUsersRows,
     assignedUser,
     activeLabel,
     activeGirls: activeUsers,
