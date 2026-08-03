@@ -312,14 +312,14 @@ export default function DashboardPage() {
                         className="bg-[#101827]/60 border border-white/5 rounded-[20px] p-3.5 hover:border-white/10 hover:-translate-y-1 transition duration-300 relative group flex flex-col justify-between"
                       >
                         {/* Portrait Photo Container */}
-                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3.5 shadow-inner">
+                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-inner">
                           <img
                             src={girl.photo}
                             alt={girl.name}
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
                           {/* Unique ID Badge Overlay */}
-                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 shadow-sm">
+                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 shadow-sm whitespace-nowrap">
                             {girl.uniqueId}
                           </div>
                           {/* Status Indicator Dot */}
@@ -328,24 +328,21 @@ export default function DashboardPage() {
                               }`}
                           />
                           {/* Floating Pink Heart Badge */}
-                          <div className="absolute bottom-2.5 right-2.5 w-8.5 h-8.5 rounded-full bg-[#EC4899] flex items-center justify-center text-white shadow-md border border-white/10">
-                            <Heart size={14} className="fill-current" />
+                          <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-[#EC4899] flex items-center justify-center text-white shadow-md border border-white/10">
+                            <Heart size={13} className="fill-current" />
                           </div>
                         </div>
 
                         {/* Metadata text */}
-                        <div className="px-1.5 space-y-1 text-left">
-                          <p className="font-black text-sm text-white truncate group-hover:text-[#EC4899] transition-colors">{girl.name}</p>
-                          <p className="text-[11px] text-zinc-400 font-bold truncate">{girl.age}, {girl.location}</p>
-                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981]' : 'bg-[#F59E0B]'
-                                }`} />
-                              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{girl.status}</span>
-                            </div>
-                            <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                              ID: {girl.uniqueId}
-                            </span>
+                        <div className="px-1 space-y-1 text-left">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="font-black text-sm text-white truncate group-hover:text-[#EC4899] transition-colors">{girl.name}</p>
+                            <span className="text-[11px] text-zinc-400 font-bold truncate">{girl.age} yrs</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400 font-medium truncate">{girl.location}</p>
+                          <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_6px_#10B981]' : 'bg-[#F59E0B]'}`} />
+                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{girl.status}</span>
                           </div>
                         </div>
                       </Link>
