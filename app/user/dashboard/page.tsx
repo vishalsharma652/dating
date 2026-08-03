@@ -15,6 +15,8 @@ import {
   Clock,
   Eye,
   Shield,
+  ShieldCheck,
+  UserCheck,
   Search,
   BadgeIndianRupee,
 } from 'lucide-react';
@@ -35,6 +37,11 @@ export default function DashboardPage() {
     activeLabel: string;
     activeGirls?: any[];
     assignedGirl?: any | null;
+    userCounts?: {
+      totalUsers: number;
+      verifiedUsers: number;
+      pendingKycUsers: number;
+    };
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,7 +79,7 @@ export default function DashboardPage() {
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Boys' : (userGender === 'male' ? 'Active Girls' : 'Active Users');
+  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -140,32 +147,37 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 4 Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* 5 Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
           {[
             {
-              label: 'Total Matches',
-              value: matches.length || 0,
-              icon: Heart,
-              change: '0 recent',
+              label: 'All Users',
+              value: data?.userCounts?.totalUsers ?? (activeUsers.length || 0),
+              icon: Users,
+              change: 'Pending & KYC Done',
               color: '#EC4899',
-              chartColor: '#EC4899'
             },
             {
-              label: 'New Messages',
-              value: unreadMessages,
-              icon: MessageCircle,
-              change: 'Synced from chats',
-              color: '#7C3AED',
-              chartColor: '#7C3AED'
+              label: 'New Users',
+              value: data?.userCounts?.pendingKycUsers ?? 0,
+              icon: UserCheck,
+              change: 'Pending KYC',
+              color: '#F59E0B',
+              
+            },
+            {
+              label: 'Verified Users',
+              value: data?.userCounts?.verifiedUsers ?? 0,
+              icon: ShieldCheck,
+              change: 'KYC Approved',
+              color: '#10B981',
             },
             {
               label: targetLabel,
               value: activeGirlsList.filter(g => g.status === 'Online').length,
-              icon: Users,
-              change: 'Waiting for online users',
+              icon: Heart,
+              change: 'Online Now',
               color: '#EC4899',
-              chartColor: '#EC4899'
             },
             {
               label: 'Coins Balance',
@@ -174,53 +186,58 @@ export default function DashboardPage() {
               change: 'View wallet',
               isLink: true,
               color: '#7C3AED',
-              chartColor: '#7C3AED'
             }
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
               <Card
                 key={i}
-                className="relative bg-[#101827]/72 backdrop-blur-xl border border-white/5 rounded-2xl p-6 overflow-hidden hover:border-white/10 transition-all duration-300 group shadow-md"
+                className="relative bg-[#0E1526]/85 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-4.5 overflow-hidden hover:border-white/20 transition-all duration-300 group shadow-lg flex flex-col justify-between"
               >
-                {/* Background Glow */}
+                {/* Ambient Glow */}
                 <div
-                  className="absolute -right-6 -top-6 w-20 h-20 rounded-full blur-xl opacity-10 pointer-events-none group-hover:opacity-15 transition-opacity"
+                  className="absolute -right-6 -top-6 w-20 h-20 rounded-full blur-xl opacity-15 pointer-events-none group-hover:opacity-25 transition-opacity"
                   style={{ backgroundColor: stat.color }}
                 />
 
-                <div className="space-y-4 relative z-10">
-                  <div className="flex justify-between items-start">
+                <div className="space-y-3 relative z-10">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] md:text-[11px] font-extrabold text-zinc-400 tracking-wider uppercase truncate">
+                      {stat.label}
+                    </p>
+
                     {/* Glowing Icon Container */}
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${stat.color}15`, border: `1px solid ${stat.color}25` }}
+                      className="w-8.5 h-8.5 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${stat.color}18`, border: `1px solid ${stat.color}30` }}
                     >
-                      <Icon size={20} style={{ color: stat.color, filter: `drop-shadow(0 0 6px ${stat.color}aa)` }} />
+                      <Icon size={17} style={{ color: stat.color, filter: `drop-shadow(0 0 6px ${stat.color}88)` }} />
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-zinc-450 tracking-wide uppercase">{stat.label}</p>
-                    <h3 className="text-3xl font-black text-white mt-1 leading-none tracking-tight">
+                    <h3 className="text-2xl xl:text-3xl font-black text-white leading-none tracking-tight">
                       {stat.value}
                     </h3>
                   </div>
 
-                  <div className="text-[11px] font-bold">
+                  <div className="text-[10px] md:text-[11px] font-bold truncate">
                     {stat.isLink ? (
                       <Link href="/user/wallet" className="text-[#7C3AED] hover:underline flex items-center gap-1">
                         <span>{stat.change}</span>
                         <span>→</span>
                       </Link>
                     ) : (
-                      <span className="text-[#10B981]">{`↑ ${stat.change}`}</span>
+                      <span className="flex items-center gap-1.5" style={{ color: stat.color }}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stat.color }} />
+                        <span className="truncate">{stat.change}</span>
+                      </span>
                     )}
                   </div>
                 </div>
 
                 {/* Mini SVG line graph path */}
-                <div className="absolute bottom-0 left-0 right-0 h-10 opacity-20 pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 h-8 opacity-15 pointer-events-none">
                   <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
                     <path
                       d={i % 2 === 0
@@ -233,12 +250,12 @@ export default function DashboardPage() {
                         ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10"
                         : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20"}
                       fill="none"
-                      stroke={stat.chartColor}
+                      stroke={stat.color}
                       strokeWidth="1.2"
                     />
                     <defs>
                       <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={stat.chartColor} />
+                        <stop offset="0%" stopColor={stat.color} />
                         <stop offset="100%" stopColor="transparent" />
                       </linearGradient>
                     </defs>
@@ -289,7 +306,7 @@ export default function DashboardPage() {
                   <div className="space-y-2 max-w-sm relative z-10">
                     <h3 className="font-bold text-white text-sm tracking-tight">Scanning for connections...</h3>
                     <p className="text-zinc-400 text-xs leading-relaxed font-semibold">
-                      No active {isFemale ? 'boys' : 'girls'} are online right now. We are constantly searching. Check back soon or boost your profile to increase your views!
+                      No active {isFemale ? 'males' : 'females'} are online right now. We are constantly searching. Check back soon or boost your profile to increase your views!
                     </p>
                   </div>
 
@@ -358,7 +375,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-zinc-400 text-xs font-semibold relative z-10 overflow-hidden">
                     <div className="flex items-center gap-2">
                       <Sparkles size={14} className="text-[#EC4899]" />
-                      <span>Showing active {isFemale ? 'boys' : 'girls'} online right now!</span>
+                      <span>Showing active {isFemale ? 'males' : 'females'} online right now!</span>
                     </div>
                   </div>
                 </>

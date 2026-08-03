@@ -39,7 +39,7 @@ export default function ActiveUsersPage() {
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Boys' : (userGender === 'male' ? 'Active Girls' : 'Active Users');
+  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];

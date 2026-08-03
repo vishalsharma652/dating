@@ -11,6 +11,8 @@ const { ok, created } = require('../utils/apiResponse');
 const { AppError } = require('../utils/errors');
 const { hasNameGenderMismatch, normalizeGender: normalizeNameGender } = require('../utils/nameGender');
 
+const { query } = require('../config/db');
+
 const profileRules = [
   body('name').optional().trim().notEmpty(),
   body('age').optional().isInt({ min: 18 }),
@@ -23,8 +25,19 @@ async function dashboard(req, res) {
   const matches = await socialModel.matches(req.user.id);
   const activeUsers = await profileModel.activeOppositeGenderUsers(req.user.id);
   const currentGender = normalizeGender(req.user.gender || profile?.gender);
-  const activeLabel = currentGender === 'female' ? 'Active Boys' : 'Active Girls';
+  const activeLabel = currentGender === 'female' ? 'Active Males' : 'Active Females';
   const assignedUser = activeUsers[0] || null;
+
+  const countRows = await query(`
+    SELECT 
+      COUNT(*) AS totalUsers,
+      SUM(CASE WHEN kyc_status = 'approved' THEN 1 ELSE 0 END) AS verifiedUsers,
+      SUM(CASE WHEN kyc_status <> 'approved' OR kyc_status IS NULL THEN 1 ELSE 0 END) AS pendingKycUsers
+    FROM users 
+    WHERE role = 'user' AND status = 'active'
+  `);
+  const counts = countRows[0] || {};
+
   return ok(res, {
     user: req.user,
     profile,
@@ -33,7 +46,12 @@ async function dashboard(req, res) {
     assignedUser,
     activeLabel,
     activeGirls: activeUsers,
-    assignedGirl: assignedUser
+    assignedGirl: assignedUser,
+    userCounts: {
+      totalUsers: Number(counts.totalUsers) || 0,
+      verifiedUsers: Number(counts.verifiedUsers) || 0,
+      pendingKycUsers: Number(counts.pendingKycUsers) || 0
+    }
   });
 }
 
