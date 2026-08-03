@@ -52,17 +52,23 @@ function ActiveUsersContent() {
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
   const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
 
-  const formattedUsers = rawUsers.map((u: any, idx: number) => ({
-    id: u.id,
-    uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
-    name: u.name || 'User',
-    age: u.age || 24,
-    location: u.location || 'Delhi',
-    status: (u.online === true || u.isOnline === true || u.online_status === true) ? 'Online' : 'Away',
-    kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
-    photo: u.photo || fallbacks[idx % fallbacks.length],
-    bio: u.bio || 'Looking for meaningful connections'
-  }));
+  const formattedUsers = rawUsers.map((u: any, idx: number) => {
+    const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
+    const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
+    const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
+
+    return {
+      id: u.id,
+      uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
+      name: u.name || 'User',
+      age: u.age || 24,
+      location: u.location || 'Delhi',
+      status: (u.online === true || u.isOnline === true || u.online_status === true || u.status === 'Online') ? 'Online' : 'Away',
+      kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
+      photo: photoUrl,
+      bio: u.bio || 'Looking for meaningful connections'
+    };
+  });
 
   const filteredUsers = formattedUsers.filter((u: any) => {
     // 1. Tab filter
