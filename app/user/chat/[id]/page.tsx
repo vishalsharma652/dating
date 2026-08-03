@@ -10,7 +10,7 @@ import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { CheckCheck } from 'lucide-react';
+import { Check, CheckCheck } from 'lucide-react';
 
 type ActiveCall = 'voice' | 'video' | null;
 
@@ -173,7 +173,15 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     <span className="break-words font-normal">{msg.text}</span>
                     <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
                       <span>{msg.timestamp}</span>
-                      {isMine && <CheckCheck size={13} className="text-sky-300 inline" />}
+                      {isMine && (
+                        msg.deliveryStatus === 'read' ? (
+                          <CheckCheck size={13} className="text-sky-300 inline" />
+                        ) : chatUser?.online ? (
+                          <CheckCheck size={13} className="text-zinc-300 inline" />
+                        ) : (
+                          <Check size={13} className="text-zinc-400 inline" />
+                        )
+                      )}
                     </span>
                   </div>
                 </div>
