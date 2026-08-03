@@ -162,29 +162,50 @@ async function bankAccounts(userId) {
 }
 
 async function createWithdrawal(userId, data) {
-  const amount = Number(data.amount);
-  const result = await transaction(async (connection) => {
-    const [users] = await connection.execute('SELECT earnings FROM users WHERE id = :userId LIMIT 1 FOR UPDATE', { userId });
-    if (!users[0]) throw new AppError('User not found', 404);
-    if (Number(users[0].earnings) < amount) throw new AppError('Insufficient earnings for this withdrawal', 422);
+  const amountRupees = Number(data.amount);
+  if (isNaN(amountRupees) || amountRupees < 50) {
+    throw new AppError('Minimum withdrawal amount is ₹50 (200 Coins)', 422);
+  }
+  const requiredCoins = amountRupees * 4; // Rate: 200 Coins = ₹50 (1 Coin = ₹0.25)
 
-    await connection.execute('UPDATE users SET earnings = earnings - :amount WHERE id = :userId', { amount, userId });
-    await connection.execute(
-      'UPDATE wallets SET withdrawal_balance = withdrawal_balance - :amount WHERE user_id = :userId AND withdrawal_balance >= :amount',
-      { amount, userId }
+  const result = await transaction(async (connection) => {
+    const [users] = await connection.execute(
+      'SELECT coins, earnings FROM users WHERE id = :userId LIMIT 1 FOR UPDATE',
+      { userId }
     );
+    if (!users[0]) throw new AppError('User not found', 404);
+
+    const availableCoins = Math.max(Number(users[0].coins || 0), Number(users[0].earnings || 0));
+    if (availableCoins < requiredCoins) {
+      throw new AppError(`Insufficient coins. You need ${requiredCoins} coins to withdraw ₹${amountRupees}.`, 422);
+    }
+
+    // Deduct coins from user's coins & earnings
+    await connection.execute(
+      'UPDATE users SET coins = GREATEST(coins - :requiredCoins, 0), earnings = GREATEST(earnings - :requiredCoins, 0) WHERE id = :userId',
+      { requiredCoins, userId }
+    );
+    await connection.execute(
+      'UPDATE wallets SET withdrawal_balance = GREATEST(withdrawal_balance - :requiredCoins, 0), balance = GREATEST(balance - :requiredCoins, 0) WHERE user_id = :userId',
+      { requiredCoins, userId }
+    );
+
+    // Record withdrawal request in rupees
     const [withdrawalResult] = await connection.execute(
       `INSERT INTO withdrawals (user_id, amount, method, bank_name, account_number, status)
-       VALUES (:userId, :amount, :method, :bankName, :accountNumber, 'pending')`,
-      { userId, amount, method: data.method, bankName: data.bankName || null, accountNumber: data.accountNumber || null }
+       VALUES (:userId, :amountRupees, :method, :bankName, :accountNumber, 'pending')`,
+      { userId, amountRupees, method: data.method, bankName: data.bankName || null, accountNumber: data.accountNumber || null }
     );
+
     await connection.execute(
       `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-       VALUES (:userId, 'withdrawal', 'Withdrawal Requested', :description, :amount, 0, 'pending')`,
-      { userId, description: `Withdrawal #${withdrawalResult.insertId}`, amount: -amount }
+       VALUES (:userId, 'withdrawal', 'Withdrawal Requested', :description, :amountRupees, :requiredCoins, 'pending')`,
+      { userId, description: `Withdrawal #${withdrawalResult.insertId} (₹${amountRupees} for ${requiredCoins} coins)`, amountRupees: -amountRupees, requiredCoins: -requiredCoins }
     );
+
     return withdrawalResult;
   });
+
   return findWithdrawal(result.insertId);
 }
 

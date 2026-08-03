@@ -26,7 +26,7 @@ export default function WithdrawPage() {
     accountNumber: '',
     ifscCode: '',
   });
-  const [wallet, setWallet] = useState<{ earnings?: number; withdrawalBalance?: number }>({});
+  const [wallet, setWallet] = useState<{ coins?: number; earnings?: number; withdrawalBalance?: number }>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -93,7 +93,9 @@ export default function WithdrawPage() {
     }
   };
 
-  const availableBalance = wallet.withdrawalBalance ?? wallet.earnings ?? 0;
+  const totalCoins = Number(wallet.coins ?? wallet.earnings ?? wallet.withdrawalBalance ?? 0);
+  const availableRupees = (totalCoins * 0.25).toFixed(2);
+  const reqCoins = Number(formData.amount || 0) * 4;
 
   return (
     <div className="p-4 md:p-8">
@@ -102,11 +104,21 @@ export default function WithdrawPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-1">Withdrawal</h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">Withdraw your earnings to your bank or UPI account</p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-200 dark:border-pink-900/40 px-4 py-2">
-            <Wallet size={18} className="text-pink-500" />
-            <span className="text-sm font-medium">Available Balance:</span>
-            <span className="font-bold text-pink-600">₹ {Number(availableBalance).toFixed(2)}</span>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-200 dark:border-pink-900/40 px-4 py-2">
+              <Wallet size={18} className="text-pink-500" />
+              <span className="text-sm font-medium">Earned Coins:</span>
+              <span className="font-bold text-pink-600">{totalCoins} Coins</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200 dark:border-emerald-900/40 px-4 py-2">
+              <BadgeIndianRupee size={18} className="text-emerald-500" />
+              <span className="text-sm font-medium">Available Balance (50% Rate):</span>
+              <span className="font-bold text-emerald-400">₹ {availableRupees}</span>
+            </div>
           </div>
+          <p className="text-xs text-zinc-400 mt-2 font-semibold">
+            💡 Rate Condition: 200 Coins = ₹50 INR (1 Coin = ₹0.25). 50% purchase package conversion rate applied.
+          </p>
         </div>
 
         <Card className="mb-6">
@@ -121,13 +133,20 @@ export default function WithdrawPage() {
               <label className="block text-sm font-medium mb-2">Amount (₹) <span className="text-red-500">*</span></label>
               <input
                 type="number"
-                placeholder="Enter amount (Min: ₹500)"
+                placeholder="Enter amount (Min: ₹50)"
                 value={formData.amount}
                 onChange={(e) => set('amount', e.target.value)}
                 className={inputCls}
-                min={500}
+                min={50}
               />
-              <p className="text-xs text-zinc-400 mt-1">Minimum withdrawal: ₹500</p>
+              <div className="flex items-center justify-between text-xs text-zinc-400 mt-1.5 font-medium">
+                <span>Minimum withdrawal: ₹50 (200 Coins)</span>
+                {reqCoins > 0 && (
+                  <span className="text-pink-400 font-bold">
+                    Deduction: {reqCoins} Coins
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Mobile Number */}
