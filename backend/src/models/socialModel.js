@@ -241,7 +241,7 @@ async function startChatSession(chatId, payerUserId, earnerUserId, settings) {
     actorUserId: payerUserId,
     type: 'chat_session_started',
     title: 'Paid Chat Started',
-    message: `${payerName} started a paid chat with you. You earn ${earnerShare} coins per minute.`,
+    message: `${payerName} started a paid chat with you. You earn ${earnerShare} coins per message.`,
     linkUrl: `/user/chat/${payerUserId}`,
     metadata: { chatId, chargePerMinute, earnerShare }
   });

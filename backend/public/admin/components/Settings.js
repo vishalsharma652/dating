@@ -6,7 +6,7 @@ window.Settings = function Settings({ data, onSave }) {
       <div className="panel-body">
         <form className="form-grid" onSubmit={onSave}>
           <label className="field">
-            <span>Coin deduction rate (per minute chat cost)</span>
+            <span>Coin deduction rate (per message chat cost)</span>
             <input className="input" name="coin_deduction_rate" defaultValue={data.coin_deduction_rate || '10'} />
           </label>
           <label className="field">
