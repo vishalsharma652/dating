@@ -281,17 +281,6 @@ export default function KYCPage() {
                       >
                         <Camera size={16} /> 📸 Take Live Selfie Photo
                       </Button>
-                      
-                      <label className="text-[11px] font-semibold text-zinc-400 hover:text-pink-400 underline cursor-pointer transition">
-                        Or select photo file from device
-                        <input
-                          type="file"
-                          accept="image/*"
-                          capture="user"
-                          className="hidden"
-                          onChange={(event) => handleSelfieChange(event.target.files?.[0] ?? null)}
-                        />
-                      </label>
                     </div>
                   </div>
                 )}
