@@ -100,17 +100,17 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
       <form onSubmit={handleSubmit} className="flex items-center gap-2 max-w-4xl mx-auto">
         {/* Quick Action Buttons: Photo & Gift */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Photo Button */}
           <button
             type="button"
             title="Send Photo"
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-full text-zinc-400 hover:text-pink-400 hover:bg-pink-500/10 transition flex items-center gap-1 text-xs font-bold disabled:opacity-50"
+            className="px-3 py-2 rounded-full bg-pink-500/10 border border-pink-500/20 hover:bg-pink-500/20 text-pink-400 transition flex items-center gap-1.5 text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
-            <ImageIcon size={19} className="text-pink-400" />
-            <span className="hidden md:inline text-pink-400">Photo</span>
+            <ImageIcon size={18} className="text-pink-400 shrink-0" />
+            <span className="text-pink-400 font-extrabold">Photo</span>
           </button>
 
           {/* Gift Button */}
@@ -118,10 +118,10 @@ export function ChatInput({ onSend }: ChatInputProps) {
             type="button"
             title="Send Gift"
             onClick={() => setShowGiftPicker((prev) => !prev)}
-            className="p-2.5 rounded-full text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 transition flex items-center gap-1 text-xs font-bold"
+            className="px-3 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
           >
-            <Gift size={19} className="text-amber-400" />
-            <span className="hidden md:inline text-amber-400">Gift</span>
+            <Gift size={18} className="text-amber-400 shrink-0" />
+            <span className="text-amber-400 font-extrabold">Gift</span>
           </button>
         </div>
 
