@@ -145,6 +145,10 @@ async function messages(chatId, readerUserId) {
 }
 
 async function sendMessage(chatId, senderId, body, type = 'text') {
+  try {
+    await query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
+  } catch (e) {}
+
   const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId });
   const chat = chatRows[0];
   if (!chat) throw new AppError('Chat not found', 404);

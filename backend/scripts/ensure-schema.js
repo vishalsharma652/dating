@@ -43,6 +43,7 @@ async function main() {
   }
 
   await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type ENUM('welcome_bonus','purchase','earning','withdrawal','chat_charge','commission') NOT NULL");
+  await pool.query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS wallets (

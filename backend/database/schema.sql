@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id BIGINT UNSIGNED NOT NULL,
   body TEXT NOT NULL,
   type VARCHAR(30) NOT NULL DEFAULT 'text',
-  delivery_status ENUM('sent','delivered','read') NOT NULL DEFAULT 'sent',
+  delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_messages_chat FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
 );

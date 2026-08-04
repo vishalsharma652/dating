@@ -262,14 +262,6 @@ export default function DashboardPage() {
                         {stat.value}
                       </h3>
                     </div>
-
-                    <div className="text-[10px] md:text-[11px] font-bold truncate flex items-center justify-between" style={{ color: stat.color }}>
-                      <span className="flex items-center gap-1.5 truncate">
-                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stat.color }} />
-                        <span className="truncate">{stat.change}</span>
-                      </span>
-                      <span className="group-hover:translate-x-1 transition duration-300">→</span>
-                    </div>
                   </div>
 
                   {/* Mini SVG line graph path */}
