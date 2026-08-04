@@ -27,8 +27,13 @@ export function ChatHeader({
   return (
     <div className="sticky top-0 bg-[#0D1120] dark:bg-zinc-950 border-b border-white/10 p-3 sm:p-4 flex items-center justify-between z-20 text-white">
       <div className="flex items-center gap-2 sm:gap-3 flex-1">
-        <Link href="/user/chat" className="md:hidden p-1.5 -ml-1 hover:bg-white/10 rounded-full transition text-zinc-300">
-          <ArrowLeft size={20} />
+        <Link 
+          href="/user/chat" 
+          title="Back to chats"
+          className="p-2 -ml-1 hover:bg-white/10 rounded-xl transition text-zinc-300 hover:text-white flex items-center gap-1 text-xs font-bold border border-white/5 bg-white/[0.02]"
+        >
+          <ArrowLeft size={18} />
+          <span className="hidden sm:inline">Back</span>
         </Link>
         <div className="relative">
           <Avatar src={user?.photo || ''} alt={name} fallback={name[0]} />

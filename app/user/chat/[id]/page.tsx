@@ -113,9 +113,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   useEffect(() => { scrollToBottom(); }, [messages]);
 
   // ── Send message ─────────────────────────────────────────────────
-  const handleSend = async (message: string) => {
+  const handleSend = async (message: string, type: 'text' | 'image' | 'gift' = 'text') => {
     try {
-      const data = await userApi.sendMessage(id, message);
+      const data = await userApi.sendMessage(id, message, type);
       setMessages((prev) => [
         ...prev,
         {
@@ -124,8 +124,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         },
       ]);
     } catch (err) {
-      const txt = err instanceof Error ? err.message : 'Unable to send message';
-      setError(txt);
+      console.error('Send message error:', err);
     }
   };
 
@@ -168,7 +167,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                         : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
                     }`}
                   >
-                    <span className="break-words font-normal">{msg.text}</span>
+                    {msg.type === 'image' ? (
+                      <img src={msg.text} alt="Photo attachment" className="max-w-[220px] max-h-[220px] object-cover rounded-lg my-1 border border-white/10" />
+                    ) : (
+                      <span className="break-words font-normal">{msg.text}</span>
+                    )}
                     <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
                       <span>{msg.timestamp}</span>
                       {isMine && (

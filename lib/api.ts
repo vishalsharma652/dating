@@ -226,10 +226,10 @@ export const userApi = {
   chats: () => apiRequest<{ chats: any[] }>('/user/chat'),
   messages: (userId: number | string) =>
     apiRequest<{ chat: any; messages: any[] }>(`/user/chat/${userId}/messages`),
-  sendMessage: (userId: number | string, text: string) =>
+  sendMessage: (userId: number | string, text: string, type: string = 'text') =>
     apiRequest<{ message: any }>(`/user/chat/${userId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, type }),
     }),
   wallet: () => apiRequest<{ coins: number; earnings: number }>('/user/wallet'),
   transactions: () => apiRequest<{ transactions: any[] }>('/user/wallet/history'),
