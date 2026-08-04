@@ -470,14 +470,14 @@ export default function DashboardPage() {
                   </Button>
                 )}
 
-                {/* Refer & Earn (100 Free Coins) button */}
+                {/* Refer & Earn button */}
                 <Button
                   type="button"
                   onClick={() => setShowReferModal(true)}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-transform hover:scale-[1.01]"
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#F59E0B] via-[#FBBF24] to-[#D97706] hover:from-[#FBBF24] hover:to-[#F59E0B] text-black font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] border border-amber-300/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <Gift size={15} className="text-black" />
-                  <span>Refer & Earn (100 Coins Free)</span>
+                  <Gift size={16} className="text-black fill-black/10" />
+                  <span>Refer & Earn</span>
                 </Button>
               </div>
             </Card>
