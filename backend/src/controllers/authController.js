@@ -152,34 +152,40 @@ async function ensureResetTable() {
   try {
     await query("ALTER TABLE password_reset_tokens MODIFY COLUMN expires_at BIGINT NOT NULL");
   } catch (err) { /* ignore */ }
+  try {
+    await query("ALTER TABLE password_reset_tokens ADD COLUMN otp VARCHAR(10) NULL");
+  } catch (err) { /* ignore */ }
   _resetTableReady = true;
 }
 
-async function saveResetToken(email, token, userId, ttlMs = 30 * 60 * 1000) {
+async function saveResetToken(email, token, userId, otp = null, ttlMs = 30 * 60 * 1000) {
   await ensureResetTable();
   const expiresAt = Date.now() + ttlMs;
   await query(
-    `INSERT INTO password_reset_tokens (token, email, user_id, expires_at)
-     VALUES (:token, :email, :userId, :expiresAt)
-     ON DUPLICATE KEY UPDATE expires_at = :expiresAt`,
-    { token, email, userId, expiresAt }
+    `INSERT INTO password_reset_tokens (token, email, user_id, otp, expires_at)
+     VALUES (:token, :email, :userId, :otp, :expiresAt)
+     ON DUPLICATE KEY UPDATE otp = :otp, expires_at = :expiresAt`,
+    { token, email, userId, otp, expiresAt }
   );
 }
 
-async function getResetToken(token) {
+async function getResetToken(tokenOrOtp, email = null) {
   await ensureResetTable();
-  const rows = await query('SELECT * FROM password_reset_tokens WHERE token = :token LIMIT 1', { token });
+  if (!tokenOrOtp && !email) return null;
+  const rows = await query(
+    `SELECT * FROM password_reset_tokens 
+     WHERE (token = :val OR otp = :val OR (email = :email AND otp = :val)) 
+       AND expires_at >= :now 
+     ORDER BY expires_at DESC LIMIT 1`,
+    { val: tokenOrOtp || '', email: email || '', now: Date.now() }
+  );
   if (!rows[0]) return null;
-  if (Number(rows[0].expires_at) < Date.now()) {
-    await deleteResetToken(token);
-    return null;
-  }
   return rows[0];
 }
 
 async function deleteResetToken(token) {
   await ensureResetTable();
-  await query('DELETE FROM password_reset_tokens WHERE token = :token', { token });
+  await query('DELETE FROM password_reset_tokens WHERE token = :token OR email = :token', { token });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -371,34 +377,80 @@ async function heartbeat(req, res) {
 async function forgotPassword(req, res) {
   const email = (req.body.email || '').trim().toLowerCase();
   const user = await userModel.findByEmailOrPhone(email);
-  if (user) {
+  if (user && user.email) {
     const token = randomBytes(32).toString('hex');
-    await saveResetToken(email, token, user.id);
+    const otp = String(randomInt(100000, 1000000));
+    await saveResetToken(user.email, token, user.id, otp);
+
+    const baseUrl = (process.env.APP_URL || 'https://saathika.com').replace(/\/+$/, '');
+    const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+
     try {
       const transporter = createTransporter();
-      const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
       await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Saathika" <noreply@saathika.in>`,
-        to: email,
-        subject: 'Reset your Saathika password',
-        html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link expires in 30 minutes.</p>`,
-        text: `Reset your Saathika password: ${resetLink}`,
+        from: process.env.SMTP_FROM || `"Saathika Dating" <noreply@saathika.com>`,
+        to: user.email,
+        subject: '🔐 Reset your Saathika password (OTP & Link)',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background-color: #070B18; color: #ffffff; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #EC4899; font-size: 22px; font-weight: 800; margin: 0;">Saathika Dating</h2>
+              <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Password Reset Request</p>
+            </div>
+            
+            <p style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">Hello <strong>${user.name || 'User'}</strong>,</p>
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">You requested to reset your password for your Saathika account. You can use either the <strong>6-Digit OTP Code</strong> below or click the button.</p>
+
+            <!-- OTP Box -->
+            <div style="text-align: center; margin: 28px 0; padding: 18px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px dashed rgba(236,72,153,0.4);">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #ec4899; font-weight: 700; margin-bottom: 8px;">Your Password Reset OTP</div>
+              <div style="display: inline-block; background: linear-gradient(135deg, #EC4899 0%, #7C3AED 100%); font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #ffffff; padding: 12px 28px; border-radius: 12px;">
+                ${otp}
+              </div>
+              <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">Valid for 30 minutes</p>
+            </div>
+
+            <!-- Direct Reset Link Button -->
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${resetLink}" target="_blank" style="display: inline-block; background: linear-gradient(90deg, #EC4899 0%, #7C3AED 100%); color: #ffffff; font-weight: bold; font-size: 14px; text-decoration: none; padding: 14px 34px; border-radius: 30px; text-transform: uppercase; letter-spacing: 1px;">
+                Click Here to Reset Password
+              </a>
+            </div>
+
+            <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
+              Direct URL: <a href="${resetLink}" style="color: #ec4899; text-decoration: underline;">${resetLink}</a>
+            </p>
+          </div>
+        `,
+        text: `Reset your Saathika password. Your OTP Code is: ${otp}. Or click this link: ${resetLink}`,
       });
     } catch (err) {
       console.error('[Reset Email] Failed:', err.message);
     }
+
     const isDev = process.env.NODE_ENV !== 'production';
-    return ok(res, isDev ? { resetToken: token } : {}, 'Password reset instructions sent to your email');
+    return ok(res, isDev ? { resetToken: token, otp } : {}, 'Password reset OTP & link sent to your email');
   }
   return ok(res, {}, 'If this email is registered, you will receive reset instructions shortly');
 }
 
 async function resetPassword(req, res) {
-  const { token, password } = req.body;
-  const entry = await getResetToken(token);
-  if (!entry) throw new AppError('Invalid or expired reset link. Please request a new one.', 410);
+  const { token, otp, email, password } = req.body;
+  const tokenOrOtp = token || otp;
+  if (!tokenOrOtp) {
+    throw new AppError('Please provide a valid reset token or 6-digit OTP code.', 400);
+  }
+  if (!password || String(password).length < 6) {
+    throw new AppError('Password must be at least 6 characters long.', 400);
+  }
+
+  const entry = await getResetToken(tokenOrOtp, email);
+  if (!entry) {
+    throw new AppError('Invalid or expired reset link/OTP code. Please request a new one.', 410);
+  }
+
   await userModel.updatePassword(entry.user_id, password);
-  await deleteResetToken(token);
+  await deleteResetToken(entry.token);
   return ok(res, null, 'Password reset successfully. You can now sign in.');
 }
 

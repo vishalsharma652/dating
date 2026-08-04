@@ -169,11 +169,13 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
-  resetPassword: (token: string, password: string) =>
-    apiRequest<null>('/auth/reset-password', {
+  resetPassword: (payload: { token?: string; otp?: string; email?: string; password: string } | string, password?: string) => {
+    const body = typeof payload === 'object' ? payload : { token: payload, password };
+    return apiRequest<null>('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, password }),
-    }),
+      body: JSON.stringify(body),
+    });
+  },
 };
 
 export const userApi = {
