@@ -160,26 +160,52 @@ async function ensureResetTable() {
 
 async function saveResetToken(email, token, userId, otp = null, ttlMs = 30 * 60 * 1000) {
   await ensureResetTable();
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanOtp = String(otp || '').trim();
   const expiresAt = Date.now() + ttlMs;
+
+  try {
+    await query('DELETE FROM password_reset_tokens WHERE LOWER(email) = :cleanEmail', { cleanEmail });
+  } catch (err) { /* ignore */ }
+
   await query(
     `INSERT INTO password_reset_tokens (token, email, user_id, otp, expires_at)
-     VALUES (:token, :email, :userId, :otp, :expiresAt)
-     ON DUPLICATE KEY UPDATE otp = :otp, expires_at = :expiresAt`,
-    { token, email, userId, otp, expiresAt }
+     VALUES (:token, :cleanEmail, :userId, :cleanOtp, :expiresAt)`,
+    { token, cleanEmail, userId, cleanOtp, expiresAt }
   );
 }
 
 async function getResetToken(tokenOrOtp, email = null) {
   await ensureResetTable();
-  if (!tokenOrOtp && !email) return null;
-  const rows = await query(
-    `SELECT * FROM password_reset_tokens 
-     WHERE (token = :val OR otp = :val OR (email = :email AND otp = :val)) 
-       AND expires_at >= :now 
-     ORDER BY expires_at DESC LIMIT 1`,
-    { val: tokenOrOtp || '', email: email || '', now: Date.now() }
-  );
-  if (!rows[0]) return null;
+  const valStr = String(tokenOrOtp || '').trim();
+  const emailStr = String(email || '').trim().toLowerCase();
+  const now = Date.now();
+
+  if (!valStr) return null;
+
+  let rows = [];
+  if (emailStr) {
+    rows = await query(
+      `SELECT * FROM password_reset_tokens 
+       WHERE LOWER(email) = :emailStr 
+         AND (token = :valStr OR otp = :valStr) 
+         AND expires_at >= :now 
+       ORDER BY expires_at DESC LIMIT 1`,
+      { emailStr, valStr, now }
+    );
+  }
+
+  if (!rows || !rows[0]) {
+    rows = await query(
+      `SELECT * FROM password_reset_tokens 
+       WHERE (token = :valStr OR otp = :valStr) 
+         AND expires_at >= :now 
+       ORDER BY expires_at DESC LIMIT 1`,
+      { valStr, now }
+    );
+  }
+
+  if (!rows || !rows[0]) return null;
   return rows[0];
 }
 
