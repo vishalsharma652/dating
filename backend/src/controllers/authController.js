@@ -416,7 +416,7 @@ async function forgotPassword(req, res) {
       await transporter.sendMail({
         from: process.env.SMTP_FROM || `"Saathika Dating" <noreply@saathika.com>`,
         to: user.email,
-        subject: '🔐 Reset your Saathika password (OTP & Link)',
+        subject: `🔐 Your Password Reset OTP: ${otp}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background-color: #070B18; color: #ffffff; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -425,30 +425,23 @@ async function forgotPassword(req, res) {
             </div>
             
             <p style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">Hello <strong>${user.name || 'User'}</strong>,</p>
-            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">You requested to reset your password for your Saathika account. You can use either the <strong>6-Digit OTP Code</strong> below or click the button.</p>
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">You requested to reset your password for your Saathika account. Please enter the <strong>6-Digit OTP Code</strong> below to complete your password reset.</p>
 
             <!-- OTP Box -->
-            <div style="text-align: center; margin: 28px 0; padding: 18px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px dashed rgba(236,72,153,0.4);">
+            <div style="text-align: center; margin: 28px 0; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px dashed rgba(236,72,153,0.4);">
               <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #ec4899; font-weight: 700; margin-bottom: 8px;">Your Password Reset OTP</div>
               <div style="display: inline-block; background: linear-gradient(135deg, #EC4899 0%, #7C3AED 100%); font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #ffffff; padding: 12px 28px; border-radius: 12px;">
                 ${otp}
               </div>
-              <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">Valid for 30 minutes</p>
+              <p style="font-size: 11px; color: #94a3b8; margin-top: 10px; margin-bottom: 0;">Valid for 30 minutes</p>
             </div>
 
-            <!-- Direct Reset Link Button -->
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${resetLink}" target="_blank" style="display: inline-block; background: linear-gradient(90deg, #EC4899 0%, #7C3AED 100%); color: #ffffff; font-weight: bold; font-size: 14px; text-decoration: none; padding: 14px 34px; border-radius: 30px; text-transform: uppercase; letter-spacing: 1px;">
-                Click Here to Reset Password
-              </a>
-            </div>
-
-            <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
-              Direct URL: <a href="${resetLink}" style="color: #ec4899; text-decoration: underline;">${resetLink}</a>
+            <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 20px;">
+              If you did not request a password reset, please ignore this email.
             </p>
           </div>
         `,
-        text: `Reset your Saathika password. Your OTP Code is: ${otp}. Or click this link: ${resetLink}`,
+        text: `Hello ${user.name || 'User'}, your Saathika password reset OTP code is: ${otp}. It expires in 30 minutes.`,
       });
     } catch (err) {
       console.error('[Reset Email] Failed:', err.message);
