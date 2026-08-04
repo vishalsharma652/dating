@@ -275,14 +275,27 @@ export default function ProfilePage() {
             {/* Single Dedicated About Me Card */}
             <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
               <div className="absolute top-0 left-0 w-1 h-full bg-[#EC4899]" />
-              <div>
-                <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-3.5 flex items-center gap-2">
-                  <User size={13} className="text-[#EC4899]" />
-                  <span>About Me</span>
-                </h3>
-                <p className="text-zinc-300 text-xs leading-relaxed font-semibold text-left">
-                  {profile.bio || 'No bio added yet. Tell people about your interests and dreams by editing your profile!'}
-                </p>
+              <div className="space-y-3.5">
+                <div>
+                  <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                    <User size={13} className="text-[#EC4899]" />
+                    <span>About Me</span>
+                  </h3>
+                  <p className="text-zinc-300 text-xs leading-relaxed font-semibold text-left">
+                    {profile.bio || 'No bio added yet. Tell people about your interests and dreams by editing your profile!'}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                    <MapPin size={14} className="text-[#EC4899]" />
+                    <span>Location</span>
+                    <span className="text-[10px] text-zinc-500 font-normal">(Optional)</span>
+                  </div>
+                  <span className="text-xs font-bold text-white">
+                    {profile.city ? profile.city : 'Not specified'}
+                  </span>
+                </div>
               </div>
             </Card>
 
