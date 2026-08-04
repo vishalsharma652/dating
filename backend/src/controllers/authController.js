@@ -372,11 +372,24 @@ async function resendOtp(req, res) {
  * Login: email/phone + password. No OTP needed after registration.
  */
 async function login(req, res) {
-  const identifier = req.body.email || req.body.phone;
+  const identifier = (req.body.email || req.body.phone || '').trim().toLowerCase();
   if (!identifier) throw new AppError('Email or phone is required', 422);
+
   const user = await userModel.findByEmailOrPhone(identifier);
-  if (!user || !(await userModel.verifyPassword(user, req.body.password))) {
-    throw new AppError('Invalid credentials', 401);
+  if (!user) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No account found with this email address. Please check your email or register.',
+      userExists: false
+    });
+  }
+
+  if (!(await userModel.verifyPassword(user, req.body.password))) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'Invalid password. Please try again.',
+      userExists: true
+    });
   }
   if (user.status && user.status !== 'active') {
     throw new AppError('Your account is currently inactive or suspended', 403);

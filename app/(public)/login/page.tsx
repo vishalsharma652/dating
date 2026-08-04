@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isRegisteredUser, setIsRegisteredUser] = useState(true);
 
   // Already logged in? Go straight to dashboard
   useEffect(() => {
@@ -37,10 +38,20 @@ export default function LoginPage() {
       });
       setAuthSession(data.token, data.user);
       setFailedAttempts(0);
+      setIsRegisteredUser(true);
       router.push('/user/dashboard');
-    } catch (err) {
-      setFailedAttempts((prev) => prev + 1);
-      setError(err instanceof Error ? err.message : 'Login failed');
+    } catch (err: any) {
+      const errMsg = err instanceof Error ? err.message : String(err || 'Login failed');
+      const isUnregistered = err?.userExists === false || errMsg.toLowerCase().includes('no account found') || errMsg.toLowerCase().includes('user not found') || errMsg.toLowerCase().includes('not registered');
+
+      if (isUnregistered) {
+        setIsRegisteredUser(false);
+        setFailedAttempts(0);
+      } else {
+        setIsRegisteredUser(true);
+        setFailedAttempts((prev) => prev + 1);
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -97,7 +108,7 @@ export default function LoginPage() {
                 />
                 Remember me
               </label>
-              {failedAttempts >= 3 && (
+              {failedAttempts >= 3 && isRegisteredUser && (
                 <Link
                   href={formData.email ? `/forgot-password?email=${encodeURIComponent(formData.email)}` : '/forgot-password'}
                   className="text-pink-500 font-semibold hover:text-pink-600 animate-pulse"
