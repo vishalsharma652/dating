@@ -114,7 +114,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   // ── Send message ─────────────────────────────────────────────────
   const handleSend = async (message: string) => {
-    if (chatBlocked) return;
     try {
       const data = await userApi.sendMessage(id, message);
       setMessages((prev) => [
@@ -127,7 +126,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     } catch (err) {
       const txt = err instanceof Error ? err.message : 'Unable to send message';
       setError(txt);
-      if (txt.toLowerCase().includes('coin') || txt.toLowerCase().includes('blocked')) setChatBlocked(true);
     }
   };
 
@@ -195,23 +193,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
 
         {/* Bottom bar */}
-        {chatBlocked ? (
-          <div className="border-t border-amber-200 bg-amber-50 p-4 text-center dark:border-amber-900 dark:bg-amber-950/30">
-            <p className="font-semibold text-amber-900 dark:text-amber-200">
-              Chat paused — at least 10 coins are needed for the next minute.
-            </p>
-            {walletBalance !== null && (
-              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                Your balance: {walletBalance} coins
-              </p>
-            )}
-            <Button asChild className="mt-3">
-              <Link href="/user/wallet/coins">Buy Coins</Link>
-            </Button>
-          </div>
-        ) : (
-          <ChatInput onSend={handleSend} />
-        )}
+        <ChatInput onSend={handleSend} />
       </div>
     </>
   );

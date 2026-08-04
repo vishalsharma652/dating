@@ -217,10 +217,6 @@ async function messages(req, res) {
 
 async function sendMessage(req, res) {
   const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
-  if (normalizeGender(req.user.gender) === 'male') {
-    const session = await socialModel.activeChatSession(chat.id);
-    if (!session) throw new AppError('Chat is blocked. Add at least 10 coins to continue.', 402);
-  }
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
   return created(res, { message }, 'Message sent');
 }
