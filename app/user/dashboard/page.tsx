@@ -76,18 +76,44 @@ export default function DashboardPage() {
 
   const user = data?.user || {};
   const matches = data?.matches || [];
-  const activeUsers = data?.activeUsers || data?.activeGirls || [];
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
-  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
+  const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
+  const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const isFemale = isUserFemale;
+  const targetLabel = isUserFemale ? 'Active Males' : 'Active Females';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
-  const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
-  const defaultHeaderAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+  const fallbacks = isUserFemale ? boyFallbacks : girlFallbacks;
+  const defaultHeaderAvatar = isUserFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
 
-  const activeGirlsList = activeUsers.slice(0, 3).map((u: any, idx: number) => {
+  const rawMasterUsers = (data?.allUsers && Array.isArray(data.allUsers) && data.allUsers.length > 0)
+    ? data.allUsers
+    : (data?.activeUsers || data?.activeGirls || []);
+
+  // Filter master users by opposite gender
+  const oppositeGenderUsers = rawMasterUsers.filter((u: any) => {
+    const targetGender = String(u.gender || u.role || '').toLowerCase();
+    const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(targetGender);
+
+    if (isUserMale && !isTargetFemale) return false;
+    if (isUserFemale && isTargetFemale) return false;
+    return true;
+  });
+
+  // Calculate accurate opposite-gender counts for stats cards:
+  const totalOppositeUsers = oppositeGenderUsers.length;
+  const pendingKycOppositeUsers = oppositeGenderUsers.filter((u: any) => {
+    const kycStatus = u.kyc_status || (u.verified ? 'approved' : 'pending');
+    return kycStatus !== 'approved';
+  }).length;
+  const verifiedOppositeUsers = oppositeGenderUsers.filter((u: any) => {
+    const kycStatus = u.kyc_status || (u.verified ? 'approved' : 'pending');
+    return kycStatus === 'approved';
+  }).length;
+
+  const activeGirlsList = oppositeGenderUsers.slice(0, 3).map((u: any, idx: number) => {
     const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
     return {
       id: u.id,
@@ -156,7 +182,7 @@ export default function DashboardPage() {
           {[
             {
               label: 'All Users',
-              value: data?.userCounts?.totalUsers ?? (data?.allUsers?.length || activeUsers.length || 0),
+              value: data?.userCounts?.totalUsers ?? totalOppositeUsers,
               icon: Users,
               change: 'Total Registered Users',
               href: '/user/all-users',
@@ -164,7 +190,7 @@ export default function DashboardPage() {
             },
             {
               label: 'New Users',
-              value: data?.userCounts?.pendingKycUsers ?? 0,
+              value: data?.userCounts?.pendingKycUsers ?? pendingKycOppositeUsers,
               icon: UserCheck,
               change: 'Pending KYC',
               href: '/user/all-users?filter=new',
@@ -172,7 +198,7 @@ export default function DashboardPage() {
             },
             {
               label: 'Verified Users',
-              value: data?.userCounts?.verifiedUsers ?? 0,
+              value: data?.userCounts?.verifiedUsers ?? verifiedOppositeUsers,
               icon: ShieldCheck,
               change: 'KYC Approved',
               href: '/user/all-users?filter=verified',

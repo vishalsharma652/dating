@@ -25,8 +25,13 @@ async function dashboard(req, res) {
   const matches = await socialModel.matches(req.user.id);
   const activeUsers = await profileModel.activeOppositeGenderUsers(req.user.id);
   const currentGender = normalizeGender(req.user.gender || profile?.gender);
-  const activeLabel = currentGender === 'female' ? 'Active Males' : 'Active Females';
+  const isUserMale = currentGender === 'male';
+  const activeLabel = isUserMale ? 'Active Females' : 'Active Males';
   const assignedUser = activeUsers[0] || null;
+
+  const oppositeGenders = isUserMale
+    ? ['female', 'woman', 'girl', 'women']
+    : ['male', 'man', 'boy', 'men'];
 
   const allUsersRows = await query(
     `SELECT 
@@ -45,9 +50,16 @@ async function dashboard(req, res) {
      LEFT JOIN profiles p ON p.user_id = u.id
      WHERE u.id <> :userId
        AND u.role = 'user'
+       AND LOWER(COALESCE(u.gender, p.gender, '')) IN (:g0, :g1, :g2, :g3)
      ORDER BY (u.online_status = true AND u.last_seen_at IS NOT NULL AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) DESC, u.id DESC
      LIMIT 500`,
-    { userId: req.user.id }
+    {
+      userId: req.user.id,
+      g0: oppositeGenders[0],
+      g1: oppositeGenders[1],
+      g2: oppositeGenders[2],
+      g3: oppositeGenders[3]
+    }
   );
 
   const countRows = await query(`
@@ -56,8 +68,15 @@ async function dashboard(req, res) {
       SUM(CASE WHEN kyc_status = 'approved' THEN 1 ELSE 0 END) AS verifiedUsers,
       SUM(CASE WHEN kyc_status <> 'approved' OR kyc_status IS NULL THEN 1 ELSE 0 END) AS pendingKycUsers
     FROM users 
-    WHERE role = 'user' AND status = 'active'
-  `);
+    WHERE role = 'user' AND status = 'active' AND id <> :userId
+      AND LOWER(COALESCE(gender, '')) IN (:g0, :g1, :g2, :g3)
+  `, {
+      userId: req.user.id,
+      g0: oppositeGenders[0],
+      g1: oppositeGenders[1],
+      g2: oppositeGenders[2],
+      g3: oppositeGenders[3]
+  });
   const counts = countRows[0] || {};
 
   return ok(res, {
