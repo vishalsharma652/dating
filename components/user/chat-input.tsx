@@ -1,6 +1,6 @@
 'use client';
 
-import { Send, Smile, Image as ImageIcon, Gift, X } from 'lucide-react';
+import { Send, Smile, Image as ImageIcon, Gift, X, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, FormEvent } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
@@ -138,6 +138,15 @@ export function ChatInput({ onSend }: ChatInputProps) {
             onChange={(e) => setMessage(e.target.value)}
             className="flex-1 bg-transparent px-3 py-1.5 text-base sm:text-sm text-white placeholder-zinc-400 focus:outline-none"
           />
+          <button
+            type="button"
+            title="Attach Photo"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="p-1 text-zinc-400 hover:text-pink-400 transition"
+          >
+            <Paperclip size={18} />
+          </button>
         </div>
 
         {/* Send Button */}
