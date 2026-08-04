@@ -53,21 +53,23 @@ function AllUsersContent() {
     : (data?.activeUsers || data?.activeGirls || []);
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
-  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
+  const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
+  const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const targetLabel = isUserFemale ? 'Active Males' : 'Active Females';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
 
   const formattedUsers = allMasterUsers.map((u: any, idx: number) => {
-    const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
-    const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
+    const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
+    const userFallbackPhotos = isTargetFemale ? girlFallbacks : boyFallbacks;
     const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
 
     const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online';
 
     return {
       id: u.id,
+      isTargetFemale,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
       age: u.age || null,
@@ -80,6 +82,10 @@ function AllUsersContent() {
   });
 
   const filteredUsers = formattedUsers.filter((u: any) => {
+    // 0. Gender Filter: Male user sees ONLY Female members, Female user sees ONLY Male members
+    if (isUserMale && !u.isTargetFemale) return false;
+    if (isUserFemale && u.isTargetFemale) return false;
+
     // 1. Tab filter
     if (activeFilter === 'new') {
       if (u.kycStatus === 'approved') return false;
@@ -210,21 +216,6 @@ function AllUsersContent() {
 
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-
-                  {/* KYC Status Badge - Top Left */}
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-bold flex items-center gap-1">
-                    {u.kycStatus === 'approved' ? (
-                      <span className="text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 size={12} />
-                        KYC Done
-                      </span>
-                    ) : (
-                      <span className="text-amber-400 flex items-center gap-1">
-                        <Clock size={12} />
-                        Pending KYC
-                      </span>
-                    )}
-                  </div>
 
                   {/* Heart Action Badge - Bottom Right */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
