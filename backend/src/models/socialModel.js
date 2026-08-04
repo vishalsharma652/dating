@@ -214,21 +214,6 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   });
 
-  if (recipientUserId && deliveryStatus !== 'undelivered') {
-    const senderRows = await query('SELECT name FROM users WHERE id = :senderId LIMIT 1', { senderId });
-    const senderName = senderRows[0]?.name || 'Someone';
-    const preview = String(body || '').trim().slice(0, 120);
-    await notificationModel.create({
-      userId: recipientUserId,
-      actorUserId: senderId,
-      type: 'message',
-      title: senderName,
-      message: preview || 'Sent you a message',
-      linkUrl: `/user/chat/${senderId}`,
-      metadata: { chatId, messageId }
-    });
-  }
-
   return { id: messageId, senderId, text: body, type, deliveryStatus };
 }
 

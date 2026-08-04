@@ -42,7 +42,7 @@ async function create({ userId, actorUserId = null, type, title, message, linkUr
 async function list(userId, { limit = 50, includeRead = false } = {}) {
   await ensureTable();
   const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 100));
-  const filters = ['n.user_id = :userId'];
+  const filters = ['n.user_id = :userId', "n.type <> 'message'"];
   if (String(includeRead) !== 'true') {
     filters.push('n.read_at IS NULL');
   }
@@ -67,7 +67,7 @@ async function list(userId, { limit = 50, includeRead = false } = {}) {
 async function unreadCount(userId) {
   await ensureTable();
   const rows = await query(
-    'SELECT COUNT(*) AS unread FROM notifications WHERE user_id = :userId AND read_at IS NULL',
+    "SELECT COUNT(*) AS unread FROM notifications WHERE user_id = :userId AND read_at IS NULL AND type <> 'message'",
     { userId }
   );
   return Number(rows[0]?.unread) || 0;
