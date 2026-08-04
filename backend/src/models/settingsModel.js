@@ -5,7 +5,9 @@ const DEFAULTS = {
   site_logo: '/uploads/saathika-logo.jpg',
   coin_rate_inr: '0.70',
   chat_charge_per_minute: '10',
+  video_call_charge_per_minute: '100',
   female_earning_per_minute: '7',
+  female_video_earning_per_minute: '50',
   platform_commission_per_minute: '3'
 };
 
@@ -25,7 +27,9 @@ async function brand() {
 async function chatSettings() {
   const settings = await all();
   const chatChargePerMinute = Number(settings.chat_charge_per_minute || DEFAULTS.chat_charge_per_minute);
+  const videoCallChargePerMinute = Number(settings.video_call_charge_per_minute || DEFAULTS.video_call_charge_per_minute);
   const earnerSharePerMinute = Number(settings.female_earning_per_minute || DEFAULTS.female_earning_per_minute);
+  const femaleVideoEarningPerMinute = Number(settings.female_video_earning_per_minute || DEFAULTS.female_video_earning_per_minute);
   const configuredPlatformShare = Number(settings.platform_commission_per_minute || DEFAULTS.platform_commission_per_minute);
   const platformSharePerMinute = Number.isFinite(configuredPlatformShare)
     ? configuredPlatformShare
@@ -34,7 +38,9 @@ async function chatSettings() {
   return {
     coinRateInr: Number(settings.coin_rate_inr || DEFAULTS.coin_rate_inr),
     chatChargePerMinute,
+    videoCallChargePerMinute,
     earnerSharePerMinute,
+    femaleVideoEarningPerMinute,
     platformSharePerMinute
   };
 }

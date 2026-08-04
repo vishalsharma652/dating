@@ -29,27 +29,40 @@ export default function TransactionHistoryPage() {
 
         <div className="space-y-3">
           {transactions.length === 0 && <Card className="p-8 text-center text-zinc-500">No transactions found.</Card>}
-          {transactions.map((txn) => (
-            <Card key={txn.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{txn.title}</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">{txn.description}</p>
-                  <p className="text-xs text-zinc-500 mt-1">{txn.date}</p>
-                </div>
+          {transactions.map((txn) => {
+            const coinsVal = Number(txn.coins || 0);
+            const isVideo = Math.abs(coinsVal) >= 100 || String(txn.title || '').toLowerCase().includes('video') || String(txn.description || '').toLowerCase().includes('video');
+            const isVoice = String(txn.title || '').toLowerCase().includes('voice') || String(txn.title || '').toLowerCase().includes('audio');
 
-                <div className="text-right">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className={`text-lg font-semibold ${Number(txn.coins) >= 0 ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
-                      {Number(txn.coins) > 0 ? '+' : ''}{txn.coins} coins
-                    </p>
-                    {Number(txn.amount) > 0 && <span className="text-zinc-500">₹{txn.amount}</span>}
+            let displayTitle = txn.title;
+            if (isVideo) {
+              displayTitle = coinsVal < 0 ? 'Video Call (1 min) Charged' : 'Video Call (1 min) Earning';
+            } else if (isVoice) {
+              displayTitle = coinsVal < 0 ? 'Voice Call (1 min) Charged' : 'Voice Call (1 min) Earning';
+            }
+
+            return (
+              <Card key={txn.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">{displayTitle}</h3>
+                    <p className="text-sm text-zinc-400">{txn.description}</p>
+                    <p className="text-xs text-zinc-500 mt-1">{txn.date}</p>
                   </div>
-                  <Badge variant={txn.status === 'completed' ? 'default' : 'pink'}>{txn.status}</Badge>
+
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className={`text-lg font-bold ${coinsVal >= 0 ? 'text-emerald-400' : 'text-pink-400'}`}>
+                        {coinsVal > 0 ? '+' : ''}{coinsVal} coins
+                      </p>
+                      {Number(txn.amount) > 0 && <span className="text-zinc-500">₹{txn.amount}</span>}
+                    </div>
+                    <Badge variant={txn.status === 'completed' ? 'default' : 'pink'}>{txn.status}</Badge>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       </Container>
     </div>

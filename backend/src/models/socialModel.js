@@ -220,17 +220,18 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
 }
 
 
-async function startChatSession(chatId, payerUserId, earnerUserId, settings) {
-  const chargePerMinute = Number(settings.chatChargePerMinute || 10);
-  const earnerShare = Number(settings.earnerSharePerMinute || 7);
-  const platformShare = Number(settings.platformSharePerMinute || chargePerMinute - earnerShare);
+async function startChatSession(chatId, payerUserId, earnerUserId, settings, callType = 'chat') {
+  const isVideo = String(callType).toLowerCase().includes('video');
+  const chargePerMinute = Number(isVideo ? (settings.videoCallChargePerMinute || 100) : (settings.chatChargePerMinute || 10));
+  const earnerShare = Number(isVideo ? (settings.femaleVideoEarningPerMinute || 50) : (settings.earnerSharePerMinute || 7));
+  const platformShare = Number(chargePerMinute - earnerShare);
   const existing = await query('SELECT * FROM chat_sessions WHERE chat_id = :chatId AND status = "active" LIMIT 1', { chatId });
   if (existing[0]) return existing[0];
 
   const result = await query(
-    `INSERT INTO chat_sessions (chat_id, payer_user_id, earner_user_id, charge_per_minute, earner_share, platform_share)
-     VALUES (:chatId, :payerUserId, :earnerUserId, :chargePerMinute, :earnerShare, :platformShare)`,
-    { chatId, payerUserId, earnerUserId, chargePerMinute, earnerShare, platformShare }
+    `INSERT INTO chat_sessions (chat_id, payer_user_id, earner_user_id, charge_per_minute, earner_share, platform_share, call_type)
+     VALUES (:chatId, :payerUserId, :earnerUserId, :chargePerMinute, :earnerShare, :platformShare, :callType)`,
+    { chatId, payerUserId, earnerUserId, chargePerMinute, earnerShare, platformShare, callType }
   );
 
   // Notify the girl that a paid session has started
@@ -299,16 +300,23 @@ async function chargeChatMinute(sessionId) {
       { earnerShare, earnerUserId: session.earner_user_id }
     );
 
+    const isVideoCall = Math.abs(charge) >= 100 || String(session.call_type || '').toLowerCase().includes('video');
+    const payerTitle = isVideoCall ? 'Video Call (1 min) Charged' : 'Chat Minute Charged';
+    const earnerTitle = isVideoCall ? 'Video Call (1 min) Earning' : 'Chat Minute Earning';
+    const descText = isVideoCall ? `Video Call session #${session.id}` : `Chat session #${session.id}`;
+
     // Log wallet transactions for both users
     await connection.execute(
       `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-       VALUES (:payerUserId, 'chat_charge', 'Chat Minute Charged', :payerDescription, 0, :payerCoins, 'completed'),
-              (:earnerUserId, 'earning',    'Chat Minute Earning',  :earnerDescription, 0, :earnerCoins, 'completed')`,
+       VALUES (:payerUserId, 'chat_charge', :payerTitle, :payerDescription, 0, :payerCoins, 'completed'),
+              (:earnerUserId, 'earning',    :earnerTitle,  :earnerDescription, 0, :earnerCoins, 'completed')`,
       {
         payerUserId: session.payer_user_id,
         earnerUserId: session.earner_user_id,
-        payerDescription: `Chat session #${session.id}`,
-        earnerDescription: `Chat session #${session.id}`,
+        payerTitle,
+        earnerTitle,
+        payerDescription: descText,
+        earnerDescription: descText,
         payerCoins: -charge,
         earnerCoins: earnerShare
       }
