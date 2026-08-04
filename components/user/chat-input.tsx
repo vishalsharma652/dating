@@ -238,33 +238,6 @@ export function ChatInput({ onSend }: ChatInputProps) {
       )}
 
       <form onSubmit={handleSubmit} className="flex items-center gap-2 max-w-4xl mx-auto">
-        {/* Quick Action Buttons: Photo & Gift */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Photo Button */}
-          <button
-            type="button"
-            title="Send Photo"
-            disabled={uploading || sending}
-            onClick={() => galleryInputRef.current?.click()}
-            className="px-3 py-2 rounded-full bg-pink-500/10 border border-pink-500/20 hover:bg-pink-500/20 text-pink-400 transition flex items-center gap-1.5 text-xs font-bold disabled:opacity-50 cursor-pointer"
-          >
-            <ImageIcon size={18} className="text-pink-400 shrink-0" />
-            <span className="text-pink-400 font-extrabold">Photo</span>
-          </button>
-
-          {/* Gift Button */}
-          <button
-            type="button"
-            title="Send Gift"
-            disabled={sending}
-            onClick={() => setShowGiftPicker((prev) => !prev)}
-            className="px-3 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-          >
-            <Gift size={18} className="text-amber-400 shrink-0" />
-            <span className="text-amber-400 font-extrabold">Gift</span>
-          </button>
-        </div>
-
         {/* Rounded Input Text Pill with Emoji & Paperclip inside */}
         <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3.5 py-1.5 focus-within:border-[#EC4899] focus-within:bg-white/[0.08] transition duration-200 min-w-0">
           {/* Emoji Button */}
