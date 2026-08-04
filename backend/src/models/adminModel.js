@@ -227,7 +227,7 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
   }
   return query(
     `SELECT w.*, u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
-            wa.wallet_id AS wallet_id
+            COALESCE(u.unique_id, wa.wallet_id, CONCAT('STK-', LPAD(w.user_id, 6, '0'))) AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN wallets wa ON wa.user_id = w.user_id
