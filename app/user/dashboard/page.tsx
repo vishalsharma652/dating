@@ -91,7 +91,7 @@ export default function DashboardPage() {
     const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
     return {
       id: u.id,
-      uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
+      uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
       age: u.age || null,
       location: u.location || u.city || '',
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between py-1 border-b border-white/5">
                   <span className="text-zinc-400">Unique ID</span>
                   <div className="flex items-center gap-1.5 text-white">
-                    <span>{user?.unique_id || 'Assigned'}</span>
+                    <span>{user?.unique_id ? String(user.unique_id).replace(/^STK-/i, '') : 'Assigned'}</span>
                     <CheckCircle2 size={14} className="text-[#10B981]" />
                   </div>
                 </div>

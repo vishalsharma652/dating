@@ -180,7 +180,8 @@ export function UserNav() {
             const isFemaleUser = ['female', 'woman', 'girl', 'women'].includes(String(currentUser.gender || '').toLowerCase());
             const IconSymbol = isFemaleUser ? Gem : Coins;
             const symbolColor = isFemaleUser ? 'text-cyan-400' : 'text-amber-400';
-            const displayId = currentUser.unique_id || currentUser.uniqueId || (currentUser.id ? `STK-${String(currentUser.id).padStart(6, '0')}` : '');
+            const rawId = currentUser.unique_id || currentUser.uniqueId || currentUser.id || '';
+            const displayId = String(rawId).replace(/^STK-/i, '').padStart(6, '0');
             return (
               <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1">

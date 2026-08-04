@@ -8,7 +8,7 @@ async function transactions(userId) {
 async function wallet(userId) {
   let rows = await query(
     `SELECT w.id AS walletRowId, 
-      COALESCE(u.unique_id, CONCAT('STK-', LPAD(u.id, 6, '0'))) AS walletId, 
+      COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS walletId, 
       w.balance AS coins, w.total_purchased AS totalPurchased, w.total_spent AS totalSpent,
       w.total_earned AS totalEarned, w.withdrawal_balance AS withdrawalBalance,
       u.earnings, u.coins AS userCoins
@@ -73,8 +73,8 @@ async function purchase(userId, packageId, payment = {}) {
       'SELECT id FROM wallet_transactions WHERE payment_reference = :reference LIMIT 1', { reference: payment.reference }
     );
     if (duplicate[0]) throw new AppError('This payment has already been processed', 409);
-    // Ensure wallet exists with unified user unique_id (STK-XXXXXX)
-    const userUniqueId = users[0].unique_id || `STK-${String(userId).padStart(6, '0')}`;
+    // Ensure wallet exists with numeric user unique_id
+    const userUniqueId = String(users[0].unique_id || userId).replace(/^STK-/i, '').padStart(6, '0');
     const [existingWallet] = await connection.execute('SELECT id FROM wallets WHERE user_id = :userId LIMIT 1', { userId });
     if (!existingWallet[0]) {
       await connection.execute(

@@ -31,7 +31,7 @@ async function dashboard(req, res) {
   const allUsersRows = await query(
     `SELECT 
       u.id, 
-      COALESCE(u.unique_id, CONCAT('STK-', LPAD(u.id, 6, '0'))) AS unique_id, 
+      COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, 
       u.name,
       COALESCE(u.gender, p.gender, '') AS gender,
       COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age,

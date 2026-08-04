@@ -142,7 +142,7 @@ async function updateKyc(id, { status }) {
       await query(
         `UPDATE users
          SET kyc_status = :status,
-             unique_id = CASE WHEN unique_id IS NULL THEN CONCAT('STK-', LPAD(id, 6, '0')) ELSE unique_id END
+              unique_id = CASE WHEN unique_id IS NULL THEN LPAD(id, 6, '0') ELSE REPLACE(unique_id, 'STK-', '') END
          WHERE id = :id`,
         { id, status }
       );
@@ -227,7 +227,7 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
   }
   return query(
     `SELECT w.*, u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
-            COALESCE(u.unique_id, wa.wallet_id, CONCAT('STK-', LPAD(w.user_id, 6, '0'))) AS wallet_id
+            COALESCE(REPLACE(u.unique_id, 'STK-', ''), REPLACE(wa.wallet_id, 'STK-', ''), LPAD(w.user_id, 6, '0')) AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN wallets wa ON wa.user_id = w.user_id

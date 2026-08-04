@@ -70,7 +70,7 @@ function ActiveUsersContent() {
 
     return {
       id: u.id,
-      uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
+      uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
       age: u.age || null,
       location: u.location || u.city || '',

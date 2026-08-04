@@ -23,8 +23,8 @@ async function create({ name, email = null, phone, password, role = 'user', phon
     // Note: Unique ID (STK-XXXXXX) is NOT generated at signup. It is generated ONLY after KYC is approved.
 
 
-    // Insert wallet and auto-assign wallet_id to match user unique_id (STK-XXXXXX)
-    const walletId = `STK-${String(userId).padStart(6, '0')}`;
+    // Insert wallet and auto-assign numeric wallet_id
+    const walletId = String(userId).padStart(6, '0');
     const [walletResult] = await connection.execute(
       `INSERT INTO wallets (user_id, wallet_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance)
        VALUES (:userId, :walletId, :balance, 0, 0, 0, 0)`,
