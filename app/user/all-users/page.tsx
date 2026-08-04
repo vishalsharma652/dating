@@ -154,11 +154,11 @@ function AllUsersContent() {
         </div>
 
         {/* Interactive Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-6">
           {[
-            { id: 'all', label: 'All Users (Total)', icon: Users },
-            { id: 'new', label: 'New Users (Pending KYC)', icon: Clock },
-            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
+            { id: 'all', label: 'All Users', icon: Users },
+            { id: 'new', label: 'New Users', icon: Clock },
+            { id: 'verified', label: 'Verified Users', icon: ShieldCheck },
             { id: 'active', label: targetLabel, icon: Heart },
           ].map((tab) => {
             const TabIcon = tab.icon;

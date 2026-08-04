@@ -6,7 +6,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
@@ -70,11 +70,20 @@ export default function ChatListPage() {
     <div className="p-4 md:p-8">
       <Container>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Chat History</h1>
-            <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-              {chats.length} active conversation{chats.length !== 1 ? 's' : ''}
-            </p>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/user/dashboard"
+              className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
+            >
+              <ArrowLeft size={18} />
+              <span className="hidden sm:inline">Back</span>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold">Chat History</h1>
+              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
+                {chats.length} active conversation{chats.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
         </div>
 
