@@ -126,11 +126,11 @@ function AllUsersContent() {
                 <Users size={24} className="text-[#EC4899]" />
                 <span>
                   {activeFilter === 'all'
-                    ? 'All Users (Total Registered)'
+                    ? 'All Users'
                     : activeFilter === 'new'
-                    ? 'New Users (Pending KYC)'
+                    ? 'New Users'
                     : activeFilter === 'verified'
-                    ? 'Verified Users (KYC Done)'
+                    ? 'Verified Users'
                     : targetLabel}
                 </span>
               </h1>
