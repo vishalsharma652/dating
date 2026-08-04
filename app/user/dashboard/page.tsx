@@ -113,8 +113,15 @@ export default function DashboardPage() {
     return kycStatus === 'approved';
   }).length;
 
-  const activeGirlsList = oppositeGenderUsers.slice(0, 3).map((u: any, idx: number) => {
-    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
+  const activeGirlsList = oppositeGenderUsers.map((u: any, idx: number) => {
+    const isOnline = Boolean(
+      u.online === true || 
+      u.isOnline === true || 
+      u.online_status === true || 
+      u.online === 1 || 
+      u.online === '1' ||
+      u.online_status === 1
+    );
     return {
       id: u.id,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
@@ -125,6 +132,8 @@ export default function DashboardPage() {
       photo: u.photo || fallbacks[idx % fallbacks.length]
     };
   });
+
+  const displayActiveList = activeGirlsList.filter((g) => g.status === 'Online').slice(0, 3);
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] text-white min-h-screen space-y-8 relative overflow-hidden">
@@ -317,7 +326,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Profiles Grid */}
-              {activeGirlsList.length === 0 ? (
+              {displayActiveList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-6 relative overflow-hidden rounded-[20px] bg-white/[0.01] border border-white/5 p-8">
                   {/* Concentric Pulsing Radar Rings */}
                   <div className="relative w-24 h-24 flex items-center justify-center">
@@ -349,7 +358,7 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {activeGirlsList.map((girl) => (
+                    {displayActiveList.map((girl) => (
                       <Link
                         key={girl.id}
                         href={`/user/chat/${girl.id}`}
