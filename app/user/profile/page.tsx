@@ -397,23 +397,6 @@ export default function ProfilePage() {
                     {user.status || 'pending'}
                   </Badge>
                 </div>
-
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    {user.kyc_status === 'approved' ? (
-                      <CheckCircle2 size={16} className="text-[#10B981]" />
-                    ) : (
-                      <Clock size={16} className="text-yellow-500" />
-                    )}
-                    <span className="text-xs font-bold text-white">Identity KYC</span>
-                  </div>
-                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.kyc_status === 'approved'
-                    ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
-                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-                    }`}>
-                    {user.kyc_status || 'pending'}
-                  </Badge>
-                </div>
               </div>
 
               {/* Unique ID display — shown after KYC approval */}
