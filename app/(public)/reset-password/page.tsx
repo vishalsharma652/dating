@@ -113,8 +113,9 @@ function ResetPasswordContent() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* OTP or Token input */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    6-Digit OTP Code / Reset Token
+                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>6-Digit OTP Code / Reset Token</span>
+                    {urlToken && <span className="text-[10px] text-[#EC4899] font-normal">Locked (Pre-filled)</span>}
                   </label>
                   <div className="relative">
                     <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
@@ -123,22 +124,29 @@ function ResetPasswordContent() {
                       placeholder="e.g. 849201"
                       value={otpOrToken}
                       onChange={(e) => setOtpOrToken(e.target.value)}
-                      className="pl-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm font-mono focus:border-[#EC4899]"
+                      readOnly={Boolean(urlToken)}
+                      className={`pl-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm font-mono focus:border-[#EC4899] ${
+                        urlToken ? 'cursor-not-allowed opacity-70 bg-white/[0.02]' : ''
+                      }`}
                     />
                   </div>
                 </div>
 
-                {/* Email address input (optional if OTP used) */}
+                {/* Email address input */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Registered Email Address
+                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>Registered Email Address</span>
+                    {urlEmail && <span className="text-[10px] text-[#EC4899] font-normal">Locked (Pre-filled)</span>}
                   </label>
                   <Input
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm focus:border-[#EC4899]"
+                    readOnly={Boolean(urlEmail)}
+                    className={`bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm focus:border-[#EC4899] ${
+                      urlEmail ? 'cursor-not-allowed opacity-70 bg-white/[0.02]' : ''
+                    }`}
                   />
                 </div>
 
