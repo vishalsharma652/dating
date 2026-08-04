@@ -19,6 +19,9 @@ import {
   UserCheck,
   Search,
   BadgeIndianRupee,
+  Gift,
+  Copy,
+  X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
@@ -47,6 +50,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [showReferModal, setShowReferModal] = useState(false);
+  const [referCopied, setReferCopied] = useState(false);
 
   useEffect(() => {
     userApi.dashboard()
@@ -465,16 +470,14 @@ export default function DashboardPage() {
                   </Button>
                 )}
 
-                {/* Edit Profile button */}
+                {/* Refer & Earn (100 Free Coins) button */}
                 <Button
-                  variant="outline"
-                  className="w-full h-11 rounded-xl border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-bold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-sm transition-transform hover:scale-[1.01]"
-                  asChild
+                  type="button"
+                  onClick={() => setShowReferModal(true)}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-transform hover:scale-[1.01]"
                 >
-                  <Link href="/user/profile">
-                    <PenSquare size={15} />
-                    <span>Edit Profile</span>
-                  </Link>
+                  <Gift size={15} className="text-black" />
+                  <span>Refer & Earn (100 Coins Free)</span>
                 </Button>
               </div>
             </Card>
@@ -609,6 +612,77 @@ export default function DashboardPage() {
         </div>
 
       </Container>
+
+      {/* Refer & Earn Modal */}
+      {showReferModal && (() => {
+        const userNumericId = String(user?.unique_id || user?.id || '').replace(/^STK-/i, '').padStart(6, '0');
+        const referralLink = typeof window !== 'undefined'
+          ? `${window.location.origin}/register?ref=${userNumericId}`
+          : `https://saathika.com/register?ref=${userNumericId}`;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <Card className="bg-[#0F172A] border border-amber-500/30 rounded-[28px] p-6 max-w-md w-full relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.2)] text-left">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600" />
+
+              <button
+                type="button"
+                onClick={() => setShowReferModal(false)}
+                className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1.5 rounded-full bg-white/5 hover:bg-white/10 transition"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="text-center space-y-4 pt-2">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-inner">
+                  <Gift size={32} />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-black text-white tracking-tight">Refer & Earn 100 Free Coins! 🎁</h3>
+                  <p className="text-zinc-400 text-xs mt-1.5 leading-relaxed font-semibold">
+                    Invite your friends to Saathika Dating! You will receive <span className="text-amber-400 font-bold">100 Free Coins</span> credited instantly for every friend who registers using your referral link.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-left">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Your Unique Referral Link</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={referralLink}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 font-bold focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(referralLink);
+                        setReferCopied(true);
+                        setTimeout(() => setReferCopied(false), 2000);
+                      }}
+                      className="bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      {referCopied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                      <span>{referCopied ? 'Copied!' : 'Copy'}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const shareText = `Join Saathika Dating App and connect with real matches! Register using my referral link to get started: ${referralLink}`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+                  }}
+                  className="w-full h-11 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-2 border-0 shadow-md"
+                >
+                  <span>Share on WhatsApp</span>
+                </Button>
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
     </div>
   );
 }
