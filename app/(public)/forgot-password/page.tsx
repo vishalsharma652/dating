@@ -214,12 +214,21 @@ export default function ForgotPasswordPage() {
                 .
               </p>
 
-              <Button asChild className="w-full h-12">
-                <Link href="/login">
-                  <ArrowLeft size={16} />
-                  Back to login
-                </Link>
-              </Button>
+              <div className="space-y-3">
+                <Button asChild className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg border-0">
+                  <Link href={`/reset-password?email=${encodeURIComponent(email)}`}>
+                    <KeyRound size={16} />
+                    Enter 6-Digit OTP / Reset Password
+                  </Link>
+                </Button>
+
+                <Button asChild variant="outline" className="w-full h-11 border-zinc-700 text-zinc-300 hover:bg-white/5 rounded-xl">
+                  <Link href="/login">
+                    <ArrowLeft size={16} />
+                    Back to login
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>
