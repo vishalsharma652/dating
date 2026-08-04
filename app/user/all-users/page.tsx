@@ -1,19 +1,18 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Search, Heart, ShieldCheck, Users, Clock, CheckCircle2 } from 'lucide-react';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 
-function ActiveUsersContent() {
+function AllUsersContent() {
   const searchParams = useSearchParams();
-  const initialFilter = searchParams.get('filter') || 'active';
-
+  const initialFilter = searchParams.get('filter') || 'all';
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,8 +20,14 @@ function ActiveUsersContent() {
   const [activeFilter, setActiveFilter] = useState(initialFilter);
 
   useEffect(() => {
+    setActiveFilter(initialFilter);
+  }, [initialFilter]);
+
+  useEffect(() => {
     userApi.dashboard()
-      .then(setData)
+      .then((res) => {
+        setData(res);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load users'))
       .finally(() => setLoading(false));
   }, []);
@@ -33,36 +38,33 @@ function ActiveUsersContent() {
     </div>
   );
 
-  if (error) return (
-    <div className="p-8 text-center text-red-500 bg-[#070B18] min-h-screen flex items-center justify-center">
-      {error}
-    </div>
-  );
+  if (error) {
+    return <div className="p-8 text-center text-red-500 bg-[#070B18] min-h-screen flex items-center justify-center">{error}</div>;
+  }
 
   const user = data?.user || {};
-  const rawUsers = (data?.activeUsers && Array.isArray(data.activeUsers) && data.activeUsers.length > 0)
-    ? data.activeUsers
-    : (data?.activeGirls || data?.allUsers || []);
+  const rawUsers = (data?.allUsers && Array.isArray(data.allUsers) && data.allUsers.length > 0)
+    ? data.allUsers
+    : (data?.activeUsers || data?.activeGirls || []);
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
+  const activeLabel = isFemale ? 'Active Males' : 'Active Females';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
-  const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
 
   const formattedUsers = rawUsers.map((u: any, idx: number) => {
     const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
     const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
     const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
 
-    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
+    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online';
 
     return {
       id: u.id,
       uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
-      name: u.name || 'User',
+      name: u.name,
       age: u.age || null,
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
@@ -113,12 +115,12 @@ function ActiveUsersContent() {
                 <Users size={24} className="text-[#EC4899]" />
                 <span>
                   {activeFilter === 'all'
-                    ? 'All Users (Total Registered)'
+                    ? 'All Users'
                     : activeFilter === 'new'
                     ? 'New Users (Pending KYC)'
                     : activeFilter === 'verified'
                     ? 'Verified Users (KYC Done)'
-                    : targetLabel}
+                    : activeLabel}
                 </span>
               </h1>
               <p className="text-zinc-400 text-sm font-medium mt-1">
@@ -143,10 +145,10 @@ function ActiveUsersContent() {
         {/* Interactive Filter Tabs */}
         <div className="flex flex-wrap items-center gap-2">
           {[
-            { id: 'all', label: 'All Users (Total)', icon: Users },
-            { id: 'new', label: 'New Users (Pending KYC)', icon: Clock },
-            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
-            { id: 'active', label: targetLabel, icon: Heart },
+            { id: 'all', label: 'All Users', icon: Users, href: '/user/all-users' },
+            { id: 'new', label: 'New Users (Pending KYC)', icon: Clock, href: '/user/all-users?filter=new' },
+            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck, href: '/user/all-users?filter=verified' },
+            { id: 'active', label: activeLabel, icon: Heart, href: '/user/active-users' },
           ].map((tab) => {
             const TabIcon = tab.icon;
             const isActive = activeFilter === tab.id;
@@ -249,18 +251,17 @@ function ActiveUsersContent() {
                       {u.uniqueId}
                     </span>
                   </div>
-
-                  {/* Line 4: Chat Button */}
-                  <Button
-                    className="w-full mt-2 h-9 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide flex items-center justify-center gap-2 border-0 shadow-md transition-transform"
-                    asChild
-                  >
-                    <Link href={`/user/chat/${u.id}`}>
-                      <MessageCircle size={14} />
-                      <span>Start Chat</span>
-                    </Link>
-                  </Button>
                 </div>
+
+                <Button
+                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0"
+                  asChild
+                >
+                  <Link href={`/user/chat/${u.id}`}>
+                    <Heart size={13} className="fill-current text-white" />
+                    <span>Start Chat</span>
+                  </Link>
+                </Button>
               </Card>
             ))}
           </div>
@@ -270,14 +271,10 @@ function ActiveUsersContent() {
   );
 }
 
-export default function ActiveUsersPage() {
+export default function AllUsersPage() {
   return (
-    <Suspense fallback={
-      <div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]">
-        <Loading />
-      </div>
-    }>
-      <ActiveUsersContent />
+    <Suspense fallback={<div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]"><Loading /></div>}>
+      <AllUsersContent />
     </Suspense>
   );
 }

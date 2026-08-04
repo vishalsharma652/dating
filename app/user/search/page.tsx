@@ -154,7 +154,7 @@ export default function UserSearchPage() {
                           <MapPin size={16} className="text-pink-400 shrink-0" />
                           <div>
                             <span className="text-zinc-400 text-xs block">Location</span>
-                            <span className="font-medium text-white">{user.city || 'Delhi, India'}</span>
+                            <span className="font-medium text-white">{user.city || user.location || 'Not specified'}</span>
                           </div>
                         </div>
 

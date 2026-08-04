@@ -33,6 +33,7 @@ export default function DashboardPage() {
     profile: any;
     matches: any[];
     activeUsers: any[];
+    allUsers?: any[];
     assignedUser: any | null;
     activeLabel: string;
     activeGirls?: any[];
@@ -92,8 +93,8 @@ export default function DashboardPage() {
       id: u.id,
       uniqueId: u.unique_id || u.uniqueId || `STK-${String(u.id).padStart(6, '0')}`,
       name: u.name || 'User',
-      age: u.age || 24,
-      location: u.location || 'Delhi',
+      age: u.age || null,
+      location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
       photo: u.photo || fallbacks[idx % fallbacks.length]
     };
@@ -155,10 +156,10 @@ export default function DashboardPage() {
           {[
             {
               label: 'All Users',
-              value: data?.userCounts?.totalUsers ?? (activeUsers.length || 0),
+              value: data?.userCounts?.totalUsers ?? (data?.allUsers?.length || activeUsers.length || 0),
               icon: Users,
-              change: 'Pending & KYC Done',
-              href: '/user/active-users?filter=all',
+              change: 'Total Registered Users',
+              href: '/user/all-users',
               color: '#EC4899',
             },
             {
@@ -166,7 +167,7 @@ export default function DashboardPage() {
               value: data?.userCounts?.pendingKycUsers ?? 0,
               icon: UserCheck,
               change: 'Pending KYC',
-              href: '/user/active-users?filter=new',
+              href: '/user/all-users?filter=new',
               color: '#F59E0B',
             },
             {
@@ -174,7 +175,7 @@ export default function DashboardPage() {
               value: data?.userCounts?.verifiedUsers ?? 0,
               icon: ShieldCheck,
               change: 'KYC Approved',
-              href: '/user/active-users?filter=verified',
+              href: '/user/all-users?filter=verified',
               color: '#10B981',
             },
             {
@@ -182,7 +183,7 @@ export default function DashboardPage() {
               value: activeGirlsList.filter(g => g.status === 'Online').length,
               icon: Heart,
               change: 'Online Now',
-              href: '/user/active-users?filter=active',
+              href: '/user/active-users',
               color: '#EC4899',
             },
             {
@@ -351,7 +352,7 @@ export default function DashboardPage() {
 
                           {/* Age & Location (Line 2) */}
                           <p className="text-xs font-semibold text-zinc-400 truncate">
-                            {girl.age} yrs • {girl.location}
+                            {girl.age ? `${girl.age} yrs` : ''}{girl.age && girl.location ? ' • ' : ''}{girl.location ? `${girl.location}` : ''}
                           </p>
 
                           {/* Online Status & Unique ID (Line 3 - Bottom Bar) */}
