@@ -5,24 +5,33 @@ import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 
 function ActiveUsersContent() {
   const searchParams = useSearchParams();
-  const initialFilter = searchParams.get('filter') || 'active';
+  const paramFilter = searchParams.get('filter');
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState(initialFilter);
+  const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'active');
+
+  // Keep activeFilter in sync if searchParams change
+  useEffect(() => {
+    if (paramFilter) {
+      setActiveFilter(paramFilter);
+    }
+  }, [paramFilter]);
 
   useEffect(() => {
     userApi.dashboard()
-      .then(setData)
+      .then((res) => {
+        setData(res);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load users'))
       .finally(() => setLoading(false));
   }, []);
@@ -40,9 +49,10 @@ function ActiveUsersContent() {
   );
 
   const user = data?.user || {};
-  const rawUsers = (data?.activeUsers && Array.isArray(data.activeUsers) && data.activeUsers.length > 0)
-    ? data.activeUsers
-    : (data?.activeGirls || data?.allUsers || []);
+  // Master list contains all registered users
+  const allMasterUsers = (data?.allUsers && Array.isArray(data.allUsers) && data.allUsers.length > 0)
+    ? data.allUsers
+    : (data?.activeUsers || data?.activeGirls || []);
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
@@ -50,14 +60,13 @@ function ActiveUsersContent() {
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
-  const fallbacks = isFemale ? boyFallbacks : girlFallbacks;
 
-  const formattedUsers = rawUsers.map((u: any, idx: number) => {
+  const formattedUsers = allMasterUsers.map((u: any, idx: number) => {
     const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
     const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
     const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
 
-    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online' || u.online !== undefined;
+    const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online';
 
     return {
       id: u.id,
@@ -122,7 +131,7 @@ function ActiveUsersContent() {
                 </span>
               </h1>
               <p className="text-zinc-400 text-sm font-medium mt-1">
-                Showing {filteredUsers.length} total members
+                Showing {filteredUsers.length} members
               </p>
             </div>
           </div>
@@ -153,8 +162,9 @@ function ActiveUsersContent() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveFilter(tab.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 border ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 border cursor-pointer ${
                   isActive
                     ? 'bg-[#EC4899] border-[#EC4899] text-white shadow-lg shadow-pink-500/20'
                     : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'
@@ -249,18 +259,17 @@ function ActiveUsersContent() {
                       {u.uniqueId}
                     </span>
                   </div>
-
-                  {/* Line 4: Chat Button */}
-                  <Button
-                    className="w-full mt-2 h-9 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide flex items-center justify-center gap-2 border-0 shadow-md transition-transform"
-                    asChild
-                  >
-                    <Link href={`/user/chat/${u.id}`}>
-                      <MessageCircle size={14} />
-                      <span>Start Chat</span>
-                    </Link>
-                  </Button>
                 </div>
+
+                <Button
+                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0"
+                  asChild
+                >
+                  <Link href={`/user/chat/${u.id}`}>
+                    <Heart size={13} className="fill-current text-white" />
+                    <span>Start Chat</span>
+                  </Link>
+                </Button>
               </Card>
             ))}
           </div>
@@ -272,11 +281,7 @@ function ActiveUsersContent() {
 
 export default function ActiveUsersPage() {
   return (
-    <Suspense fallback={
-      <div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]">
-        <Loading />
-      </div>
-    }>
+    <Suspense fallback={<div className="p-8 text-center min-h-screen flex items-center justify-center bg-[#070B18]"><Loading /></div>}>
       <ActiveUsersContent />
     </Suspense>
   );
