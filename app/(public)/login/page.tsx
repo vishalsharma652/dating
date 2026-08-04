@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
   // Already logged in? Go straight to dashboard
   useEffect(() => {
     if (getStoredUser()) router.replace('/user/dashboard');
@@ -34,8 +36,10 @@ export default function LoginPage() {
         password: formData.password,
       });
       setAuthSession(data.token, data.user);
+      setFailedAttempts(0);
       router.push('/user/dashboard');
     } catch (err) {
+      setFailedAttempts((prev) => prev + 1);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
@@ -93,9 +97,14 @@ export default function LoginPage() {
                 />
                 Remember me
               </label>
-              <Link href="/forgot-password" className="text-pink-500 font-semibold hover:text-pink-600">
-                Forgot password?
-              </Link>
+              {failedAttempts >= 3 && (
+                <Link
+                  href={formData.email ? `/forgot-password?email=${encodeURIComponent(formData.email)}` : '/forgot-password'}
+                  className="text-pink-500 font-semibold hover:text-pink-600 animate-pulse"
+                >
+                  Forgot password?
+                </Link>
+              )}
             </div>
 
             {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">{error}</p>}

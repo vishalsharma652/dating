@@ -169,6 +169,11 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
+  verifyResetOtp: (email: string, otp: string) =>
+    apiRequest<{ resetToken: string; email: string }>('/auth/verify-reset-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    }),
   resetPassword: (payload: { token?: string; otp?: string; email?: string; password: string } | string, password?: string) => {
     const body = typeof payload === 'object' ? payload : { token: payload, password };
     return apiRequest<null>('/auth/reset-password', {

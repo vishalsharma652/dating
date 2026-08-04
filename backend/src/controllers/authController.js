@@ -434,6 +434,21 @@ async function forgotPassword(req, res) {
   return ok(res, {}, 'If this email is registered, you will receive reset instructions shortly');
 }
 
+async function verifyResetOtp(req, res) {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const otp = (req.body.otp || '').trim();
+  if (!email || !otp) {
+    throw new AppError('Email and 6-digit OTP code are required.', 400);
+  }
+
+  const entry = await getResetToken(otp, email);
+  if (!entry) {
+    throw new AppError('Invalid or expired 6-digit OTP code. Please check and try again.', 400);
+  }
+
+  return ok(res, { resetToken: entry.token, email: entry.email, verified: true }, 'OTP verified successfully.');
+}
+
 async function resetPassword(req, res) {
   const { token, otp, email, password } = req.body;
   const tokenOrOtp = token || otp;
@@ -456,5 +471,5 @@ async function resetPassword(req, res) {
 
 module.exports = {
   registerRules, loginRules, forgotPasswordRules, resetPasswordRules,
-  register, login, me, logout, heartbeat, verifyOtp, resendOtp, forgotPassword, resetPassword
+  register, login, me, logout, heartbeat, verifyOtp, resendOtp, forgotPassword, verifyResetOtp, resetPassword
 };

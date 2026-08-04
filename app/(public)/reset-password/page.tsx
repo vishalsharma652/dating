@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Brand } from '@/components/brand';
-import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Lock, ShieldAlert, Key } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Lock, ShieldAlert } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import Loading from '@/app/loading';
 
@@ -18,8 +18,6 @@ function ResetPasswordContent() {
   const urlToken = searchParams.get('token') || '';
   const urlEmail = searchParams.get('email') || '';
 
-  const [otpOrToken, setOtpOrToken] = useState(urlToken);
-  const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -27,40 +25,33 @@ function ResetPasswordContent() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (urlToken) setOtpOrToken(urlToken);
-    if (urlEmail) setEmail(urlEmail);
-  }, [urlToken, urlEmail]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const tokenVal = otpOrToken.trim();
-    if (!tokenVal) {
-      setError('Please enter your 6-digit OTP code or reset token.');
+    if (!urlToken) {
+      setError('Invalid or missing reset token. Please request a new password reset.');
       return;
     }
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError('New Password must be at least 6 characters long.');
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('New Password and Confirm New Password do not match.');
       return;
     }
 
     setLoading(true);
     try {
       await authApi.resetPassword({
-        token: tokenVal.length > 10 ? tokenVal : undefined,
-        otp: tokenVal.length <= 10 ? tokenVal : undefined,
-        email: email.trim().toLowerCase() || undefined,
+        token: urlToken,
+        email: urlEmail || undefined,
         password,
       });
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to reset password. Token or OTP may be invalid.');
+      setError(err instanceof Error ? err.message : 'Unable to reset password. Link may be expired.');
     } finally {
       setLoading(false);
     }
@@ -106,51 +97,12 @@ function ResetPasswordContent() {
                 <Brand className="justify-center mb-2" imageClassName="h-9 w-9" />
                 <h1 className="text-2xl font-black text-white tracking-tight">Set New Password</h1>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Enter your 6-digit OTP code (or token) from your email and your new password.
+                  Please enter your new password below.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* OTP or Token input */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>6-Digit OTP Code / Reset Token</span>
-                    {urlToken && <span className="text-[10px] text-[#EC4899] font-normal">Locked (Pre-filled)</span>}
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                    <Input
-                      type="text"
-                      placeholder="e.g. 849201"
-                      value={otpOrToken}
-                      onChange={(e) => setOtpOrToken(e.target.value)}
-                      readOnly={Boolean(urlToken)}
-                      className={`pl-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm font-mono focus:border-[#EC4899] ${
-                        urlToken ? 'cursor-not-allowed opacity-70 bg-white/[0.02]' : ''
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Email address input */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Registered Email Address</span>
-                    {urlEmail && <span className="text-[10px] text-[#EC4899] font-normal">Locked (Pre-filled)</span>}
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    readOnly={Boolean(urlEmail)}
-                    className={`bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm focus:border-[#EC4899] ${
-                      urlEmail ? 'cursor-not-allowed opacity-70 bg-white/[0.02]' : ''
-                    }`}
-                  />
-                </div>
-
-                {/* New Password */}
+                {/* 1. New Password */}
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
                     New Password
@@ -163,11 +115,13 @@ function ResetPasswordContent() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm focus:border-[#EC4899]"
+                      autoFocus
+                      required
                     />
                   </div>
                 </div>
 
-                {/* Confirm Password */}
+                {/* 2. Confirm New Password */}
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
                     Confirm New Password
@@ -176,10 +130,11 @@ function ResetPasswordContent() {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                     <Input
                       type="password"
-                      placeholder="Re-enter password"
+                      placeholder="Re-enter new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-500 rounded-xl h-11 text-sm focus:border-[#EC4899]"
+                      required
                     />
                   </div>
                 </div>

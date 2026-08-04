@@ -16,6 +16,7 @@ router.post('/verify-otp', [body('email').notEmpty().isEmail(), body('otp').notE
 router.post('/resend-otp', [body('email').notEmpty().isEmail()], validate, asyncHandler(auth.resendOtp));
 
 router.post('/forgot-password', auth.forgotPasswordRules, validate, asyncHandler(auth.forgotPassword));
+router.post('/verify-reset-otp', asyncHandler(auth.verifyResetOtp));
 router.post('/reset-password', auth.resetPasswordRules, validate, asyncHandler(auth.resetPassword));
 
 module.exports = router;
