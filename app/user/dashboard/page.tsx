@@ -268,32 +268,6 @@ export default function DashboardPage() {
                       </h3>
                     </div>
                   </div>
-
-                  {/* Mini SVG line graph path */}
-                  <div className="absolute bottom-0 left-0 right-0 h-8 opacity-15 pointer-events-none">
-                    <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
-                      <path
-                        d={i % 2 === 0
-                          ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10 L100,30 L0,30 Z"
-                          : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20 L100,30 L0,30 Z"}
-                        fill={`url(#grad-${i})`}
-                      />
-                      <path
-                        d={i % 2 === 0
-                          ? "M0,25 Q15,10 30,20 T60,5 T90,22 T100,10"
-                          : "M0,22 Q10,25 25,12 T50,24 T75,8 T100,20"}
-                        fill="none"
-                        stroke={stat.color}
-                        strokeWidth="1.2"
-                      />
-                      <defs>
-                        <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={stat.color} />
-                          <stop offset="100%" stopColor="transparent" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
                 </Card>
               </Link>
             );
