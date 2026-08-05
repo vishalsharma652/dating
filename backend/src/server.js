@@ -7,7 +7,13 @@ const { startChatBillingScheduler } = require('./services/chatBillingScheduler')
 const { setupCallSignaling } = require('./services/callSignaling');
 
 async function start() {
-  await pool.query('SELECT 1');
+  try {
+    await pool.query('SELECT 1');
+    console.log('Database connected successfully.');
+  } catch (err) {
+    console.error('Database connection warning:', err?.message || err);
+  }
+
   try {
     await pool.query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
   } catch {}
@@ -29,30 +35,35 @@ async function start() {
     console.error('Coin packages seed error:', err);
   }
 
-
   // Create HTTP server so Socket.IO can share the same port as Express
   const httpServer = http.createServer(app);
 
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: env.nodeEnv === 'production' ? [env.appUrl] : '*',
+      origin: '*',
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    // Prefer WebSocket, fall back to polling
     transports: ['websocket', 'polling'],
   });
 
-  setupCallSignaling(io);
-  startChatBillingScheduler();
+  try {
+    setupCallSignaling(io);
+  } catch (e) {
+    console.error('Call signaling setup error:', e);
+  }
+
+  try {
+    startChatBillingScheduler();
+  } catch (e) {
+    console.error('Chat billing scheduler error:', e);
+  }
 
   httpServer.listen(env.port, () => {
-    console.log(`Ember API listening on ${env.apiUrl}`);
-    console.log(`Socket.IO signaling active on ws://localhost:${env.port}`);
+    console.log(`Saathika API listening on port ${env.port}`);
   });
 }
 
 start().catch((error) => {
   console.error('Failed to start API:', error);
-  process.exit(1);
 });
