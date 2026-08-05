@@ -227,41 +227,27 @@ function PaymentContent() {
     setPaymentStatus('processing');
     setProcessingStep(1);
 
-    // Step 1: Initialize transaction modal
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setProcessingStep(2);
-
-    // Step 2: Simulate Gateway Processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    // Handle simulation outcomes
-    if (simulationOutcome === 'cancel') {
-      setPaymentStatus('cancelled');
-      return;
-    }
-
-    if (simulationOutcome === 'failure') {
-      setPaymentStatus('failure');
-      setError('Payment declined by Bank / Gateway. Please check credentials or try another method.');
-      return;
-    }
-
-    // Step 3: Success outcome - Submit payload to backend
-    setProcessingStep(3);
     try {
-      let gateway: 'stripe' | 'phonepe' | 'upi_qr' = 'stripe';
+      let gateway: 'stripe' | 'phonepe' | 'upi_qr' | 'razorpay' = 'stripe';
       if (paymentMethod === 'upi') {
         gateway = upiSubMode === 'qr' ? 'upi_qr' : 'phonepe';
       }
 
-      const mockRef =
-        paymentMethod === 'stripe'
-          ? stripeIntent?.paymentIntentId || `pi_stripe_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`
-          : `UPI-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      setProcessingStep(2);
+
+      // Verify if live payment intent / order ID exists
+      const paymentRef = stripeIntent?.paymentIntentId || '';
+      if (!paymentRef) {
+        setPaymentStatus('failure');
+        setError('Payment Gateway is not connected. Real payment gateway (Stripe or Razorpay) credentials are required to complete payment.');
+        return;
+      }
+
+      setProcessingStep(3);
 
       const data = await userApi.purchaseCoins(packageId!, {
         gateway,
-        paymentReference: mockRef,
+        paymentReference: paymentRef,
         upiId: paymentMethod === 'upi' && upiSubMode === 'vpa' ? upiId : undefined,
         cardNumber: paymentMethod === 'stripe' ? cardNumber : undefined,
         expiry: paymentMethod === 'stripe' ? expiry : undefined,
@@ -269,7 +255,7 @@ function PaymentContent() {
         cardName: paymentMethod === 'stripe' ? cardName : undefined,
       });
 
-      setReference(mockRef);
+      setReference(paymentRef);
       setCoinsAdded(data.coinsAdded);
       setPaymentStatus('success');
 
@@ -283,12 +269,12 @@ function PaymentContent() {
         router.push('/user/wallet');
       }, 3200);
     } catch (err: any) {
-      setPaymentStatus('idle');
+      setPaymentStatus('failure');
       if (err.errors) {
         setFieldErrors(err.errors);
         setError('Validation failed. Please review the highlighted fields.');
       } else {
-        setError(err.message || 'Transaction failed. Please try again.');
+        setError(err.message || 'Payment verification failed. Coins were not added.');
       }
     }
   };

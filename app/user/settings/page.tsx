@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { authApi, clearAuthSession, userApi } from '@/lib/api';
+import { LanguageModal, useLanguage } from '@/context/language-context';
 import {
   Lock,
   Bell,
@@ -20,6 +22,9 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { language } = useLanguage();
+  const [showLangModal, setShowLangModal] = useState(false);
+
   const settings = [
     {
       icon: Bell,
@@ -47,8 +52,9 @@ export default function SettingsPage() {
     },
     {
       icon: Languages,
-      label: 'Language',
-      description: 'Change app language',
+      label: 'Language / भाषा',
+      description: language === 'hi' ? 'हिंदी (Hindi) भाषा चुनी गई है' : 'English language selected',
+      isLanguage: true,
       href: '#',
     },
     {
@@ -92,6 +98,30 @@ export default function SettingsPage() {
         <div className="space-y-2 mb-8">
           {settings.map((setting) => {
             const Icon = setting.icon;
+            if (setting.isLanguage) {
+              return (
+                <Card
+                  key={setting.label}
+                  onClick={() => setShowLangModal(true)}
+                  className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                        <Icon className="text-pink-500" size={24} />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{setting.label}</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                          {setting.description}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="text-zinc-400" size={24} />
+                  </div>
+                </Card>
+              );
+            }
             return (
               <Link key={setting.label} href={setting.href}>
                 <Card className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
@@ -194,6 +224,11 @@ export default function SettingsPage() {
           </div>
         </Card>
       </Container>
+
+      <LanguageModal
+        isOpen={showLangModal}
+        onClose={() => setShowLangModal(false)}
+      />
     </div>
   );
 }

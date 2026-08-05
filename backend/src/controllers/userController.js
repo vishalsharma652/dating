@@ -253,6 +253,14 @@ async function endChatSession(req, res) {
   return ok(res, { session }, 'Chat session ended');
 }
 
+async function deleteMessage(req, res) {
+  const messageId = Number(req.params.messageId);
+  const mode = String(req.body.mode || req.query.mode || 'me').toLowerCase();
+  const result = await socialModel.deleteMessage(messageId, req.user.id, mode);
+  if (!result) throw new AppError('Message not found', 404);
+  return ok(res, result, mode === 'everyone' ? 'Message deleted for everyone' : 'Message deleted for you');
+}
+
 async function wallet(req, res) {
   const data = await walletModel.wallet(req.user.id);
   return ok(res, data || { coins: 0, earnings: 0, totalPurchased: 0, totalSpent: 0, totalEarned: 0, withdrawalBalance: 0 });
@@ -267,64 +275,85 @@ async function coinPackages(req, res) {
 }
 
 async function purchaseCoins(req, res) {
-  const { gateway, upiId, cardNumber, expiry, cvv, cardName, bankCode, walletProvider } = req.body;
+  const { gateway, upiId, cardNumber, expiry, cvv, cardName, bankCode, walletProvider, paymentReference } = req.body;
 
-  if (gateway === 'phonepe') {
+  if (!paymentReference || typeof paymentReference !== 'string' || !paymentReference.trim()) {
+    notificationModel.create({
+      userId: req.user.id,
+      type: 'recharge_failed',
+      title: 'Recharge Failed ❌',
+      message: 'Recharge failed: Payment reference ID is required.',
+      linkUrl: '/user/wallet/coins'
+    }).catch(() => {});
+    throw new AppError('Payment reference ID is required to verify transaction', 422);
+  }
+
+  const ref = paymentReference.trim();
+  const selectedGateway = (gateway || 'stripe').toLowerCase();
+
+  try {
+    // Strict Payment Verification Guard
+    if (selectedGateway === 'stripe') {
+      if (stripeConfig.isConfigured && stripeConfig.stripe) {
+        const intent = await stripeConfig.stripe.paymentIntents.retrieve(ref);
+        if (intent.status !== 'succeeded') {
+          throw new AppError(`Stripe payment verification failed (Status: ${intent.status}). Coins not credited.`, 400);
+        }
+      } else if (process.env.ALLOW_UNVERIFIED_TEST_PAYMENTS !== 'true') {
+        throw new AppError('Stripe Payment Gateway is not configured with valid secret key. Real payment is required.', 400);
+      }
+    } else if (selectedGateway === 'razorpay') {
+      if (razorpayConfig.isConfigured && razorpayConfig.razorpay) {
+        const payment = await razorpayConfig.razorpay.payments.fetch(ref);
+        if (payment.status !== 'captured' && payment.status !== 'authorized') {
+          throw new AppError(`Razorpay payment verification failed (Status: ${payment.status}). Coins not credited.`, 400);
+        }
+      } else if (process.env.ALLOW_UNVERIFIED_TEST_PAYMENTS !== 'true') {
+        throw new AppError('Razorpay Payment Gateway is not configured with valid API keys. Real payment is required.', 400);
+      }
+    } else {
+      // For non-Stripe / non-Razorpay gateways (PhonePe, UPI, Netbanking simulation)
+      if (process.env.ALLOW_UNVERIFIED_TEST_PAYMENTS !== 'true') {
+        throw new AppError('Direct unverified coin addition is disabled. Real payment gateway confirmation required.', 400);
+      }
+    }
+  } catch (err) {
+    const failureReason = err.message || 'Payment verification failed';
+    notificationModel.create({
+      userId: req.user.id,
+      type: 'recharge_failed',
+      title: 'Recharge Failed ❌',
+      message: `Your recharge attempt failed: ${failureReason}`,
+      linkUrl: '/user/wallet/coins',
+      metadata: { gateway: selectedGateway, reference: ref, error: failureReason }
+    }).catch(() => {});
+    throw err;
+  }
+
+  // Field validation for legacy input
+  if (selectedGateway === 'phonepe') {
     const upiRegex = /^[a-zA-Z0-9.\-_]{3,64}@[a-zA-Z]{3,32}$/;
     if (!upiId || typeof upiId !== 'string' || !upiId.trim() || !upiRegex.test(upiId.trim())) {
       const err = new AppError('UPI validation failed', 422);
       err.details = { upiId: 'Please enter a valid UPI ID (e.g., 9876543210@ybl or username@okaxis)' };
       throw err;
     }
-  } else if (gateway === 'razorpay') {
-    const errors = {};
-    const cleanCard = (cardNumber || '').replace(/\s/g, '');
-    if (!cardNumber || typeof cardNumber !== 'string' || cleanCard.length < 16 || !/^\d+$/.test(cleanCard)) {
-      errors.cardNumber = 'Please enter a valid 16-digit card number';
-    }
-    if (!expiry || typeof expiry !== 'string' || !expiry.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/)) {
-      errors.expiry = 'Please enter a valid expiry (MM/YY)';
-    } else {
-      const [expMonth, expYear] = expiry.split('/').map(Number);
-      const now = new Date();
-      const currentYear = now.getFullYear() % 100;
-      const currentMonth = now.getMonth() + 1;
-      if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-        errors.expiry = 'Card has expired';
-      }
-    }
-    const cleanCvv = (cvv || '').trim();
-    if (!cvv || typeof cvv !== 'string' || cleanCvv.length < 3 || cleanCvv.length > 4 || !/^\d+$/.test(cleanCvv)) {
-      errors.cvv = 'Please enter a valid CVV (3 or 4 digits)';
-    }
-    if (!cardName || typeof cardName !== 'string' || !cardName.trim()) {
-      errors.cardName = 'Please enter cardholder name';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      const err = new AppError('Card validation failed', 422);
-      err.details = errors;
-      throw err;
-    }
-  } else if (gateway === 'netbanking') {
-    if (!bankCode || typeof bankCode !== 'string' || !bankCode.trim()) {
-      const err = new AppError('Netbanking validation failed', 422);
-      err.details = { bankCode: 'Please select a bank' };
-      throw err;
-    }
-  } else if (gateway === 'wallet') {
-    if (!walletProvider || typeof walletProvider !== 'string' || !walletProvider.trim()) {
-      const err = new AppError('Wallet validation failed', 422);
-      err.details = { walletProvider: 'Please select a wallet' };
-      throw err;
-    }
   }
 
   const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId), {
-    gateway: req.body.gateway || 'stripe',
-    reference: req.body.paymentReference
+    gateway: selectedGateway,
+    reference: ref
   });
-  if (!purchase) throw new AppError('Coin package not found', 404);
+  if (!purchase) {
+    notificationModel.create({
+      userId: req.user.id,
+      type: 'recharge_failed',
+      title: 'Recharge Failed ❌',
+      message: 'Selected coin package was not found.',
+      linkUrl: '/user/wallet/coins'
+    }).catch(() => {});
+    throw new AppError('Coin package not found', 404);
+  }
   return created(res, purchase, 'Coin purchase completed');
 }
 
@@ -538,6 +567,7 @@ module.exports = {
   chatRequests,
   messages,
   sendMessage,
+  deleteMessage,
   startChatSession,
   chargeChatMinute,
   endChatSession,

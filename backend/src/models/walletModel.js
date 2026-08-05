@@ -1,5 +1,6 @@
 const { query, transaction } = require('../config/db');
 const { AppError } = require('../utils/errors');
+const notificationModel = require('./notificationModel');
 
 async function transactions(userId) {
   return query('SELECT id, type, title, description, amount, coins, status, DATE_FORMAT(created_at, "%Y-%m-%d") AS date FROM wallet_transactions WHERE user_id = :userId ORDER BY created_at DESC', { userId });
@@ -103,6 +104,24 @@ async function purchase(userId, packageId, payment = {}) {
       }
     );
   });
+
+  // Trigger Recharge Successful Notification
+  notificationModel.create({
+    userId,
+    type: 'recharge_success',
+    title: 'Recharge Successful! 🎉',
+    message: `Your recharge of ${totalCoins} coins (${pkg.name}) has been credited successfully to your wallet.`,
+    linkUrl: '/user/wallet',
+    metadata: {
+      packageId,
+      packageName: pkg.name,
+      amount: pkg.price,
+      coinsAdded: totalCoins,
+      paymentGateway: payment.gateway || null,
+      paymentReference: payment.reference || null
+    }
+  }).catch((err) => console.error('[Wallet] Failed to send recharge notification:', err.message));
+
   return { package: pkg, coinsAdded: totalCoins };
 }
 

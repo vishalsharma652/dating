@@ -28,6 +28,8 @@ router.post('/chat/sessions/:sessionId/charge-minute', [param('sessionId').isInt
 router.patch('/chat/sessions/:sessionId/end', [param('sessionId').isInt()], validate, asyncHandler(user.endChatSession));
 router.get('/chat/:userId/messages', [param('userId').isInt()], validate, asyncHandler(user.messages));
 router.post('/chat/:userId/messages', [param('userId').isInt(), body('text').trim().notEmpty()], validate, asyncHandler(user.sendMessage));
+router.delete('/chat/messages/:messageId', [param('messageId').isInt()], validate, asyncHandler(user.deleteMessage));
+router.post('/chat/messages/:messageId/delete', [param('messageId').isInt()], validate, asyncHandler(user.deleteMessage));
 
 router.get('/wallet', asyncHandler(user.wallet));
 router.get('/wallet/history', asyncHandler(user.transactions));

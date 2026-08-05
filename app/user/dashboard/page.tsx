@@ -24,6 +24,8 @@ import {
   X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { SayHiModal } from '@/components/user/say-hi-modal';
+import { LanguageSwitcherButton } from '@/context/language-context';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -52,6 +54,7 @@ export default function DashboardPage() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [showReferModal, setShowReferModal] = useState(false);
   const [referCopied, setReferCopied] = useState(false);
+  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
 
   useEffect(() => {
     userApi.dashboard()
@@ -86,7 +89,7 @@ export default function DashboardPage() {
   const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
   const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
   const isFemale = isUserFemale;
-  const targetLabel = isUserFemale ? 'Active Males' : 'Active Females';
+  const targetLabel = 'All Users';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -161,9 +164,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Header Controls */}
-          <div className="flex items-center gap-4.5">
+          <div className="flex items-center gap-3 sm:gap-4.5">
+            {/* Language Switcher Button */}
+            <LanguageSwitcherButton />
+
             {/* Premium Pill */}
-            <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/20 text-[10px] font-bold text-[#EC4899] tracking-wider uppercase select-none shadow-[0_0_15px_rgba(236,72,153,0.15)]">
+            <div className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/20 text-[10px] font-bold text-[#EC4899] tracking-wider uppercase select-none shadow-[0_0_15px_rgba(236,72,153,0.15)]">
               <Sparkles size={11} className="fill-[#EC4899]" />
               <span>Premium Member</span>
             </div>
@@ -219,11 +225,11 @@ export default function DashboardPage() {
               color: '#10B981',
             },
             {
-              label: targetLabel,
-              value: activeGirlsList.filter(g => g.status === 'Online').length,
+              label: 'All Users',
+              value: totalOppositeUsers,
               icon: Heart,
-              change: 'Online Now',
-              href: '/user/active-users',
+              change: 'Total Members',
+              href: '/user/active-users?filter=all',
               color: '#EC4899',
             },
             {
@@ -292,7 +298,7 @@ export default function DashboardPage() {
                   className="rounded-full border-[#EC4899]/30 hover:border-[#EC4899] text-[#EC4899] hover:bg-[#EC4899]/5 text-xs px-4"
                   asChild
                 >
-                  <Link href="/user/active-users">View All</Link>
+                  <Link href="/user/active-users?filter=all">View All</Link>
                 </Button>
               </div>
 
@@ -376,6 +382,19 @@ export default function DashboardPage() {
                               {girl.uniqueId}
                             </span>
                           </div>
+
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSayHiTarget({ id: girl.id, name: girl.name, photo: girl.photo, location: girl.location });
+                            }}
+                            className="w-full mt-3 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                          >
+                            <Sparkles size={14} />
+                            <span>Say Hi 👋 (5 Coins)</span>
+                          </Button>
                         </div>
                       </Link>
                     ))}
@@ -503,8 +522,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* BOTTOM ROW: Get matches booster, profile views, activity */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* BOTTOM ROW: Get matches booster, profile views */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* Card 1: Get More Matches (Booster) */}
           <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] overflow-hidden relative group min-h-[190px] flex items-center justify-between">
@@ -555,34 +574,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </Card>
-
-          {/* Card 3: Your Activity */}
-          <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] flex flex-col justify-between min-h-[190px] relative overflow-hidden">
-            <div className="space-y-1.5 z-10">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                <TrendingUp size={14} className="text-[#7C3AED]" />
-                <span>Your Activity</span>
-              </div>
-              <p className="text-[11px] text-zinc-400 font-bold mt-2 leading-relaxed max-w-[80%]">
-                Keep going! Your journey is just getting started.
-              </p>
-            </div>
-
-            {/* Glowing Activity Wave Chart */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 opacity-35 pointer-events-none z-0">
-              <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
-                <path d="M0,28 Q15,10 30,22 T60,5 T90,25 L100,30 L0,30 Z" fill="url(#pinkGrad)" />
-                <path d="M0,28 Q15,10 30,22 T60,5 T90,25" fill="none" stroke="#EC4899" strokeWidth="1.5" />
-                <defs>
-                  <linearGradient id="pinkGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#EC4899" />
-                    <stop offset="100%" stopColor="transparent" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </Card>
-
         </div>
 
       </Container>
@@ -657,6 +648,13 @@ export default function DashboardPage() {
           </div>
         );
       })()}
+
+      <SayHiModal
+        isOpen={Boolean(sayHiTarget)}
+        onClose={() => setSayHiTarget(null)}
+        targetUser={sayHiTarget}
+        currentCoins={user?.coins}
+      />
     </div>
   );
 }

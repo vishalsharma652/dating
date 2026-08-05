@@ -273,11 +273,12 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
-('Basic', 250, 50.00, 0, FALSE),
-('Popular', 600, 100.00, 0, TRUE),
-('Pro', 1250, 200.00, 0, FALSE),
-('VIP', 2500, 400.00, 0, FALSE)
+INSERT INTO coin_packages (id, name, coins, price, bonus, popular, active) VALUES
+(1, '50 Coins Pack', 50, 250.00, 0, FALSE, TRUE),
+(2, '100 Coins Pack', 100, 550.00, 0, TRUE, TRUE),
+(3, '200 Coins Pack', 200, 1150.00, 0, FALSE, TRUE),
+(4, '400 Coins VIP Pack', 400, 2350.00, 0, TRUE, TRUE),
+(5, '1000 Coins Royal Pack', 1000, 6500.00, 0, FALSE, TRUE)
 ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
