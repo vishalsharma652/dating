@@ -452,6 +452,14 @@ async function deleteMessage(messageId, userId, mode = 'me') {
   }
 }
 
+async function dueChatSessions() {
+  try {
+    return await query('SELECT * FROM chat_sessions WHERE status = "active" AND next_billing_at <= NOW()');
+  } catch (err) {
+    return [];
+  }
+}
+
 module.exports = {
   like,
   matches,
