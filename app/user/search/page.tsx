@@ -203,7 +203,7 @@ export default function UserSearchPage() {
                     <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
                       <Button
                         type="button"
-                        onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoUrl, location: user.city })}
+                        onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city })}
                         className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
                       >
                         <Sparkles size={16} /> Say Hi 👋 with #{user.id}
