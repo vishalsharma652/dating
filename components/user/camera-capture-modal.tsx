@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, RefreshCw, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Camera, X, RefreshCw, Check, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CameraCaptureModalProps {
@@ -31,38 +31,46 @@ export function CameraCaptureModal({ isOpen, onClose, onCapture }: CameraCapture
   const startCamera = useCallback(async () => {
     setLoading(true);
     setError('');
-    stopCamera();
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera access is not supported on this browser/device.');
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
+      let mediaStream: MediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode },
+          audio: false,
+        });
+      } catch (e) {
+        // Fallback to basic video constraint for desktop webcams
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
 
       setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        await videoRef.current.play().catch(() => undefined);
-      }
     } catch (err: any) {
       console.error('System Camera Access Error:', err);
       setError(
         err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'
-          ? 'Camera permission denied. Please allow camera access in browser settings.'
+          ? 'Camera permission denied. Please click the lock icon in URL bar to allow camera access.'
           : err.message || 'Unable to start system camera.'
       );
     } finally {
       setLoading(false);
     }
-  }, [facingMode, stopCamera]);
+  }, [facingMode]);
+
+  // Assign stream to video element when mounted
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => undefined);
+    }
+  }, [stream]);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,7 +81,7 @@ export function CameraCaptureModal({ isOpen, onClose, onCapture }: CameraCapture
     return () => {
       stopCamera();
     };
-  }, [isOpen, startCamera, stopCamera]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -147,34 +155,57 @@ export function CameraCaptureModal({ isOpen, onClose, onCapture }: CameraCapture
 
         {/* Live Camera Viewfinder */}
         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center">
-          {loading && (
-            <div className="flex flex-col items-center gap-2 text-zinc-400 text-xs font-semibold">
-              <Loader2 className="animate-spin text-pink-500" size={28} />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            onCanPlay={() => setLoading(false)}
+            className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''} ${
+              loading || error ? 'hidden' : 'block'
+            }`}
+          />
+
+          {loading && !error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/90 text-zinc-400 text-xs font-semibold z-10 p-4 text-center">
+              <Loader2 className="animate-spin text-pink-500" size={32} />
               <span>Starting System Camera...</span>
+              <p className="text-[10px] text-zinc-500">Please allow camera permissions if prompted by your browser</p>
             </div>
           )}
 
-          {error ? (
-            <div className="p-6 text-center text-red-400 space-y-3">
+          {error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-red-400 space-y-3 bg-black/95 z-10">
               <AlertCircle size={32} className="mx-auto text-red-500" />
               <p className="text-xs font-medium max-w-xs mx-auto leading-relaxed">{error}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={startCamera}
-                className="rounded-full border-white/20 text-xs text-white"
-              >
-                Retry Camera Access
-              </Button>
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startCamera}
+                  className="rounded-full border-white/20 text-xs text-white cursor-pointer"
+                >
+                  Retry Access
+                </Button>
+                <label className="px-3 py-1.5 rounded-full bg-pink-500/20 text-pink-300 hover:bg-pink-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-pink-500/30">
+                  <span>Open System App</span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        stopCamera();
+                        onCapture(file);
+                        onClose();
+                      }
+                    }}
+                  />
+                </label>
+              </div>
             </div>
-          ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
-            />
           )}
 
           {/* Grid lines overlay */}
@@ -214,6 +245,27 @@ export function CameraCaptureModal({ isOpen, onClose, onCapture }: CameraCapture
               <Camera size={22} />
             </div>
           </button>
+
+          {/* Gallery Pick Option */}
+          <label
+            title="Choose Existing Photo/Video from Gallery"
+            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+          >
+            <ImageIcon size={18} />
+            <input
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  stopCamera();
+                  onCapture(file);
+                  onClose();
+                }
+              }}
+            />
+          </label>
 
           {/* Close / Cancel */}
           <button

@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
+import { CameraCaptureModal } from '@/components/user/camera-capture-modal';
+import { WhatsAppEmojiPicker } from '@/components/user/whatsapp-emoji-picker';
 
 interface ChatInputProps {
   onSend?: (message: string, type?: 'text' | 'image' | 'gift') => void;
@@ -25,6 +27,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -79,10 +82,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleCapturedFile = async (file: File) => {
     setShowAttachmentMenu(false);
     setUploading(true);
     const form = new FormData();
@@ -95,15 +95,21 @@ export function ChatInput({ onSend }: ChatInputProps) {
         await onSend?.(photoUrl, 'image');
       }
     } catch (err) {
-      console.error('Photo upload failed', err);
+      console.error('Camera photo upload failed', err);
     } finally {
       setUploading(false);
-      if (e.target) e.target.value = '';
     }
   };
 
-  const sendGift = (giftName: string, giftIcon: string) => {
-    onSend?.(`🎁 Sent a ${giftName} ${giftIcon}`, 'gift');
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleCapturedFile(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const sendGift = (giftName: string, giftIcon: string, giftCoins: number) => {
+    onSend?.(`🎁 Sent a ${giftName} ${giftIcon} (${giftCoins} Coins)`, 'gift');
     setShowGiftPicker(false);
     setShowAttachmentMenu(false);
   };
@@ -114,19 +120,26 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
   return (
     <div className="shrink-0 bg-[#0D1120]/95 backdrop-blur-xl border-t border-white/10 p-2.5 sm:p-3.5 z-20 relative">
-      {/* Hidden File Inputs */}
+      {/* Live System Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onCapture={handleCapturedFile}
+      />
+
+      {/* Hidden File Inputs for Native System Camera & Gallery */}
       <input
         type="file"
         ref={galleryInputRef}
         onChange={handlePhotoUpload}
-        accept="image/*"
+        accept="image/*,video/*"
         className="hidden"
       />
       <input
         type="file"
         ref={cameraInputRef}
         onChange={handlePhotoUpload}
-        accept="image/*"
+        accept="image/*,video/*"
         capture="environment"
         className="hidden"
       />
@@ -143,8 +156,11 @@ export function ChatInput({ onSend }: ChatInputProps) {
           <div className="space-y-1">
             <button
               type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white text-xs font-semibold transition"
+              onClick={() => {
+                setShowAttachmentMenu(false);
+                setShowCameraModal(true);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white text-xs font-semibold transition cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
                 <Camera size={16} />
@@ -180,23 +196,15 @@ export function ChatInput({ onSend }: ChatInputProps) {
         </div>
       )}
 
-      {/* Quick Emoji Bar */}
+      {/* WhatsApp Style Categorized Emoji Picker Drawer */}
       {showEmojiPicker && (
-        <div className="absolute bottom-full left-0 right-0 p-2.5 bg-[#0F172A]/95 border-t border-white/10 backdrop-blur-xl flex items-center gap-2 overflow-x-auto z-20 animate-in fade-in duration-150 scrollbar-none">
-          {['😊', '😂', '❤️', '😍', '👍', '🔥', '🎉', '🌹', '💖', '👑', '💍', '💯'].map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => addEmoji(emoji)}
-              className="text-xl p-1.5 hover:bg-white/10 rounded-xl transition duration-150 shrink-0 hover:scale-125 cursor-pointer"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
+        <WhatsAppEmojiPicker
+          onSelectEmoji={(emoji) => addEmoji(emoji)}
+          onClose={() => setShowEmojiPicker(false)}
+        />
       )}
 
-      {/* Gift Picker Drawer */}
+      {/* Gift Picker Drawer with Coin Prices */}
       {showGiftPicker && (
         <div className="absolute bottom-full left-0 right-0 p-4 bg-[#0F172A] border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom-2 duration-200 z-30">
           <div className="flex items-center justify-between mb-3">
@@ -214,22 +222,29 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
           <div className="grid grid-cols-4 gap-2">
             {[
-              { name: 'Red Rose', icon: '🌹' },
-              { name: 'Love Heart', icon: '💖' },
-              { name: 'Golden Crown', icon: '👑' },
-              { name: 'Sparkling Ring', icon: '💍' },
+              { name: 'Red Rose', icon: '🌹', coins: 10 },
+              { name: 'Love Heart', icon: '💖', coins: 25 },
+              { name: 'Chocolate', icon: '🍫', coins: 50 },
+              { name: 'Teddy Bear', icon: '🧸', coins: 100 },
+              { name: 'Golden Crown', icon: '👑', coins: 200 },
+              { name: 'Diamond Ring', icon: '💍', coins: 500 },
+              { name: 'Sports Car', icon: '🚗', coins: 1000 },
+              { name: 'Super Diamond', icon: '💎', coins: 2000 },
             ].map((g) => (
               <button
                 key={g.name}
                 type="button"
-                onClick={() => sendGift(g.name, g.icon)}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 transition group cursor-pointer"
+                onClick={() => sendGift(g.name, g.icon, g.coins)}
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 transition group cursor-pointer space-y-1"
               >
-                <span className="text-2xl mb-1 group-hover:scale-125 transition duration-200">
+                <span className="text-2xl group-hover:scale-125 transition duration-200">
                   {g.icon}
                 </span>
                 <span className="text-[10px] font-bold text-zinc-300 truncate">
                   {g.name}
+                </span>
+                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+                  🪙 {g.coins} coins
                 </span>
               </button>
             ))}

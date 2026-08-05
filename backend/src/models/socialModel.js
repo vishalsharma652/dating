@@ -125,27 +125,108 @@ async function chatPartner(userId, otherUserId) {
   return rows[0] || null;
 }
 
+async function initMessagesDeletionSchema() {
+  try {
+    await query("ALTER TABLE messages ADD COLUMN deleted_for_sender TINYINT(1) NOT NULL DEFAULT 0");
+  } catch (e) {}
+  try {
+    await query("ALTER TABLE messages ADD COLUMN deleted_for_recipient TINYINT(1) NOT NULL DEFAULT 0");
+  } catch (e) {}
+  try {
+    await query("ALTER TABLE messages ADD COLUMN deleted_for_everyone TINYINT(1) NOT NULL DEFAULT 0");
+  } catch (e) {}
+
+  try {
+    await query("UPDATE messages SET deleted_for_sender = 0 WHERE deleted_for_sender IS NULL");
+    await query("UPDATE messages SET deleted_for_recipient = 0 WHERE deleted_for_recipient IS NULL");
+    await query("UPDATE messages SET deleted_for_everyone = 0 WHERE deleted_for_everyone IS NULL");
+  } catch (e) {}
+}
+
 async function messages(chatId, readerUserId) {
+  const numericChatId = Number(chatId);
+  const numericReaderId = Number(readerUserId);
+
+  await initMessagesDeletionSchema();
+
   await query(
     `UPDATE messages
      SET delivery_status = 'read'
-     WHERE chat_id = :chatId
-       AND sender_id <> :readerUserId
+     WHERE chat_id = :numericChatId
+       AND sender_id <> :numericReaderId
        AND delivery_status NOT IN ('read', 'undelivered')`,
-    { chatId, readerUserId }
+    { numericChatId, numericReaderId }
   );
 
   return query(
-    `SELECT id, sender_id AS senderId, body AS text, type, delivery_status AS deliveryStatus, DATE_FORMAT(created_at, "%l:%i %p") AS timestamp 
+    `SELECT 
+       id, 
+       sender_id AS senderId, 
+       IF(COALESCE(deleted_for_everyone, 0) = 1, '🚫 This message was deleted', body) AS text, 
+       type, 
+       delivery_status AS deliveryStatus,
+       COALESCE(deleted_for_everyone, 0) AS deletedForEveryone,
+       DATE_FORMAT(created_at, "%l:%i %p") AS timestamp 
      FROM messages 
-     WHERE chat_id = :chatId
-       AND (sender_id = :readerUserId OR delivery_status <> 'undelivered')
+     WHERE chat_id = :numericChatId
+       AND (
+         (sender_id = :numericReaderId AND COALESCE(deleted_for_sender, 0) = 0)
+         OR
+         (sender_id <> :numericReaderId AND COALESCE(deleted_for_recipient, 0) = 0 AND delivery_status <> 'undelivered')
+       )
      ORDER BY created_at ASC`,
-    { chatId, readerUserId }
+    { numericChatId, numericReaderId }
   );
 }
 
+async function deleteMessage(messageId, userId, deleteType = 'me') {
+  await initMessagesDeletionSchema();
+
+  const numMsgId = Number(messageId);
+  const numUserId = Number(userId);
+
+  const msgRows = await query('SELECT id, chat_id, sender_id FROM messages WHERE id = :numMsgId LIMIT 1', { numMsgId });
+  const msg = msgRows[0];
+  if (!msg) throw new AppError('Message not found', 404);
+
+  const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId: msg.chat_id });
+  const chat = chatRows[0];
+  if (!chat) throw new AppError('Chat not found', 404);
+
+  const isUserOne = Number(chat.user_one_id) === numUserId;
+  const isUserTwo = Number(chat.user_two_id) === numUserId;
+  if (!isUserOne && !isUserTwo) {
+    throw new AppError('Unauthorized to delete this message', 403);
+  }
+
+  if (deleteType === 'everyone') {
+    await query(
+      `UPDATE messages 
+       SET deleted_for_everyone = 1, body = '🚫 This message was deleted' 
+       WHERE id = :numMsgId`,
+      { numMsgId }
+    );
+  } else {
+    const isSender = Number(msg.sender_id) === numUserId;
+    if (isSender) {
+      await query('UPDATE messages SET deleted_for_sender = 1 WHERE id = :numMsgId', { numMsgId });
+    } else {
+      await query('UPDATE messages SET deleted_for_recipient = 1 WHERE id = :numMsgId', { numMsgId });
+    }
+  }
+
+  return { id: numMsgId, deleteType };
+}
+
 async function sendMessage(chatId, senderId, body, type = 'text') {
+  // Requirement 14: Block digits/numbers in chat messages
+  if (type === 'text') {
+    const hasDigits = /\d/.test(body);
+    if (hasDigits) {
+      throw new AppError('Sharing digits or contact numbers is strictly prohibited in chat.', 400);
+    }
+  }
+
   try {
     await query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
   } catch (e) {}
@@ -421,6 +502,7 @@ module.exports = {
   getOrCreateChat,
   chatPartner,
   messages,
+  deleteMessage,
   sendMessage,
   startChatSession,
   chargeChatMinute,

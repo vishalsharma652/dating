@@ -221,6 +221,13 @@ async function sendMessage(req, res) {
   return created(res, { message }, 'Message sent');
 }
 
+async function deleteMessage(req, res) {
+  const messageId = Number(req.params.messageId);
+  const type = req.body.type || req.query.type || 'me';
+  const result = await socialModel.deleteMessage(messageId, req.user.id, type);
+  return ok(res, result, 'Message deleted');
+}
+
 async function startChatSession(req, res) {
   const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
   const otherUser = await userModel.findPublicById(Number(req.params.userId));
@@ -544,6 +551,7 @@ module.exports = {
   chatRequests,
   messages,
   sendMessage,
+  deleteMessage,
   startChatSession,
   chargeChatMinute,
   endChatSession,

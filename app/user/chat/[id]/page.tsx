@@ -10,7 +10,7 @@ import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Check, CheckCheck, Clock, Sparkles } from 'lucide-react';
+import { Check, CheckCheck, Clock, Sparkles, Trash2, X } from 'lucide-react';
 
 type ActiveCall = 'voice' | 'video' | null;
 
@@ -21,8 +21,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sendError, setSendError] = useState('');
   const [chatBlocked, setChatBlocked] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [deleteModalMsg, setDeleteModalMsg] = useState<any>(null);
   const call = useCall();
 
   const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
@@ -112,8 +114,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   // ── Auto-scroll ──────────────────────────────────────────────────
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  const [sendError, setSendError] = useState('');
-
   // ── Send message ─────────────────────────────────────────────────
   const handleSend = async (message: string, type: 'text' | 'image' | 'gift' | 'say_hi' = 'text') => {
     setSendError('');
@@ -132,6 +132,29 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     } catch (err: any) {
       console.error('Send message error:', err);
       setSendError(err?.message || 'Failed to send message');
+    }
+  };
+
+  const handleDeleteMessage = async (type: 'me' | 'everyone') => {
+    if (!deleteModalMsg) return;
+    const targetId = Number(deleteModalMsg.id);
+    try {
+      await userApi.deleteMessage(targetId, type);
+      if (type === 'me') {
+        setMessages((prev) => prev.filter((m) => Number(m.id) !== targetId));
+      } else {
+        setMessages((prev) =>
+          prev.map((m) =>
+            Number(m.id) === targetId
+              ? { ...m, text: '🚫 This message was deleted', deletedForEveryone: true }
+              : m
+          )
+        );
+      }
+    } catch (err: any) {
+      console.error('Delete error', err);
+    } finally {
+      setDeleteModalMsg(null);
     }
   };
 
@@ -156,7 +179,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         />
 
         {/* Messages area — WhatsApp style wallpaper background */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-1 bg-[#070B18] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0B0F19] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
           <Container>
             {sendError && (
               <div className="my-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg">
@@ -208,34 +231,56 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             )}
             {messages.map((msg) => {
               const isMine = Number(msg.senderId) === Number(currentUser?.id);
+              const isDeleted = msg.text === '🚫 This message was deleted' || msg.deletedForEveryone;
+
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-0.5`}>
-                  <div
-                    className={`w-fit max-w-[85%] sm:max-w-md px-3 py-1.5 rounded-xl text-sm leading-normal shadow-sm ${
-                      isMine
-                        ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white rounded-tr-none'
-                        : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
-                    }`}
-                  >
-                    {msg.type === 'image' ? (
-                      <img src={msg.text} alt="Photo attachment" className="max-w-[220px] max-h-[220px] object-cover rounded-lg my-1 border border-white/10" />
-                    ) : (
-                      <span className="break-words font-normal">{msg.text}</span>
+                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-1 group/msg relative`}>
+                  <div className="flex items-center gap-1.5 max-w-[85%] sm:max-w-md">
+                    {/* Delete Icon — always visible, left side for sent messages */}
+                    {isMine && !isDeleted && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalMsg(msg)}
+                        title="Delete Message"
+                        className="flex-shrink-0 p-1.5 rounded-full bg-white/5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     )}
-                    <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
-                      <span>{msg.timestamp}</span>
-                      {isMine && (
-                        msg.deliveryStatus === 'read' ? (
-                          <CheckCheck size={13} className="text-sky-300 inline" />
-                        ) : msg.deliveryStatus === 'undelivered' ? (
-                          <Clock size={12} className="text-amber-400/80 inline" />
-                        ) : chatUser?.online ? (
-                          <CheckCheck size={13} className="text-zinc-300 inline" />
+
+                    <div
+                      className={`w-fit px-3 py-1.5 rounded-xl text-sm leading-normal shadow-sm relative ${
+                        isDeleted
+                          ? 'bg-zinc-800/80 text-zinc-400 italic border border-white/5'
+                          : isMine
+                          ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white rounded-tr-none'
+                          : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
+                      }`}
+                    >
+                      {msg.type === 'image' && !isDeleted ? (
+                        String(msg.text || '').match(/\.(mp4|webm|mov|avi|mkv|3gp)($|\?)/i) ? (
+                          <video src={msg.text} controls className="max-w-[240px] max-h-[240px] rounded-lg my-1 border border-white/10" />
                         ) : (
-                          <Check size={13} className="text-zinc-400 inline" />
+                          <img src={msg.text} alt="Photo attachment" className="max-w-[220px] max-h-[220px] object-cover rounded-lg my-1 border border-white/10" />
                         )
+                      ) : (
+                        <span className="break-words font-normal">{msg.text}</span>
                       )}
-                    </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
+                        <span>{msg.timestamp}</span>
+                        {isMine && !isDeleted && (
+                          msg.deliveryStatus === 'read' ? (
+                            <CheckCheck size={13} className="text-sky-300 inline" />
+                          ) : msg.deliveryStatus === 'undelivered' ? (
+                            <Clock size={12} className="text-amber-400/80 inline" />
+                          ) : chatUser?.online ? (
+                            <CheckCheck size={13} className="text-zinc-300 inline" />
+                          ) : (
+                            <Check size={13} className="text-zinc-400 inline" />
+                          )
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -250,6 +295,46 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {/* Bottom bar */}
         <ChatInput onSend={handleSend} />
       </div>
+
+      {/* ── Delete Message Modal ── */}
+      {deleteModalMsg && (
+        <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDeleteModalMsg(null)}>
+          <div
+            className="w-full sm:w-80 bg-[#0F172A] border border-white/10 rounded-t-3xl sm:rounded-2xl p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+                <Trash2 size={22} className="text-red-400" />
+              </div>
+              <h3 className="text-white font-bold text-base">Delete Message?</h3>
+              <p className="text-zinc-400 text-xs mt-1">Choose how you want to delete this message</p>
+            </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={() => handleDeleteMessage('me')}
+                className="w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition cursor-pointer flex items-center gap-3"
+              >
+                <Trash2 size={16} className="text-zinc-400" />
+                Delete for Me
+              </button>
+              <button
+                onClick={() => handleDeleteMessage('everyone')}
+                className="w-full py-3 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-semibold transition cursor-pointer flex items-center gap-3"
+              >
+                <Trash2 size={16} className="text-red-400" />
+                Delete for Everyone
+              </button>
+              <button
+                onClick={() => setDeleteModalMsg(null)}
+                className="w-full py-3 px-4 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 text-sm transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

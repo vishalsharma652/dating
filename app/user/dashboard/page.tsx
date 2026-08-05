@@ -556,33 +556,6 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          {/* Card 3: Your Activity */}
-          <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] flex flex-col justify-between min-h-[190px] relative overflow-hidden">
-            <div className="space-y-1.5 z-10">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                <TrendingUp size={14} className="text-[#7C3AED]" />
-                <span>Your Activity</span>
-              </div>
-              <p className="text-[11px] text-zinc-400 font-bold mt-2 leading-relaxed max-w-[80%]">
-                Keep going! Your journey is just getting started.
-              </p>
-            </div>
-
-            {/* Glowing Activity Wave Chart */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 opacity-35 pointer-events-none z-0">
-              <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
-                <path d="M0,28 Q15,10 30,22 T60,5 T90,25 L100,30 L0,30 Z" fill="url(#pinkGrad)" />
-                <path d="M0,28 Q15,10 30,22 T60,5 T90,25" fill="none" stroke="#EC4899" strokeWidth="1.5" />
-                <defs>
-                  <linearGradient id="pinkGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#EC4899" />
-                    <stop offset="100%" stopColor="transparent" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </Card>
-
         </div>
 
       </Container>

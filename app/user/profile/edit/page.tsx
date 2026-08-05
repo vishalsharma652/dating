@@ -8,9 +8,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Upload, CheckCircle2, Clock, ShieldAlert, Sparkles, User, Heart, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, CheckCircle2, Clock, ShieldAlert, Sparkles, User, Heart, Shield, Camera } from 'lucide-react';
 
 import { userApi, setAuthSession, getToken, apiAssetUrl } from '@/lib/api';
+import { CameraCaptureModal } from '@/components/user/camera-capture-modal';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -23,13 +24,12 @@ export default function EditProfilePage() {
   const [error, setError] = useState('');
   const [gender, setGender] = useState('');
   const [kycStatus, setKycStatus] = useState('not_submitted');
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const uploadCapturedCameraPhoto = async (file: File) => {
     const form = new FormData();
     form.append('photo', file);
     setMessage('');
@@ -38,10 +38,17 @@ export default function EditProfilePage() {
     try {
       const data = await userApi.uploadPhoto(form);
       setFormData(prev => ({ ...prev, photo: apiAssetUrl(data.url) || data.url }));
-      setMessage('Photo uploaded successfully.');
+      setMessage('Photo captured and uploaded successfully.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload photo');
     }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadCapturedCameraPhoto(file);
+    if (event.target) event.target.value = '';
   };
 
   useEffect(() => {
@@ -154,6 +161,7 @@ export default function EditProfilePage() {
 
           <div className="flex flex-col sm:flex-row gap-5 items-center">
             <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+            <input type="file" ref={cameraInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*,video/*" capture="environment" />
             
             {/* Image Preview frame */}
             <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 bg-[#070B18] shadow-inner relative group/img flex-shrink-0">
@@ -166,17 +174,34 @@ export default function EditProfilePage() {
 
             <div className="text-center sm:text-left space-y-2.5">
               <p className="text-xs font-bold text-zinc-300">Make a great first impression by adding a high-quality photo.</p>
-              <Button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl border-0 shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01]"
-              >
-                <Upload size={13} />
-                <span>Upload New Photo</span>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button 
+                  type="button" 
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl border-0 shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01] cursor-pointer"
+                >
+                  <Camera size={14} />
+                  <span>Take Live Photo</span>
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01] cursor-pointer"
+                >
+                  <Upload size={13} />
+                  <span>Upload From Gallery</span>
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
+
+        <CameraCaptureModal
+          isOpen={showCameraModal}
+          onClose={() => setShowCameraModal(false)}
+          onCapture={uploadCapturedCameraPhoto}
+        />
 
         {/* Profile General Settings Card */}
         <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-md relative overflow-hidden group hover:border-white/10 transition-all duration-300">
