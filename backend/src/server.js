@@ -16,17 +16,15 @@ async function start() {
   } catch {}
   try {
     await pool.query(`
-      DELETE FROM coin_packages;
-    `);
-    await pool.query(`
       INSERT INTO coin_packages (id, name, coins, price, bonus, popular, active) VALUES
       (1, '50 Coins Pack', 50, 250.00, 0, FALSE, TRUE),
       (2, '100 Coins Pack', 100, 550.00, 0, TRUE, TRUE),
       (3, '200 Coins Pack', 200, 1150.00, 0, FALSE, TRUE),
       (4, '400 Coins VIP Pack', 400, 2350.00, 0, TRUE, TRUE),
       (5, '1000 Coins Royal Pack', 1000, 6500.00, 0, FALSE, TRUE)
-      ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
+      ON DUPLICATE KEY UPDATE name = VALUES(name), coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
     `);
+    await pool.query("UPDATE coin_packages SET active = FALSE WHERE id NOT IN (1, 2, 3, 4, 5)");
   } catch (err) {
     console.error('Coin packages seed error:', err);
   }
