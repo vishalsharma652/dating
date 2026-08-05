@@ -274,10 +274,11 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
-('Basic', 250, 50.00, 0, FALSE),
-('Popular', 600, 100.00, 0, TRUE),
-('Pro', 1250, 200.00, 0, FALSE),
-('VIP', 2500, 400.00, 0, FALSE)
+('Starter', 50, 250.00, 0, FALSE),
+('Basic', 100, 550.00, 0, FALSE),
+('Popular', 200, 1150.00, 0, TRUE),
+('Pro', 400, 2350.00, 0, FALSE),
+('VIP', 1000, 6500.00, 0, FALSE)
 ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
