@@ -222,20 +222,6 @@ function ActiveUsersContent() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-                  {/* KYC Status Badge - Top Left */}
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-bold flex items-center gap-1">
-                    {u.kycStatus === 'approved' ? (
-                      <span className="text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 size={12} />
-                        KYC Done
-                      </span>
-                    ) : (
-                      <span className="text-amber-400 flex items-center gap-1">
-                        <Clock size={12} />
-                        Pending KYC
-                      </span>
-                    )}
-                  </div>
 
                   {/* Heart Action Badge - Bottom Right */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
