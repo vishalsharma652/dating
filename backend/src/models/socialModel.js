@@ -124,17 +124,7 @@ async function chatPartner(userId, otherUserId) {
   return rows[0] || null;
 }
 
-async function ensureMessageDeleteColumns() {
-  try {
-    await query("ALTER TABLE messages ADD COLUMN deleted_for_everyone BOOLEAN NOT NULL DEFAULT FALSE");
-  } catch (e) {}
-  try {
-    await query("ALTER TABLE messages ADD COLUMN deleted_by_users TEXT NULL");
-  } catch (e) {}
-}
-
 async function messages(chatId, readerUserId) {
-  await ensureMessageDeleteColumns();
   await query(
     `UPDATE messages
      SET delivery_status = 'read'
@@ -144,17 +134,13 @@ async function messages(chatId, readerUserId) {
     { chatId, readerUserId }
   );
 
-  const formattedUserId = `,${readerUserId},`;
   return query(
-    `SELECT id, sender_id AS senderId, body AS text, type, delivery_status AS deliveryStatus, 
-            deleted_for_everyone AS deletedForEveryone,
-            DATE_FORMAT(created_at, "%l:%i %p") AS timestamp 
+    `SELECT id, sender_id AS senderId, body AS text, type, delivery_status AS deliveryStatus, DATE_FORMAT(created_at, "%l:%i %p") AS timestamp 
      FROM messages 
      WHERE chat_id = :chatId
        AND (sender_id = :readerUserId OR delivery_status <> 'undelivered')
-       AND (deleted_by_users IS NULL OR deleted_by_users NOT LIKE :readerPattern)
      ORDER BY created_at ASC`,
-    { chatId, readerUserId, readerPattern: `%${formattedUserId}%` }
+    { chatId, readerUserId }
   );
 }
 
@@ -162,13 +148,6 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
   try {
     await query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
   } catch (e) {}
-
-  // ── Block digits / phone numbers in text messages ──
-  if (type === 'text' && body && typeof body === 'string') {
-    if (/\d/.test(body)) {
-      throw new AppError('Sharing numbers or digits in chat is strictly prohibited for safety and privacy 🚫', 400);
-    }
-  }
 
   const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId });
   const chat = chatRows[0];
@@ -184,15 +163,12 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     const isMalePayer = ['male', 'man', 'boy', 'men'].includes(String(sender?.gender || '').toLowerCase());
 
     if (isMalePayer) {
-      const isSayHi = String(type).toLowerCase() === 'say_hi' || String(type).toLowerCase() === 'icebreaker';
-      const COIN_COST = isSayHi ? 5 : 10;
-      const EARNING_COINS = COIN_COST;
-
+      const COIN_COST = 10;
       if (Number(sender.coins || 0) < COIN_COST) {
         // Insufficient coins: mark message as undelivered
         deliveryStatus = 'undelivered';
       } else {
-        // Deduct coins from male sender (5 for Say Hi, 10 for normal message)
+        // Deduct 10 coins from male sender
         await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
         await connection.execute(
           `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
@@ -201,22 +177,18 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
         );
         await connection.execute(
           `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-           VALUES (:senderId, 'chat_charge', :title, :desc, 0, :coins, 'completed')`,
-          {
-            senderId,
-            title: isSayHi ? 'Say Hi Message Sent' : 'Message Sent',
-            desc: isSayHi ? `Say Hi Icebreaker in chat #${chatId}` : `Message in chat #${chatId}`,
-            coins: -COIN_COST
-          }
+           VALUES (:senderId, 'chat_charge', 'Message Sent', :desc, 0, :coins, 'completed')`,
+          { senderId, desc: `Message in chat #${chatId}`, coins: -COIN_COST }
         );
 
-        // Credit coins to female recipient if applicable
+        // Credit 10 coins to female recipient if applicable
         if (recipientUserId) {
           const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
           const recipient = recipients[0];
           const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
 
           if (isFemaleEarner) {
+            const EARNING_COINS = 10;
             await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
             await connection.execute(
               `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
@@ -226,13 +198,8 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
             );
             await connection.execute(
               `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-               VALUES (:recipientUserId, 'earning', :title, :desc, 0, :coins, 'completed')`,
-              {
-                recipientUserId,
-                title: isSayHi ? 'Say Hi Received Earning' : 'Message Received Earning',
-                desc: `Earned ${EARNING_COINS} coins from ${isSayHi ? 'Say Hi' : 'message'} in chat #${chatId}`,
-                coins: EARNING_COINS
-              }
+               VALUES (:recipientUserId, 'earning', 'Message Received Earning', :desc, 0, :coins, 'completed')`,
+              { recipientUserId, desc: `Earned 10 coins from message in chat #${chatId}`, coins: EARNING_COINS }
             );
           }
         }
@@ -421,43 +388,8 @@ async function activeChatSession(chatId) {
   return query('SELECT * FROM chat_sessions WHERE chat_id = :chatId AND status = "active" LIMIT 1', { chatId }).then((rows) => rows[0] || null);
 }
 
-async function deleteMessage(messageId, userId, mode = 'me') {
-  await ensureMessageDeleteColumns();
-  const rows = await query('SELECT * FROM messages WHERE id = :messageId LIMIT 1', { messageId });
-  const msg = rows[0];
-  if (!msg) return null;
-
-  if (mode === 'everyone') {
-    if (Number(msg.sender_id) !== Number(userId)) {
-      throw new AppError('Only the sender can delete this message for everyone', 403);
-    }
-    await query(
-      `UPDATE messages 
-       SET deleted_for_everyone = TRUE, body = '🚫 This message was deleted', type = 'text' 
-       WHERE id = :messageId`,
-      { messageId }
-    );
-    return { messageId, mode: 'everyone', deleted: true, text: '🚫 This message was deleted' };
-  } else {
-    const currentDeletedBy = String(msg.deleted_by_users || '');
-    const userTag = `,${userId},`;
-    if (!currentDeletedBy.includes(userTag)) {
-      const nextDeletedBy = currentDeletedBy ? `${currentDeletedBy}${userId},` : `,${userId},`;
-      await query(
-        'UPDATE messages SET deleted_by_users = :nextDeletedBy WHERE id = :messageId',
-        { nextDeletedBy, messageId }
-      );
-    }
-    return { messageId, mode: 'me', deleted: true };
-  }
-}
-
 async function dueChatSessions() {
-  try {
-    return await query('SELECT * FROM chat_sessions WHERE status = "active" AND next_billing_at <= NOW()');
-  } catch (err) {
-    return [];
-  }
+  return query(`SELECT id FROM chat_sessions WHERE status = 'active' AND COALESCE(last_charged_at, started_at) <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MINUTE)`);
 }
 
 module.exports = {
@@ -471,7 +403,6 @@ module.exports = {
   chatPartner,
   messages,
   sendMessage,
-  deleteMessage,
   startChatSession,
   chargeChatMinute,
   endChatSession,

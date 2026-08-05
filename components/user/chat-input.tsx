@@ -9,128 +9,14 @@ import {
   Paperclip,
   Camera,
   Loader2,
-  Sparkles,
-  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
-import { CameraCaptureModal } from '@/components/user/camera-capture-modal';
 
 interface ChatInputProps {
-  onSend?: (message: string, type?: 'text' | 'image' | 'gift' | 'say_hi') => void;
+  onSend?: (message: string, type?: 'text' | 'image' | 'gift') => void;
 }
-
-const EMOJI_CATEGORIES = [
-  {
-    id: 'smileys',
-    name: 'Smileys & People',
-    icon: '😊',
-    emojis: [
-      '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
-      '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
-      '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
-      '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
-      '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬',
-      '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗',
-      '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯',
-      '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
-      '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈',
-      '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾',
-      '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿',
-      '😾', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞',
-      '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍',
-      '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝',
-      '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂',
-      '🦻', '👃', '🧠', '🦷', '🦴', '👀', '👁️', '舌', '👄', '💋'
-    ]
-  },
-  {
-    id: 'love',
-    name: 'Hearts & Romance',
-    icon: '❤️',
-    emojis: [
-      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
-      '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💌',
-      '👩‍❤️‍👨', '👩‍❤️‍👩', '👨‍❤️‍👨', '👩‍❤️‍💋‍👨', '👩‍❤️‍💋‍👩', '👨‍❤️‍💋‍👨', '🌹', '🥀', '🌺', '🌻',
-      '🌼', '🌷', '💐', '🌸', '💒', '💍', '👑', '🥂', '🍾', '🎁'
-    ]
-  },
-  {
-    id: 'nature',
-    name: 'Animals & Nature',
-    icon: '🐶',
-    emojis: [
-      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
-      '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔',
-      '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺',
-      '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟',
-      '🦗', '🕷️', '🕸️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙',
-      '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋',
-      '🦈', '🐊', '🐅', '🐆', '🐘', '🦏', '🦛', '🐪', '🐫', '🦒'
-    ]
-  },
-  {
-    id: 'food',
-    name: 'Food & Drink',
-    icon: '🍕',
-    emojis: [
-      '🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐',
-      '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑',
-      '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🧄', '🧅', '🥔', '🍠',
-      '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🍳', 'バター', '🥞', '🧇',
-      '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙',
-      '🌮', '🌯', '🥗', '🥘', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣',
-      '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '☕',
-      '🍵', '🧃', '🥤', '🧋', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸'
-    ]
-  },
-  {
-    id: 'activity',
-    name: 'Activity & Sports',
-    icon: '⚽',
-    emojis: [
-      '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱',
-      '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳',
-      '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛼', '🛷',
-      '⛷️', '🏂', '🪂', '🏋️', '🤼', '🤸', '⛹️', '🤺', '🤾', '🏌️',
-      '🏇', '🧘', '🏄', '🏊', '🚣', '🧗', '🚴', '🏆', '🥇', '🥈',
-      '🥉', '🏅', '🎖️', '🎪', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹',
-      '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎲', '🎯', ' bowling', '🎮'
-    ]
-  },
-  {
-    id: 'travel',
-    name: 'Travel & Objects',
-    icon: '🚀',
-    emojis: [
-      '🚗', '🚕', '🚙', '🚌', '🛺', '🏎️', '🚓', '🚑', '🚒', '🚐',
-      '🛻', '🚚', '🚛', '🚜', '🛵', '🏍️', '🚲', '🛴', '🚨', '🚔',
-      '✈️', '🛫', '🛬', '🛸', '🚀', '🛰️', '⛵', '🚤', '🛳️', '⛴️',
-      '🚢', '⚓', '⛽', '🚦', '🗺️', '🗽', '🗼', '🏰', '🏟️', '🎡',
-      '🎢', '🎠', '⛲', '⛱️', '🏖️', '🏝️', '🌋', '⛰️', '🏕️', '🏠'
-    ]
-  },
-  {
-    id: 'symbols',
-    name: 'Symbols & Fire',
-    icon: '🔥',
-    emojis: [
-      '🔥', '✨', '💥', '💫', '🎉', '🎊', '🎈', '🎆', '🎇', '🎁',
-      '⭐', '🌟', '⚡', '🌈', '☀️', '🌙', '💯', '♨️', '📍', '🚩',
-      '🏁', '🔔', '📣', '💡', '💎', '🔑', '🔒', '🔓', '💰', '💸',
-      '💳', '💣', '🛡️', '❤️‍🔥', '🎶', '🎵', '🔞', '✅', '❌', '⚠️'
-    ]
-  }
-];
-
-const SAY_HI_QUESTIONS = [
-  'Hey! How is your day going? 😊',
-  'Hi there! Would you like to connect and chat? ✨',
-  'Hello! You have a lovely profile 😊',
-  'Hi! What are your favorite hobbies? 🌟',
-  'Hey! Coffee or tea person? ☕',
-];
 
 export function ChatInput({ onSend }: ChatInputProps) {
   const [message, setMessage] = useState('');
@@ -139,10 +25,6 @@ export function ChatInput({ onSend }: ChatInputProps) {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showSayHiPicker, setShowSayHiPicker] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
-  const [activeEmojiCategory, setActiveEmojiCategory] = useState('smileys');
-  const [emojiSearchQuery, setEmojiSearchQuery] = useState('');
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -220,28 +102,8 @@ export function ChatInput({ onSend }: ChatInputProps) {
     }
   };
 
-  const handleCameraCapture = async (file: File) => {
-    setShowAttachmentMenu(false);
-    setUploading(true);
-    const form = new FormData();
-    form.append('photo', file);
-
-    try {
-      const data = await userApi.uploadPhoto(form);
-      const photoUrl = apiAssetUrl(data.url) || data.url;
-      if (photoUrl) {
-        await onSend?.(photoUrl, 'image');
-      }
-    } catch (err) {
-      console.error('Camera photo upload failed', err);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const sendGift = (giftName: string, giftIcon: string, price?: number) => {
-    const priceText = price ? ` (${price} Coins)` : '';
-    onSend?.(`🎁 Sent a ${giftName} ${giftIcon}${priceText}`, 'gift');
+  const sendGift = (giftName: string, giftIcon: string) => {
+    onSend?.(`🎁 Sent a ${giftName} ${giftIcon}`, 'gift');
     setShowGiftPicker(false);
     setShowAttachmentMenu(false);
   };
@@ -281,10 +143,7 @@ export function ChatInput({ onSend }: ChatInputProps) {
           <div className="space-y-1">
             <button
               type="button"
-              onClick={() => {
-                setShowCameraModal(true);
-                setShowAttachmentMenu(false);
-              }}
+              onClick={() => cameraInputRef.current?.click()}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white text-xs font-semibold transition"
             >
               <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
@@ -317,155 +176,23 @@ export function ChatInput({ onSend }: ChatInputProps) {
               </div>
               <span>Send Gift</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowSayHiPicker(true);
-                setShowAttachmentMenu(false);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white text-xs font-semibold transition"
-            >
-              <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
-                <Sparkles size={16} />
-              </div>
-              <span>Say Hi 👋 (5 Coins)</span>
-            </button>
           </div>
         </div>
       )}
 
-      {/* Say Hi Questions Drawer */}
-      {showSayHiPicker && (
-        <div className="absolute bottom-full left-0 right-0 p-4 bg-[#0F172A] border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom-2 duration-200 z-30">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
-              <Sparkles size={14} /> 5 Auto Say Hi Questions (5 Coins Only)
-            </h4>
-            <button
-              type="button"
-              onClick={() => setShowSayHiPicker(false)}
-              className="text-zinc-400 hover:text-white p-1 rounded-full bg-white/5"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-            {SAY_HI_QUESTIONS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => {
-                  onSend?.(q, 'say_hi');
-                  setShowSayHiPicker(false);
-                }}
-                className="w-full text-left p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-pink-500/50 hover:bg-pink-500/10 text-white text-xs font-medium transition cursor-pointer flex items-center justify-between gap-2"
-              >
-                <span>{q}</span>
-                <span className="text-[10px] font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20 whitespace-nowrap">
-                  5 Coins
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* WhatsApp Style Emoji Picker Drawer */}
+      {/* Quick Emoji Bar */}
       {showEmojiPicker && (
-        <div className="absolute bottom-full left-0 right-0 p-3 bg-[#0F172A]/98 border-t border-white/10 backdrop-blur-2xl shadow-2xl z-30 animate-in slide-in-from-bottom-2 duration-200 flex flex-col max-h-80">
-          {/* Header Bar: Category Tabs + Search Input + Close */}
-          <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/10">
-            {/* Category Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5 flex-1">
-              {EMOJI_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveEmojiCategory(cat.id);
-                    setEmojiSearchQuery('');
-                  }}
-                  className={`text-lg p-1.5 rounded-xl transition duration-150 shrink-0 cursor-pointer ${
-                    activeEmojiCategory === cat.id && !emojiSearchQuery
-                      ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30 font-bold scale-110'
-                      : 'hover:bg-white/10 text-zinc-400'
-                  }`}
-                  title={cat.name}
-                >
-                  {cat.icon}
-                </button>
-              ))}
-            </div>
-
-            {/* Quick Search */}
-            <div className="relative w-36 sm:w-48 shrink-0">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Search Emojis..."
-                value={emojiSearchQuery}
-                onChange={(e) => setEmojiSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-full pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-pink-500/50"
-              />
-            </div>
-
-            {/* Close Button */}
+        <div className="absolute bottom-full left-0 right-0 p-2.5 bg-[#0F172A]/95 border-t border-white/10 backdrop-blur-xl flex items-center gap-2 overflow-x-auto z-20 animate-in fade-in duration-150 scrollbar-none">
+          {['😊', '😂', '❤️', '😍', '👍', '🔥', '🎉', '🌹', '💖', '👑', '💍', '💯'].map((emoji) => (
             <button
+              key={emoji}
               type="button"
-              onClick={() => setShowEmojiPicker(false)}
-              className="p-1 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white shrink-0 cursor-pointer"
+              onClick={() => addEmoji(emoji)}
+              className="text-xl p-1.5 hover:bg-white/10 rounded-xl transition duration-150 shrink-0 hover:scale-125 cursor-pointer"
             >
-              <X size={16} />
+              {emoji}
             </button>
-          </div>
-
-          {/* Emojis Grid */}
-          <div className="overflow-y-auto flex-1 p-1 max-h-56 pr-1 space-y-3 scrollbar-none">
-            {emojiSearchQuery.trim() ? (
-              <div>
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-pink-400 mb-1.5 px-1">
-                  Search Results
-                </div>
-                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1">
-                  {EMOJI_CATEGORIES.flatMap((cat) => cat.emojis)
-                    .filter((emoji, idx, self) => self.indexOf(emoji) === idx)
-                    .map((emoji, idx) => (
-                      <button
-                        key={`${emoji}-${idx}`}
-                        type="button"
-                        onClick={() => addEmoji(emoji)}
-                        className="text-2xl p-1.5 rounded-xl hover:bg-white/15 transition hover:scale-125 cursor-pointer flex items-center justify-center"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              EMOJI_CATEGORIES.filter((cat) => cat.id === activeEmojiCategory).map((cat) => (
-                <div key={cat.id}>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-pink-400 mb-1.5 px-1 flex items-center gap-1.5">
-                    <span>{cat.icon}</span>
-                    <span>{cat.name}</span>
-                  </div>
-                  <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1">
-                    {cat.emojis.map((emoji, idx) => (
-                      <button
-                        key={`${emoji}-${idx}`}
-                        type="button"
-                        onClick={() => addEmoji(emoji)}
-                        className="text-2xl p-1.5 rounded-xl hover:bg-white/15 transition hover:scale-125 cursor-pointer flex items-center justify-center"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          ))}
         </div>
       )}
 
@@ -487,15 +214,15 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
           <div className="grid grid-cols-4 gap-2">
             {[
-              { name: 'Red Rose', icon: '🌹', price: 10 },
-              { name: 'Love Heart', icon: '💖', price: 25 },
-              { name: 'Golden Crown', icon: '👑', price: 50 },
-              { name: 'Sparkling Ring', icon: '💍', price: 100 },
+              { name: 'Red Rose', icon: '🌹' },
+              { name: 'Love Heart', icon: '💖' },
+              { name: 'Golden Crown', icon: '👑' },
+              { name: 'Sparkling Ring', icon: '💍' },
             ].map((g) => (
               <button
                 key={g.name}
                 type="button"
-                onClick={() => sendGift(g.name, g.icon, g.price)}
+                onClick={() => sendGift(g.name, g.icon)}
                 className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 transition group cursor-pointer"
               >
                 <span className="text-2xl mb-1 group-hover:scale-125 transition duration-200">
@@ -503,9 +230,6 @@ export function ChatInput({ onSend }: ChatInputProps) {
                 </span>
                 <span className="text-[10px] font-bold text-zinc-300 truncate">
                   {g.name}
-                </span>
-                <span className="mt-1 text-[9px] font-extrabold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-md border border-amber-400/30 whitespace-nowrap">
-                  🪙 {g.price} Coins
                 </span>
               </button>
             ))}
@@ -565,13 +289,6 @@ export function ChatInput({ onSend }: ChatInputProps) {
           )}
         </Button>
       </form>
-
-      {/* Live System Camera Viewfinder Modal */}
-      <CameraCaptureModal
-        isOpen={showCameraModal}
-        onClose={() => setShowCameraModal(false)}
-        onCapture={handleCameraCapture}
-      />
     </div>
   );
 }

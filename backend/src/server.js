@@ -7,13 +7,7 @@ const { startChatBillingScheduler } = require('./services/chatBillingScheduler')
 const { setupCallSignaling } = require('./services/callSignaling');
 
 async function start() {
-  try {
-    await pool.query('SELECT 1');
-    console.log('Database connected successfully.');
-  } catch (err) {
-    console.error('Database connection warning:', err?.message || err);
-  }
-
+  await pool.query('SELECT 1');
   try {
     await pool.query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
   } catch {}
@@ -22,48 +16,40 @@ async function start() {
   } catch {}
   try {
     await pool.query(`
-      INSERT INTO coin_packages (id, name, coins, price, bonus, popular, active) VALUES
-      (1, '50 Coins Pack', 50, 250.00, 0, FALSE, TRUE),
-      (2, '100 Coins Pack', 100, 550.00, 0, TRUE, TRUE),
-      (3, '200 Coins Pack', 200, 1150.00, 0, FALSE, TRUE),
-      (4, '400 Coins VIP Pack', 400, 2350.00, 0, TRUE, TRUE),
-      (5, '1000 Coins Royal Pack', 1000, 6500.00, 0, FALSE, TRUE)
-      ON DUPLICATE KEY UPDATE name = VALUES(name), coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
+      INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
+      ('Basic', 250, 50.00, 0, FALSE),
+      ('Popular', 600, 100.00, 0, TRUE),
+      ('Pro', 1250, 200.00, 0, FALSE),
+      ('VIP', 2500, 400.00, 0, FALSE)
+      ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
     `);
-    await pool.query("UPDATE coin_packages SET active = FALSE WHERE id NOT IN (1, 2, 3, 4, 5)");
-  } catch (err) {
-    console.error('Coin packages seed error:', err);
-  }
+    await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Basic', 'Popular', 'Pro', 'VIP')");
+  } catch {}
+
 
   // Create HTTP server so Socket.IO can share the same port as Express
   const httpServer = http.createServer(app);
 
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: '*',
+      origin: env.nodeEnv === 'production' ? [env.appUrl] : '*',
       methods: ['GET', 'POST'],
       credentials: true,
     },
+    // Prefer WebSocket, fall back to polling
     transports: ['websocket', 'polling'],
   });
 
-  try {
-    setupCallSignaling(io);
-  } catch (e) {
-    console.error('Call signaling setup error:', e);
-  }
-
-  try {
-    startChatBillingScheduler();
-  } catch (e) {
-    console.error('Chat billing scheduler error:', e);
-  }
+  setupCallSignaling(io);
+  startChatBillingScheduler();
 
   httpServer.listen(env.port, () => {
-    console.log(`Saathika API listening on port ${env.port}`);
+    console.log(`Ember API listening on ${env.apiUrl}`);
+    console.log(`Socket.IO signaling active on ws://localhost:${env.port}`);
   });
 }
 
 start().catch((error) => {
   console.error('Failed to start API:', error);
+  process.exit(1);
 });

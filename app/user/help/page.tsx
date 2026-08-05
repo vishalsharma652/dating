@@ -4,8 +4,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Clock } from 'lucide-react';
-import Link from 'next/link';
+import { Search } from 'lucide-react';
 import { useState } from 'react';
 
 export default function HelpPage() {
@@ -169,19 +168,14 @@ export default function HelpPage() {
 
         {/* Bottom CTA */}
         <Card className="mt-12">
-          <div className="p-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center mx-auto mb-1">
-              <Clock size={22} />
-            </div>
-            <h3 className="text-xl font-extrabold text-white">Still need help?</h3>
-            <p className="text-zinc-300 text-sm font-medium max-w-md mx-auto">
-              Our customer support team is available from <span className="text-pink-400 font-bold">10:00 AM to 6:00 PM</span> (Mon - Sat) to assist you with any questions or issues.
+          <div className="p-8 text-center">
+            <h3 className="text-xl font-semibold mb-2">Still need help?</h3>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+              Our support team is available 24/7 to assist you
             </p>
-            <div className="pt-2">
-              <Button asChild className="rounded-full bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-95 text-white font-bold px-6 py-2">
-                <Link href="/contact">Get in Touch</Link>
-              </Button>
-            </div>
+            <Button asChild>
+              <a href="/contact">Get in Touch</a>
+            </Button>
           </div>
         </Card>
       </Container>

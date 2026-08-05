@@ -5,11 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
+import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
-import { SayHiModal } from '@/components/user/say-hi-modal';
 
 function ActiveUsersContent() {
   const searchParams = useSearchParams();
@@ -19,8 +18,7 @@ function ActiveUsersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'all');
-  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
+  const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'active');
 
   // Keep activeFilter in sync if searchParams change
   useEffect(() => {
@@ -58,7 +56,7 @@ function ActiveUsersContent() {
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = 'All Users';
+  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -154,10 +152,10 @@ function ActiveUsersContent() {
         {/* Interactive Filter Tabs */}
         <div className="flex flex-wrap items-center gap-2">
           {[
-            { id: 'all', label: 'All Users', icon: Users },
-            { id: 'active', label: 'Online Users Now', icon: Heart },
-            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
+            { id: 'all', label: 'All Users (Total)', icon: Users },
             { id: 'new', label: 'New Users (Pending KYC)', icon: Clock },
+            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
+            { id: 'active', label: targetLabel, icon: Heart },
           ].map((tab) => {
             const TabIcon = tab.icon;
             const isActive = activeFilter === tab.id;
@@ -264,24 +262,19 @@ function ActiveUsersContent() {
                 </div>
 
                 <Button
-                  onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
-                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0"
+                  asChild
                 >
-                  <Sparkles size={13} />
-                  <span>Say Hi 👋 (5 Coins)</span>
+                  <Link href={`/user/chat/${u.id}`}>
+                    <Heart size={13} className="fill-current text-white" />
+                    <span>Start Chat</span>
+                  </Link>
                 </Button>
               </Card>
             ))}
           </div>
         )}
       </Container>
-
-      <SayHiModal
-        isOpen={Boolean(sayHiTarget)}
-        onClose={() => setSayHiTarget(null)}
-        targetUser={sayHiTarget}
-        currentCoins={data?.user?.coins}
-      />
     </div>
   );
 }

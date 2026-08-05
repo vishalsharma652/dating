@@ -231,11 +231,6 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify({ text, type }),
     }),
-  deleteMessage: (messageId: number | string, mode: 'me' | 'everyone' = 'me') =>
-    apiRequest<{ messageId: number; mode: string; deleted: boolean }>(`/user/chat/messages/${messageId}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ mode }),
-    }),
   wallet: () => apiRequest<{ coins: number; earnings: number }>('/user/wallet'),
   transactions: () => apiRequest<{ transactions: any[] }>('/user/wallet/history'),
   coinPackages: () => apiRequest<{ packages: any[] }>('/user/wallet/coins'),

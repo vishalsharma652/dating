@@ -49,7 +49,7 @@ export default function AboutPage() {
                   'Smart Matching - Advanced algorithm for better compatibility',
                   'Premium Features - Coins system for enhanced visibility',
                   'Privacy First - Your data is secure and never shared',
-                  'Customer Support - Available 10:00 AM to 6:00 PM (Mon - Sat)',
+                  '24/7 Support - Round-the-clock customer support',
                   'Mobile First - Seamless experience on all devices',
                 ].map((item) => (
                   <div key={item} className="flex gap-3">
