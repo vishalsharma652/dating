@@ -86,7 +86,7 @@ export default function DashboardPage() {
   const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
   const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
   const isFemale = isUserFemale;
-  const targetLabel = isUserFemale ? 'Active Males' : 'Active Females';
+  const targetLabel = isUserFemale ? 'All Users' : 'All Users';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];

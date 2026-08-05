@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck, Gem, Coins } from 'lucide-react';
+import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck, Gem, Coins, Sparkles } from 'lucide-react';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
+import { SayHiModal } from '@/components/user/say-hi-modal';
 
 export default function UserSearchPage() {
   const [query, setQuery] = useState('');
@@ -18,6 +19,7 @@ export default function UserSearchPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   useEffect(() => {
@@ -199,10 +201,12 @@ export default function UserSearchPage() {
 
                     {/* Action Button */}
                     <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
-                      <Button asChild className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2">
-                        <Link href={`/user/chat/${user.id}`}>
-                          <MessageSquare size={16} /> Start Chat with #{user.id}
-                        </Link>
+                      <Button
+                        type="button"
+                        onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoUrl, location: user.city })}
+                        className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                      >
+                        <Sparkles size={16} /> Say Hi 👋 with #{user.id}
                       </Button>
                     </div>
                   </Card>
@@ -212,6 +216,13 @@ export default function UserSearchPage() {
           </div>
         )}
       </Container>
+
+      <SayHiModal
+        isOpen={Boolean(sayHiTarget)}
+        onClose={() => setSayHiTarget(null)}
+        targetUser={sayHiTarget}
+        currentCoins={currentUser?.coins}
+      />
     </div>
   );
 }

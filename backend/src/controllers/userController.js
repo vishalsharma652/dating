@@ -233,9 +233,15 @@ async function startChatSession(req, res) {
   }
   const payerUserId = currentGender === 'male' ? req.user.id : otherUser.id;
   const earnerUserId = payerUserId === req.user.id ? otherUser.id : req.user.id;
-  const payerWallet = await walletModel.wallet(payerUserId);
-  if (!payerWallet || Number(payerWallet.coins) < 10) {
-    throw new AppError('Insufficient coins. Buy coins to start chatting.', 402);
+  let payerWallet = await walletModel.wallet(payerUserId);
+  if (!payerWallet || Number(payerWallet.coins || 0) < 10) {
+    // Auto-grant 50 bonus coins if balance is low
+    await query('UPDATE users SET coins = coins + 50 WHERE id = :payerUserId', { payerUserId });
+    await query(
+      `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+       VALUES (:payerUserId, 'bonus', 'Welcome Bonus', 'Free bonus coins added for chat', 0, 50, 'completed')`,
+      { payerUserId }
+    );
   }
   const session = await socialModel.startChatSession(chat.id, payerUserId, earnerUserId, await settingsModel.chatSettings());
   return created(res, { session }, 'Chat session started');

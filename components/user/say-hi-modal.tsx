@@ -106,8 +106,21 @@ export function SayHiModal({ isOpen, onClose, targetUser, currentCoins }: SayHiM
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold">
-            {error}
+          <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold space-y-2">
+            <p>{error}</p>
+            {error.toLowerCase().includes('coin') && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push('/user/wallet/coins');
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-md border-0 transition cursor-pointer"
+              >
+                <Coins size={14} />
+                <span>Buy / Recharge Coins Now</span>
+              </button>
+            )}
           </div>
         )}
 

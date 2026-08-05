@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/db');
+const { AppError } = require('../utils/errors');
 const notificationModel = require('./notificationModel');
 
 async function like(userId, targetUserId, action) {
@@ -163,32 +164,51 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     const isMalePayer = ['male', 'man', 'boy', 'men'].includes(String(sender?.gender || '').toLowerCase());
 
     if (isMalePayer) {
-      const COIN_COST = 10;
-      if (Number(sender.coins || 0) < COIN_COST) {
-        // Insufficient coins: mark message as undelivered
-        deliveryStatus = 'undelivered';
-      } else {
-        // Deduct 10 coins from male sender
-        await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
+      const COIN_COST = type === 'say_hi' ? 5 : 10;
+      let currentCoins = Number(sender.coins || 0);
+
+      if (currentCoins < COIN_COST) {
+        // Auto-grant 50 bonus coins if balance is insufficient
+        const bonusCoins = 50;
+        await connection.execute('UPDATE users SET coins = coins + :bonus WHERE id = :senderId', { bonus: bonusCoins, senderId });
         await connection.execute(
-          `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
-           ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
-          { senderId, cost: COIN_COST }
+          `INSERT INTO wallets (user_id, balance) VALUES (:senderId, :bonus)
+           ON DUPLICATE KEY UPDATE balance = balance + :bonus`,
+          { senderId, bonus: bonusCoins }
         );
         await connection.execute(
           `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-           VALUES (:senderId, 'chat_charge', 'Message Sent', :desc, 0, :coins, 'completed')`,
-          { senderId, desc: `Message in chat #${chatId}`, coins: -COIN_COST }
+           VALUES (:senderId, 'bonus', 'Welcome Bonus', 'Free bonus coins added for Say Hi & chat', 0, :bonus, 'completed')`,
+          { senderId, bonus: bonusCoins }
         );
+      }
 
-        // Credit 10 coins to female recipient if applicable
+      // Deduct COIN_COST from male sender
+      await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
+      await connection.execute(
+        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
+         ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
+        { senderId, cost: COIN_COST }
+      );
+      await connection.execute(
+        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+         VALUES (:senderId, 'chat_charge', :title, :desc, 0, :coins, 'completed')`,
+        {
+          senderId,
+          title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
+          desc: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
+          coins: -COIN_COST
+        }
+      );
+
+        // Credit COIN_COST to female recipient if applicable
         if (recipientUserId) {
           const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
           const recipient = recipients[0];
           const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
 
           if (isFemaleEarner) {
-            const EARNING_COINS = 10;
+            const EARNING_COINS = COIN_COST;
             await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
             await connection.execute(
               `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
@@ -199,12 +219,11 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
             await connection.execute(
               `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
                VALUES (:recipientUserId, 'earning', 'Message Received Earning', :desc, 0, :coins, 'completed')`,
-              { recipientUserId, desc: `Earned 10 coins from message in chat #${chatId}`, coins: EARNING_COINS }
+              { recipientUserId, desc: `Earned ${EARNING_COINS} coins from message in chat #${chatId}`, coins: EARNING_COINS }
             );
           }
         }
       }
-    }
 
     const [msgRes] = await connection.execute(
       'INSERT INTO messages (chat_id, sender_id, body, type, delivery_status) VALUES (:chatId, :senderId, :body, :type, :deliveryStatus)',

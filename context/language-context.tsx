@@ -21,7 +21,7 @@ const translations: Record<Language, Record<string, string>> = {
     earnings: 'Earnings',
     settings: 'Settings',
     sayHi: 'Say Hi 👋',
-    startChat: 'Start Chat',
+    startChat: 'Say Hi 👋',
     rechargeNow: 'Recharge Now',
     virtualGift: 'Virtual Gift',
     camera: 'Camera',

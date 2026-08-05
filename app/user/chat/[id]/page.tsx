@@ -10,7 +10,7 @@ import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Check, CheckCheck, Clock } from 'lucide-react';
+import { Check, CheckCheck, Clock, Sparkles } from 'lucide-react';
 
 type ActiveCall = 'voice' | 'video' | null;
 
@@ -112,8 +112,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   // ── Auto-scroll ──────────────────────────────────────────────────
   useEffect(() => { scrollToBottom(); }, [messages]);
 
+  const [sendError, setSendError] = useState('');
+
   // ── Send message ─────────────────────────────────────────────────
-  const handleSend = async (message: string, type: 'text' | 'image' | 'gift' = 'text') => {
+  const handleSend = async (message: string, type: 'text' | 'image' | 'gift' | 'say_hi' = 'text') => {
+    setSendError('');
     try {
       const data = await userApi.sendMessage(id, message, type);
       setMessages((prev) => [
@@ -123,8 +126,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    } catch (err) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app:wallet-updated', { detail: {} }));
+      }
+    } catch (err: any) {
       console.error('Send message error:', err);
+      setSendError(err?.message || 'Failed to send message');
     }
   };
 
@@ -151,9 +158,52 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {/* Messages area — WhatsApp style wallpaper background */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-1 bg-[#070B18] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
           <Container>
+            {sendError && (
+              <div className="my-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg">
+                <p className="flex-1">{sendError}</p>
+                {sendError.toLowerCase().includes('coin') && (
+                  <Link
+                    href="/user/wallet/coins"
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs whitespace-nowrap shadow-md"
+                  >
+                    Buy Coins 🪙
+                  </Link>
+                )}
+              </div>
+            )}
             {messages.length === 0 && (
-              <div className="flex items-center justify-center h-48 text-zinc-500 text-sm font-medium">
-                No messages yet. Say hi to start chatting! 👋
+              <div className="flex flex-col items-center justify-center my-6 p-6 space-y-4 bg-white/[0.02] border border-white/10 rounded-3xl text-center shadow-xl">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] flex items-center justify-center text-white shadow-lg">
+                  <Sparkles size={20} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-white font-bold text-base">Say Hi 👋 to {chatUser?.name || 'User'}</h3>
+                  <p className="text-zinc-400 text-xs">
+                    Choose one of the 5 auto-generated icebreaker questions below:
+                    {isBoy && <span className="block text-amber-400 font-extrabold mt-1">✨ Only 5 Coins for Say Hi</span>}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-2.5 w-full max-w-md pt-2">
+                  {[
+                    'Hey! How is your day going? 😊',
+                    'Hi there! Would you like to connect and chat? ✨',
+                    'Hello! You have a lovely profile 😊',
+                    'Hi! What are your favorite hobbies? 🌟',
+                    'Hey! Coffee or tea person? ☕',
+                  ].map((q, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSend(q, 'say_hi')}
+                      className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-[#EC4899] hover:bg-[#EC4899]/10 text-white text-xs font-semibold text-left transition flex items-center justify-between group cursor-pointer"
+                    >
+                      <span className="pr-2">{q}</span>
+                      <span className="text-[10px] bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white px-2.5 py-1 rounded-full font-extrabold flex-shrink-0">
+                        {isBoy ? '5 Coins' : 'Free'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((msg) => {

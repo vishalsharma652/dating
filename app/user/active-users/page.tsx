@@ -5,10 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
+import { SayHiModal } from '@/components/user/say-hi-modal';
 
 function ActiveUsersContent() {
   const searchParams = useSearchParams();
@@ -18,7 +19,8 @@ function ActiveUsersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'active');
+  const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'all');
+  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
 
   // Keep activeFilter in sync if searchParams change
   useEffect(() => {
@@ -55,21 +57,24 @@ function ActiveUsersContent() {
     : (data?.activeUsers || data?.activeGirls || []);
 
   const userGender = String(user.gender || user.role || '').toLowerCase();
-  const isFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
+  const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
+  const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
+  const targetLabel = isUserFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
+  const allTargetLabel = isUserFemale ? 'All Males' : (isUserMale ? 'All Females' : 'All Users');
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
 
   const formattedUsers = allMasterUsers.map((u: any, idx: number) => {
-    const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
-    const userFallbackPhotos = isUserFemale ? girlFallbacks : boyFallbacks;
+    const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
+    const userFallbackPhotos = isTargetFemale ? girlFallbacks : boyFallbacks;
     const photoUrl = (u.photo && String(u.photo).trim() !== '') ? u.photo : userFallbackPhotos[idx % userFallbackPhotos.length];
 
     const isOnline = u.online == true || u.isOnline == true || u.online_status == true || u.online === 1 || u.online === '1' || String(u.status || '').toLowerCase() === 'online';
 
     return {
       id: u.id,
+      isTargetFemale,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
       age: u.age || null,
@@ -82,6 +87,10 @@ function ActiveUsersContent() {
   });
 
   const filteredUsers = formattedUsers.filter((u: any) => {
+    // 0. Gender Filter: Male user sees ONLY Female members, Female user sees ONLY Male members
+    if (isUserMale && !u.isTargetFemale) return false;
+    if (isUserFemale && u.isTargetFemale) return false;
+
     // 1. Tab filter
     if (activeFilter === 'new') {
       if (u.kycStatus === 'approved') return false;
@@ -122,11 +131,11 @@ function ActiveUsersContent() {
                 <Users size={24} className="text-[#EC4899]" />
                 <span>
                   {activeFilter === 'all'
-                    ? 'All Users (Total Registered)'
+                    ? allTargetLabel
                     : activeFilter === 'new'
-                    ? 'New Users (Pending KYC)'
+                    ? 'New Users'
                     : activeFilter === 'verified'
-                    ? 'Verified Users (KYC Done)'
+                    ? 'Verified Users'
                     : targetLabel}
                 </span>
               </h1>
@@ -150,11 +159,11 @@ function ActiveUsersContent() {
         </div>
 
         {/* Interactive Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-6">
           {[
-            { id: 'all', label: 'All Users (Total)', icon: Users },
-            { id: 'new', label: 'New Users (Pending KYC)', icon: Clock },
-            { id: 'verified', label: 'Verified Users (KYC Done)', icon: ShieldCheck },
+            { id: 'all', label: allTargetLabel, icon: Users },
+            { id: 'new', label: 'New Users', icon: Clock },
+            { id: 'verified', label: 'Verified Users', icon: ShieldCheck },
             { id: 'active', label: targetLabel, icon: Heart },
           ].map((tab) => {
             const TabIcon = tab.icon;
@@ -262,19 +271,25 @@ function ActiveUsersContent() {
                 </div>
 
                 <Button
-                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0"
-                  asChild
+                  type="button"
+                  onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
+                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
                 >
-                  <Link href={`/user/chat/${u.id}`}>
-                    <Heart size={13} className="fill-current text-white" />
-                    <span>Start Chat</span>
-                  </Link>
+                  <Sparkles size={14} className="text-white" />
+                  <span>Say Hi 👋</span>
                 </Button>
               </Card>
             ))}
           </div>
         )}
       </Container>
+
+      <SayHiModal
+        isOpen={Boolean(sayHiTarget)}
+        onClose={() => setSayHiTarget(null)}
+        targetUser={sayHiTarget}
+        currentCoins={user?.coins}
+      />
     </div>
   );
 }
