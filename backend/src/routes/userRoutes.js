@@ -7,6 +7,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 router.get('/dashboard', asyncHandler(user.dashboard));
 router.get('/profile', asyncHandler(user.getProfile));
+router.get('/profile/:id', [param('id').isInt()], validate, asyncHandler(user.getPublicProfile));
 router.put('/profile', user.profileRules, validate, asyncHandler(user.updateProfile));
 router.post('/profile/setup', user.profileRules, validate, asyncHandler(user.updateProfile));
 router.post('/profile/photo', upload.single('photo'), asyncHandler(user.uploadPhoto));

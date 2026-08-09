@@ -195,6 +195,7 @@ export const userApi = {
     assignedGirl?: any | null;
   }>('/user/dashboard'),
   profile: () => apiRequest<{ user: any; profile: any }>('/user/profile'),
+  getPublicProfile: (id: string | number) => apiRequest<{ user: any; profile: any }>(`/user/profile/${id}`),
   updateProfile: (body: Record<string, unknown>) =>
     apiRequest<{ user: any; profile: any }>('/user/profile', {
       method: 'PUT',

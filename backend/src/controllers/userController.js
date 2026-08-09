@@ -109,6 +109,26 @@ async function getProfile(req, res) {
   return ok(res, { user: req.user, profile });
 }
 
+async function getPublicProfile(req, res) {
+  const targetId = req.params.id;
+  const targetUser = await userModel.findById(targetId);
+  if (!targetUser) throw new AppError('User not found', 404);
+  const profile = await profileModel.getForUser(targetId);
+  return ok(res, {
+    user: {
+      id: targetUser.id,
+      name: targetUser.name,
+      unique_id: targetUser.unique_id,
+      gender: targetUser.gender,
+      online_status: targetUser.online_status,
+      last_seen_at: targetUser.last_seen_at,
+      kyc_status: targetUser.kyc_status,
+      created_at: targetUser.created_at
+    },
+    profile
+  });
+}
+
 async function updateProfile(req, res) {
   const currentProfile = await profileModel.getForUser(req.user.id);
   const nextName = req.body.name || req.user.name;
@@ -537,6 +557,7 @@ module.exports = {
   profileRules,
   dashboard,
   getProfile,
+  getPublicProfile,
   updateProfile,
   uploadPhoto,
   ageVerify,
