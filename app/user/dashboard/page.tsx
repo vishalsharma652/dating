@@ -366,7 +366,7 @@ export default function DashboardPage() {
                           {/* Top Right Blue Tick Icon */}
                           {girl.isVerified && (
                             <div
-                              className="absolute top-2.5 right-2.5 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
+                              className="absolute top-1 right-1 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
                             >
                               <CheckCircle2 size={15} className="fill-white text-[#3B82F6]" />
                             </div>
