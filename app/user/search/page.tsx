@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 
 export default function UserSearchPage() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -209,24 +211,19 @@ export default function UserSearchPage() {
 
                     {/* Action Button */}
                     <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
-                      {existingChatUserIds.has(Number(user.id)) ? (
-                        <Button
-                          asChild
-                          className="flex-1 h-11 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
-                        >
-                          <Link href={`/user/chat/${user.id}`}>
-                            <MessageSquare size={16} /> Open Chat 💬
-                          </Link>
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city })}
-                          className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
-                        >
-                          <Sparkles size={16} /> Say Hi 👋 with #{user.id}
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (existingChatUserIds.has(Number(user.id))) {
+                            router.push(`/user/chat/${user.id}`);
+                          } else {
+                            setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city });
+                          }
+                        }}
+                        className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                      >
+                        <Sparkles size={16} /> Say Hi 👋 with #{user.id}
+                      </Button>
                     </div>
                   </Card>
                 );

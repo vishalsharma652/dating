@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles, MessageCircle } from 'lucide-react';
+import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 
 function ActiveUsersContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const paramFilter = searchParams.get('filter');
 
@@ -234,7 +235,7 @@ function ActiveUsersContent() {
                   {/* Top Right Blue Tick Icon */}
                   {u.isVerified && (
                     <div
-                      className="absolute top-2.5 right-2.5 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
+                      className="absolute top-1 right-1 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
                     >
                       <CheckCircle2 size={15} className="fill-white text-[#3B82F6]" />
                     </div>
@@ -273,26 +274,20 @@ function ActiveUsersContent() {
                   </div>
                 </div>
 
-                {existingChatUserIds.has(Number(u.id)) ? (
-                  <Button
-                    asChild
-                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
-                  >
-                    <Link href={`/user/chat/${u.id}`}>
-                      <MessageCircle size={14} className="text-white" />
-                      <span>Message 💬</span>
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
-                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
-                  >
-                    <Sparkles size={14} className="text-white" />
-                    <span>Say Hi 👋</span>
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (existingChatUserIds.has(Number(u.id))) {
+                      router.push(`/user/chat/${u.id}`);
+                    } else {
+                      setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location });
+                    }
+                  }}
+                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                >
+                  <Sparkles size={14} className="text-white" />
+                  <span>Say Hi 👋</span>
+                </Button>
               </Card>
             ))}
           </div>
