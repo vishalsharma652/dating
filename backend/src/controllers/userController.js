@@ -643,6 +643,24 @@ async function deleteAccount(req, res) {
   return ok(res, null, 'Account deleted permanently');
 }
 
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new AppError('Current password and new password are required', 400);
+  }
+  if (String(newPassword).length < 6) {
+    throw new AppError('New password must be at least 6 characters long', 400);
+  }
+
+  const user = await userModel.findById(req.user.id);
+  if (!user || !(await userModel.verifyPassword(user, currentPassword))) {
+    throw new AppError('Current password is incorrect', 400);
+  }
+
+  await userModel.updatePassword(req.user.id, newPassword);
+  return ok(res, null, 'Password updated successfully!');
+}
+
 module.exports = {
   profileRules,
   dashboard,
@@ -691,5 +709,6 @@ module.exports = {
   markNotificationRead,
   markNotificationsRead,
   settings,
-  deleteAccount
+  deleteAccount,
+  changePassword
 };

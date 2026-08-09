@@ -233,6 +233,11 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify({ index }),
     }),
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    apiRequest<{ message: string }>('/user/change-password', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   ageVerify: (dob: string) =>
     apiRequest<{ user: any; age: number }>('/user/profile/age-verify', {
       method: 'POST',

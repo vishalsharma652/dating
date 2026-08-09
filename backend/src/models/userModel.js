@@ -234,4 +234,10 @@ async function verifyPassword(user, password) {
   return bcrypt.compare(password, user.password_hash);
 }
 
+async function updatePassword(id, newPassword) {
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await query('UPDATE users SET password_hash = :passwordHash WHERE id = :id', { id, passwordHash });
+  return true;
+}
+
 module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword, remove };

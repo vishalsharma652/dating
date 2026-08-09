@@ -5,14 +5,55 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { userApi } from '@/lib/api';
 
 export default function SecurityPage() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!currentPassword) {
+      setErrorMsg('Please enter your current password.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setErrorMsg('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('New password and Confirm password do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await userApi.changePassword({ currentPassword, newPassword });
+      setSuccessMsg(res.message || 'Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to update password. Please check your current password.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8">
@@ -50,7 +91,22 @@ export default function SecurityPage() {
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-6">Change Password</h2>
 
-            <div className="space-y-4">
+            {/* Alert Messages */}
+            {successMsg && (
+              <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold flex items-center gap-2">
+                <CheckCircle2 size={18} className="shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold flex items-center gap-2">
+                <AlertCircle size={18} className="shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
               {/* Current Password */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -60,18 +116,17 @@ export default function SecurityPage() {
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                     className="pr-12"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-3 text-zinc-400"
+                    className="absolute right-4 top-3 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
-                    {showPassword ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )}
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
@@ -85,18 +140,17 @@ export default function SecurityPage() {
                   <Input
                     type={showNewPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     className="pr-12"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-4 top-3 text-zinc-400"
+                    className="absolute right-4 top-3 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
-                    {showNewPassword ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )}
+                    {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
@@ -110,24 +164,29 @@ export default function SecurityPage() {
                   <Input
                     type={showConfirm ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pr-12"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-4 top-3 text-zinc-400"
+                    className="absolute right-4 top-3 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
-                    {showConfirm ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )}
+                    {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
 
-              <Button className="w-full">Update Password</Button>
-            </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 rounded-xl transition shadow-lg cursor-pointer"
+              >
+                {loading ? 'Updating Password...' : 'Update Password'}
+              </Button>
+            </form>
           </div>
         </Card>
       </Container>

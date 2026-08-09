@@ -82,5 +82,9 @@ router.patch('/notifications/read-all', asyncHandler(user.markNotificationsRead)
 router.patch('/notifications/:id/read', [param('id').isInt()], validate, asyncHandler(user.markNotificationRead));
 router.get('/settings', asyncHandler(user.settings));
 router.delete('/account', asyncHandler(user.deleteAccount));
+router.post('/change-password', [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], validate, asyncHandler(user.changePassword));
 
 module.exports = router;
