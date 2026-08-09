@@ -1,14 +1,19 @@
-const { query } = require('../config/db');
+const { pool, query } = require('../config/db');
 
 let _avatarChecked = false;
 async function ensureAvatarColumn() {
   if (_avatarChecked) return;
   try {
-    await query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) NULL');
-  } catch {
-    // Ignore if column already exists
+    const [cols] = await pool.query(
+      "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'profiles' AND COLUMN_NAME = 'avatar'"
+    );
+    if (!cols || cols.length === 0) {
+      await pool.query("ALTER TABLE profiles ADD COLUMN avatar VARCHAR(255) NULL");
+    }
+    _avatarChecked = true;
+  } catch (err) {
+    console.error('Error ensuring avatar column:', err.message);
   }
-  _avatarChecked = true;
 }
 
 async function getForUser(userId) {
