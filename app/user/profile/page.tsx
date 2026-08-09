@@ -554,12 +554,13 @@ export default function ProfilePage() {
                     <div className="w-9 h-9 rounded-xl bg-[#EC4899]/15 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] group-hover:scale-105 transition shrink-0">
                       <Users size={18} />
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <span className="text-xs font-black text-white group-hover:text-[#EC4899] transition shrink-0">Follow Status</span>
-                      <span className="text-xs font-semibold text-zinc-400 shrink-0">•</span>
-                      <span className="text-xs font-bold text-pink-400 shrink-0">{followerCount} Followers</span>
-                      <span className="text-xs font-semibold text-zinc-400 shrink-0">•</span>
-                      <span className="text-xs font-bold text-purple-400 shrink-0">{followingCount} Following</span>
+                    <div>
+                      <span className="text-xs font-black text-white block tracking-tight group-hover:text-[#EC4899] transition">Follow Status</span>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold">
+                        <span className="text-pink-400">{followerCount} Followers</span>
+                        <span className="text-zinc-500 font-normal">•</span>
+                        <span className="text-purple-400">{followingCount} Following</span>
+                      </div>
                     </div>
                   </div>
                 </div>
