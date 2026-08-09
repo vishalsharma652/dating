@@ -6,13 +6,10 @@ import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { authApi, clearAuthSession, userApi } from '@/lib/api';
 import {
   Lock,
   Bell,
-  Eye,
-  MapPin,
   Languages,
   HelpCircle,
   LogOut,
@@ -20,12 +17,11 @@ import {
   ChevronRight,
   X,
   CheckCircle2,
-  Navigation
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [activeModal, setActiveModal] = useState<'notifications' | 'privacy' | 'location' | 'language' | null>(null);
+  const [activeModal, setActiveModal] = useState<'notifications' | 'language' | null>(null);
 
   // Settings State
   const [notificationSettings, setNotificationSettings] = useState({
@@ -34,15 +30,6 @@ export default function SettingsPage() {
     matchAlerts: true,
     emailDigest: false,
   });
-
-  const [privacySettings, setPrivacySettings] = useState({
-    showOnlineStatus: true,
-    privateProfile: false,
-    hideDistance: false,
-  });
-
-  const [locationCity, setLocationCity] = useState('Delhi, India');
-  const [locationDetecting, setLocationDetecting] = useState(false);
 
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [toastMsg, setToastMsg] = useState('');
@@ -76,25 +63,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDetectLocation = () => {
-    if ('geolocation' in navigator) {
-      setLocationDetecting(true);
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          setLocationDetecting(false);
-          setLocationCity('New Delhi, India (GPS Detected)');
-          showToast('GPS Location updated successfully!');
-        },
-        () => {
-          setLocationDetecting(false);
-          showToast('Unable to detect location. Please enter city manually.');
-        }
-      );
-    } else {
-      showToast('Geolocation is not supported by your browser.');
-    }
-  };
-
   const settings = [
     {
       id: 'notifications',
@@ -104,25 +72,11 @@ export default function SettingsPage() {
       action: () => setActiveModal('notifications'),
     },
     {
-      id: 'privacy',
-      icon: Eye,
-      label: 'Privacy',
-      description: 'Control who can see your profile',
-      action: () => setActiveModal('privacy'),
-    },
-    {
       id: 'security',
       icon: Lock,
       label: 'Security',
       description: 'Password and authentication settings',
       href: '/user/settings/security',
-    },
-    {
-      id: 'location',
-      icon: MapPin,
-      label: 'Location',
-      description: 'Manage location settings',
-      action: () => setActiveModal('location'),
     },
     {
       id: 'language',
@@ -322,138 +276,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* 2. Privacy Modal */}
-      {activeModal === 'privacy' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md bg-[#0D1424] border border-white/10 rounded-3xl p-6 shadow-2xl text-white space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Eye size={20} className="text-blue-400" />
-                <span>Privacy Settings</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
-                <div>
-                  <p className="font-bold text-sm">Show Online Status</p>
-                  <p className="text-xs text-zinc-400">Let others see when you are active</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={privacySettings.showOnlineStatus}
-                  onChange={(e) => setPrivacySettings({ ...privacySettings, showOnlineStatus: e.target.checked })}
-                  className="w-5 h-5 accent-blue-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
-                <div>
-                  <p className="font-bold text-sm">Private Profile Mode</p>
-                  <p className="text-xs text-zinc-400">Only approved followers can view full details</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={privacySettings.privateProfile}
-                  onChange={(e) => setPrivacySettings({ ...privacySettings, privateProfile: e.target.checked })}
-                  className="w-5 h-5 accent-blue-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
-                <div>
-                  <p className="font-bold text-sm">Hide Distance & Location</p>
-                  <p className="text-xs text-zinc-400">Do not display distance in kilometers</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={privacySettings.hideDistance}
-                  onChange={(e) => setPrivacySettings({ ...privacySettings, hideDistance: e.target.checked })}
-                  className="w-5 h-5 accent-blue-500 cursor-pointer"
-                />
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              onClick={() => {
-                setActiveModal(null);
-                showToast('Privacy settings saved!');
-              }}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg cursor-pointer"
-            >
-              Save Privacy Settings
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Location Modal */}
-      {activeModal === 'location' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md bg-[#0D1424] border border-white/10 rounded-3xl p-6 shadow-2xl text-white space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <MapPin size={20} className="text-emerald-400" />
-                <span>Location Settings</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4 pt-2">
-              <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wider">
-                  Your Current City / Region
-                </label>
-                <Input
-                  type="text"
-                  value={locationCity}
-                  onChange={(e) => setLocationCity(e.target.value)}
-                  placeholder="e.g. Mumbai, Maharashtra"
-                  className="w-full"
-                />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                disabled={locationDetecting}
-                onClick={handleDetectLocation}
-                className="w-full py-2.5 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Navigation size={14} className={locationDetecting ? 'animate-spin' : ''} />
-                <span>{locationDetecting ? 'Detecting GPS...' : 'Detect Live GPS Location'}</span>
-              </Button>
-            </div>
-
-            <Button
-              type="button"
-              onClick={() => {
-                setActiveModal(null);
-                showToast(`Location set to: ${locationCity}`);
-              }}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg cursor-pointer"
-            >
-              Save Location
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Language Modal */}
+      {/* 2. Language Modal */}
       {activeModal === 'language' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="relative w-full max-w-md bg-[#0D1424] border border-white/10 rounded-3xl p-6 shadow-2xl text-white space-y-5">
