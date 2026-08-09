@@ -521,36 +521,46 @@ export default function ProfilePage() {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all duration-300">
+                {/* 1. Profile Security */}
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-emerald-500/30 transition-all duration-300">
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 size={16} className="text-[#10B981]" />
-                    <span className="text-xs font-bold text-white">Profile Security</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-white block tracking-tight">Profile Security</span>
+                      <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">Account Safety & Status</span>
+                    </div>
                   </div>
-                  <Badge className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${user.status === 'active'
-                    ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20'
-                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
-                    }`}>
+                  <Badge className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider ${
+                    user.status === 'active'
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                  }`}>
                     {user.status || 'pending'}
                   </Badge>
                 </div>
 
+                {/* 2. Follow Status (Interactive Clickable Social Card) */}
                 <div 
                   onClick={() => {
                     setFollowersModalTab('followers');
                     setShowFollowersModal(true);
                   }}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-[#EC4899]/10 hover:border-[#EC4899]/30 transition-all duration-300 cursor-pointer group"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm"
                   title="Click to view Followers & Following list"
                 >
                   <div className="flex items-center gap-3">
-                    <Users size={16} className="text-[#EC4899] group-hover:scale-110 transition" />
+                    <div className="w-9 h-9 rounded-xl bg-[#EC4899]/15 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] group-hover:scale-105 transition shrink-0">
+                      <Users size={18} />
+                    </div>
                     <div>
-                      <span className="text-xs font-bold text-white block group-hover:text-[#EC4899] transition">Follow Status</span>
-                      <span className="text-[10px] text-zinc-400 font-semibold">{followerCount} Followers • {followingCount} Following</span>
+                      <span className="text-xs font-black text-white block tracking-tight group-hover:text-[#EC4899] transition">Follow Status</span>
+                      <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">{followerCount} Followers • {followingCount} Following</span>
                     </div>
                   </div>
-                  <Badge className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20 group-hover:bg-[#EC4899] group-hover:text-white transition">
-                    VERIFIED ↗
+                  <Badge className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/15 text-[#EC4899] border border-[#EC4899]/30 group-hover:bg-[#EC4899] group-hover:text-white transition">
+                    View Network ↗
                   </Badge>
                 </div>
               </div>
