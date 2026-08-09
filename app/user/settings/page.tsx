@@ -99,13 +99,6 @@ export default function SettingsPage() {
   const languagesList = [
     { code: 'en', name: 'English', native: 'English (Default)', icon: '🇬🇧' },
     { code: 'hi', name: 'Hindi', native: 'हिंदी (Hindi)', icon: '🇮🇳' },
-    { code: 'hinglish', name: 'Hinglish', native: 'Hinglish (Hindi + English)', icon: '🇮🇳' },
-    { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ (Punjabi)', icon: '🇮🇳' },
-    { code: 'bn', name: 'Bengali', native: 'বাংলা (Bengali)', icon: '🇮🇳' },
-    { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી (Gujarati)', icon: '🇮🇳' },
-    { code: 'mr', name: 'Marathi', native: 'मराठी (Marathi)', icon: '🇮🇳' },
-    { code: 'ta', name: 'Tamil', native: 'தமிழ் (Tamil)', icon: '🇮🇳' },
-    { code: 'te', name: 'Telugu', native: 'తెలుగు (Telugu)', icon: '🇮🇳' },
   ];
 
   const settings = [
