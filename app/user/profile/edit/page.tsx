@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Upload, CheckCircle2, Clock, ShieldAlert, Sparkles, User, Heart, Shield, Camera } from 'lucide-react';
+import { ArrowLeft, Plus, X, CheckCircle2, Clock, ShieldAlert, Sparkles, User, Heart, Shield, Camera } from 'lucide-react';
 
 import { userApi, setAuthSession, getToken, apiAssetUrl } from '@/lib/api';
 import { CameraCaptureModal } from '@/components/user/camera-capture-modal';
@@ -25,9 +25,7 @@ export default function EditProfilePage() {
   const [gender, setGender] = useState('');
   const [kycStatus, setKycStatus] = useState('not_submitted');
   const [showCameraModal, setShowCameraModal] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
 
   const uploadCapturedCameraPhoto = async (file: File) => {
     const form = new FormData();
@@ -36,9 +34,9 @@ export default function EditProfilePage() {
     setError('');
 
     try {
-      const data = await userApi.uploadPhoto(form);
+      const data = await userApi.uploadAvatar(form);
       setFormData(prev => ({ ...prev, photo: apiAssetUrl(data.url) || data.url }));
-      setMessage('Photo captured and uploaded successfully.');
+      setMessage('Profile photo captured and updated successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload photo');
     }
@@ -58,8 +56,10 @@ export default function EditProfilePage() {
         setGender(userGender);
         const isFemale = userGender === 'female';
         const defaultPhoto = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
-        const photoVal = data.profile?.photos?.[0] 
-          ? (apiAssetUrl(data.profile.photos[0]) || data.profile.photos[0]) 
+        const photoVal = data.profile?.avatar
+          ? (apiAssetUrl(data.profile.avatar) || data.profile.avatar)
+          : data.profile?.photos?.[0]
+          ? (apiAssetUrl(data.profile.photos[0]) || data.profile.photos[0])
           : (data.user?.photo || defaultPhoto);
 
         setFormData({
@@ -72,7 +72,6 @@ export default function EditProfilePage() {
         setKycStatus(data.user?.kyc_status || 'not_submitted');
         setInterests(data.profile?.interests || []);
       })
-
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load profile'))
       .finally(() => setLoading(false));
   }, []);
@@ -160,8 +159,7 @@ export default function EditProfilePage() {
           </h3>
 
           <div className="flex flex-col sm:flex-row gap-5 items-center">
-            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
-            <input type="file" ref={cameraInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*,video/*" capture="environment" />
+            <input type="file" ref={cameraInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*,video/*" capture="user" />
             
             {/* Image Preview frame */}
             <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 bg-[#070B18] shadow-inner relative group/img flex-shrink-0">
@@ -173,24 +171,15 @@ export default function EditProfilePage() {
             </div>
 
             <div className="text-center sm:text-left space-y-2.5">
-              <p className="text-xs font-bold text-zinc-300">Make a great first impression by adding a high-quality photo.</p>
+              <p className="text-xs font-bold text-zinc-300">Take a live selfie to update your profile photo.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <Button 
                   type="button" 
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => setShowCameraModal(true)}
                   className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl border-0 shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01] cursor-pointer"
                 >
-                  <Camera size={14} />
-                  <span>Take Live Photo</span>
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01] cursor-pointer"
-                >
-                  <Upload size={13} />
-                  <span>Upload From Gallery</span>
+                  <Camera size={15} />
+                  <span>Take Live Photo 📸</span>
                 </Button>
               </div>
             </div>
@@ -352,12 +341,10 @@ export default function EditProfilePage() {
           </div>
         </Card>
 
-
-
         {/* Page Save Trigger Actions */}
         <div className="flex gap-4">
           <Button 
-            className="flex-1 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase py-3.5 border-0 shadow-md transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99]" 
+            className="flex-1 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase py-3.5 border-0 shadow-md transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer" 
             onClick={save} 
             disabled={saving}
           >
@@ -365,7 +352,7 @@ export default function EditProfilePage() {
           </Button>
           <Button 
             variant="outline" 
-            className="flex-1 rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11.5 transition duration-300" 
+            className="flex-1 rounded-xl border-white/5 hover:border-white/10 text-zinc-300 hover:bg-white/[0.02] text-xs font-bold py-3.5 h-11.5 transition duration-300 cursor-pointer" 
             asChild
           >
             <Link href="/user/profile">Cancel</Link>

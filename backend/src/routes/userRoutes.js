@@ -11,6 +11,7 @@ router.get('/profile/:id', [param('id').isInt()], validate, asyncHandler(user.ge
 router.put('/profile', user.profileRules, validate, asyncHandler(user.updateProfile));
 router.post('/profile/setup', user.profileRules, validate, asyncHandler(user.updateProfile));
 router.post('/profile/photo', upload.single('photo'), asyncHandler(user.uploadPhoto));
+router.post('/profile/avatar', upload.single('photo'), asyncHandler(user.uploadAvatar));
 router.delete('/profile/photo/:index', [param('index').isInt()], validate, asyncHandler(user.deletePhoto));
 router.post('/profile/photo/set-primary', [body('index').isInt()], validate, asyncHandler(user.setPrimaryPhoto));
 router.post('/profile/age-verify', [body('dob').isISO8601()], validate, asyncHandler(user.ageVerify));

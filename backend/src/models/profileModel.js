@@ -1,17 +1,41 @@
 const { query } = require('../config/db');
 
+let _avatarChecked = false;
+async function ensureAvatarColumn() {
+  if (_avatarChecked) return;
+  try {
+    await query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) NULL');
+  } catch {
+    // Ignore if column already exists
+  }
+  _avatarChecked = true;
+}
+
 async function getForUser(userId) {
+  await ensureAvatarColumn();
   const rows = await query('SELECT * FROM profiles WHERE user_id = :userId LIMIT 1', { userId });
   const profile = rows[0] || null;
   if (!profile) return null;
   const photos = await query('SELECT id, url, sort_order FROM profile_photos WHERE profile_id = :profileId ORDER BY sort_order ASC', { profileId: profile.id });
   return {
     ...profile,
+    avatar: profile.avatar || null,
     languages: parseJson(profile.languages, []),
     interests: parseJson(profile.interests, []),
     lifestyle: parseJson(profile.lifestyle, []),
     photos: photos.map((photo) => photo.url)
   };
+}
+
+async function updateAvatar(userId, avatarUrl) {
+  await ensureAvatarColumn();
+  const existing = await query('SELECT id FROM profiles WHERE user_id = :userId LIMIT 1', { userId });
+  if (existing && existing.length > 0) {
+    await query('UPDATE profiles SET avatar = :avatarUrl WHERE user_id = :userId', { avatarUrl, userId });
+  } else {
+    await query('INSERT INTO profiles (user_id, avatar) VALUES (:userId, :avatarUrl)', { userId, avatarUrl });
+  }
+  return avatarUrl;
 }
 
 async function upsert(userId, data) {
@@ -148,4 +172,4 @@ function parseJson(value, fallback) {
   }
 }
 
-module.exports = { getForUser, upsert, discover, activeOppositeGenderUsers };
+module.exports = { getForUser, upsert, discover, activeOppositeGenderUsers, updateAvatar };

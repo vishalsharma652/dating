@@ -135,10 +135,13 @@ export default function ProfilePage() {
   const followingCount = Number((data as any)?.followingCount || 0);
   const isFemale = user.gender === 'female';
   const defaultProfileAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
-
   const photos = profile.photos?.length
     ? profile.photos.map((p: string) => apiAssetUrl(p) || p)
-    : [user.photo || defaultProfileAvatar];
+    : [];
+
+  const userAvatar = profile.avatar
+    ? (apiAssetUrl(profile.avatar) || profile.avatar)
+    : (photos[0] || user.photo || defaultProfileAvatar);
 
   const interests = profile.interests || [];
 
@@ -242,7 +245,7 @@ export default function ProfilePage() {
               {/* Photo Area */}
               <div className="relative aspect-[3/4] overflow-hidden">
                 <img
-                  src={photos[0]}
+                  src={userAvatar}
                   alt={user.name}
                   className="w-full h-full object-cover transition duration-700 group-hover:scale-102"
                 />

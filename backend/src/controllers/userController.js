@@ -229,6 +229,13 @@ async function uploadChatMedia(req, res) {
   return ok(res, { url: mediaUrl }, 'Chat media uploaded successfully');
 }
 
+async function uploadAvatar(req, res) {
+  if (!req.file) throw new AppError('No photo uploaded', 400);
+  const photoUrl = `/uploads/${req.file.filename}`;
+  await profileModel.updateAvatar(req.user.id, photoUrl);
+  return ok(res, { url: photoUrl }, 'Profile picture updated successfully');
+}
+
 async function deletePhoto(req, res) {
   const index = Number(req.params.index);
   const profile = await profileModel.getForUser(req.user.id);
@@ -716,5 +723,6 @@ module.exports = {
   settings,
   deleteAccount,
   changePassword,
-  uploadChatMedia
+  uploadChatMedia,
+  uploadAvatar
 };

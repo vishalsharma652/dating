@@ -224,6 +224,11 @@ export const userApi = {
       method: 'POST',
       body: formData,
     }),
+  uploadAvatar: (formData: FormData) =>
+    apiRequest<{ url: string }>('/user/profile/avatar', {
+      method: 'POST',
+      body: formData,
+    }),
   uploadChatMedia: (formData: FormData) =>
     apiRequest<{ url: string }>('/user/chat/media', {
       method: 'POST',
