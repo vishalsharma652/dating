@@ -32,21 +32,55 @@ export function ChatHeader({
   const name = user?.name || 'User';
 
   useEffect(() => {
-    if (user?.id) {
+    if (!user?.id) return;
+
+    let active = true;
+    const fetchStatus = () => {
       userApi.getFollowStatus(user.id)
-        .then((res) => setFollowStatus(res.status || (res.following ? 'accepted' : 'none')))
+        .then((res) => {
+          if (active) setFollowStatus(res.status || (res.following ? 'accepted' : 'none'));
+        })
         .catch(() => undefined);
-    }
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 3000);
+
+    const handleGlobalFollowUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && Number(detail.targetUserId) === Number(user.id)) {
+        setFollowStatus(detail.status);
+      }
+    };
+
+    window.addEventListener('follow:updated', handleGlobalFollowUpdate);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('follow:updated', handleGlobalFollowUpdate);
+    };
   }, [user?.id]);
 
   const handleFollowToggle = async () => {
     if (!user?.id || followLoading) return;
     setFollowLoading(true);
+
+    const prevStatus = followStatus;
+    const nextStatus = prevStatus === 'none' ? 'pending' : 'none';
+    
+    // Immediate Optimistic Update
+    setFollowStatus(nextStatus);
+
     try {
       const res = await userApi.toggleFollow(user.id);
       setFollowStatus(res.status);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('follow:updated', { detail: { targetUserId: user.id, status: res.status } }));
+      }
     } catch (err: any) {
       console.error(err);
+      setFollowStatus(prevStatus);
     } finally {
       setFollowLoading(false);
     }

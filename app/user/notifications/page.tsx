@@ -52,11 +52,26 @@ export default function NotificationsPage() {
   }, []);
 
   const handleRespondFollowRequest = async (requestId: number, action: 'accept' | 'decline') => {
+    const targetReq = followRequests.find((r) => r.requestId === requestId);
+    const followerId = targetReq?.userId;
+
+    // Immediate Optimistic Update
+    setFollowRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+
     try {
-      await userApi.respondFollowRequest(requestId, action);
-      setFollowRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+      const res = await userApi.respondFollowRequest(requestId, action);
+      if (typeof window !== 'undefined' && followerId) {
+        window.dispatchEvent(
+          new CustomEvent('follow:updated', {
+            detail: { targetUserId: followerId, status: res.status }
+          })
+        );
+      }
     } catch (err: any) {
       console.error(err);
+      if (targetReq) {
+        setFollowRequests((prev) => [targetReq, ...prev]);
+      }
     }
   };
 

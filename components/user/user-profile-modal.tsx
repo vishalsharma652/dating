@@ -29,32 +29,61 @@ export function UserProfileModal({
   const [followLoading, setFollowLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isOpen && (userId || initialUser?.id)) {
-      const targetId = userId || initialUser?.id;
-      setLoading(true);
-      userApi.getPublicProfile(targetId)
-        .then((res) => {
-          setProfileData(res);
-          setFollowStatus(res.status || (res.following ? 'accepted' : 'none'));
-          setFollowerCount(Number(res.followerCount || 0));
-        })
-        .catch(() => {
-          setProfileData(null);
-        })
-        .finally(() => setLoading(false));
-    }
+    if (!isOpen || !(userId || initialUser?.id)) return;
+    const targetId = userId || initialUser?.id;
+    setLoading(true);
+
+    userApi.getPublicProfile(targetId)
+      .then((res) => {
+        setProfileData(res);
+        setFollowStatus(res.status || (res.following ? 'accepted' : 'none'));
+        setFollowerCount(Number(res.followerCount || 0));
+      })
+      .catch(() => {
+        setProfileData(null);
+      })
+      .finally(() => setLoading(false));
+
+    const handleGlobalFollowUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && Number(detail.targetUserId) === Number(targetId)) {
+        if (detail.status !== undefined) setFollowStatus(detail.status);
+        if (detail.followerCount !== undefined) setFollowerCount(detail.followerCount);
+      }
+    };
+
+    window.addEventListener('follow:updated', handleGlobalFollowUpdate);
+    return () => {
+      window.removeEventListener('follow:updated', handleGlobalFollowUpdate);
+    };
   }, [isOpen, userId, initialUser]);
 
   const handleFollowToggle = async () => {
     const targetId = userId || initialUser?.id;
     if (!targetId || followLoading) return;
     setFollowLoading(true);
+
+    const prevStatus = followStatus;
+    const prevCount = followerCount;
+    const nextStatus = prevStatus === 'none' ? 'pending' : 'none';
+    const nextCount = prevStatus === 'accepted' ? Math.max(0, prevCount - 1) : prevCount;
+
+    // Immediate Optimistic Update
+    setFollowStatus(nextStatus);
+    setFollowerCount(nextCount);
+
     try {
       const res = await userApi.toggleFollow(targetId);
       setFollowStatus(res.status);
       setFollowerCount(res.followerCount);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('follow:updated', { detail: { targetUserId: targetId, status: res.status, followerCount: res.followerCount } }));
+      }
     } catch (err: any) {
       console.error('Follow error:', err);
+      // Rollback on error
+      setFollowStatus(prevStatus);
+      setFollowerCount(prevCount);
     } finally {
       setFollowLoading(false);
     }
