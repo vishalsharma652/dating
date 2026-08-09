@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
@@ -34,6 +34,22 @@ export default function SettingsPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [toastMsg, setToastMsg] = useState('');
 
+  // Load language from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('app_language');
+      if (savedLang) {
+        setSelectedLanguage(savedLang);
+      }
+      const savedNotifications = localStorage.getItem('app_notifications');
+      if (savedNotifications) {
+        try {
+          setNotificationSettings(JSON.parse(savedNotifications));
+        } catch {}
+      }
+    }
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
@@ -63,12 +79,41 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveLanguage = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app_language', selectedLanguage);
+      window.dispatchEvent(new CustomEvent('language:changed', { detail: { language: selectedLanguage } }));
+    }
+    setActiveModal(null);
+    showToast(`App Language changed to: ${selectedLanguage}`);
+  };
+
+  const handleSaveNotifications = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app_notifications', JSON.stringify(notificationSettings));
+    }
+    setActiveModal(null);
+    showToast('Notification preferences saved successfully!');
+  };
+
+  const languagesList = [
+    { code: 'en', name: 'English', native: 'English (Default)', icon: '🇬🇧' },
+    { code: 'hi', name: 'Hindi', native: 'हिंदी (Hindi)', icon: '🇮🇳' },
+    { code: 'hinglish', name: 'Hinglish', native: 'Hinglish (Hindi + English)', icon: '🇮🇳' },
+    { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ (Punjabi)', icon: '🇮🇳' },
+    { code: 'bn', name: 'Bengali', native: 'বাংলা (Bengali)', icon: '🇮🇳' },
+    { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી (Gujarati)', icon: '🇮🇳' },
+    { code: 'mr', name: 'Marathi', native: 'मराठी (Marathi)', icon: '🇮🇳' },
+    { code: 'ta', name: 'Tamil', native: 'தமிழ் (Tamil)', icon: '🇮🇳' },
+    { code: 'te', name: 'Telugu', native: 'తెలుగు (Telugu)', icon: '🇮🇳' },
+  ];
+
   const settings = [
     {
       id: 'notifications',
       icon: Bell,
       label: 'Notifications',
-      description: 'Manage notification preferences',
+      description: 'Manage push and chat notification preferences',
       action: () => setActiveModal('notifications'),
     },
     {
@@ -82,7 +127,7 @@ export default function SettingsPage() {
       id: 'language',
       icon: Languages,
       label: 'Language',
-      description: 'Change app language',
+      description: `Active Language: ${selectedLanguage}`,
       action: () => setActiveModal('language'),
     },
     {
@@ -264,10 +309,7 @@ export default function SettingsPage() {
 
             <Button
               type="button"
-              onClick={() => {
-                setActiveModal(null);
-                showToast('Notification preferences saved!');
-              }}
+              onClick={handleSaveNotifications}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white font-bold text-xs shadow-lg cursor-pointer"
             >
               Save Preferences
@@ -283,7 +325,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Languages size={20} className="text-purple-400" />
-                <span>App Language</span>
+                <span>Choose App Language</span>
               </h3>
               <button
                 type="button"
@@ -294,39 +336,42 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <div className="space-y-2.5 pt-2">
-              {[
-                { name: 'English', native: 'English' },
-                { name: 'Hindi', native: 'हिंदी' },
-                { name: 'Hinglish', native: 'Hinglish (Hindi + English)' },
-              ].map((lang) => (
-                <div
-                  key={lang.name}
-                  onClick={() => setSelectedLanguage(lang.name)}
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
-                    selectedLanguage === lang.name
-                      ? 'bg-purple-500/20 border-purple-500/50 text-white font-bold'
-                      : 'bg-white/5 border-white/5 text-zinc-300 hover:bg-white/10'
-                  }`}
-                >
-                  <div>
-                    <p className="text-sm font-bold">{lang.name}</p>
-                    <p className="text-xs text-zinc-400">{lang.native}</p>
+            <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              {languagesList.map((lang) => {
+                const isSelected = selectedLanguage === lang.name;
+                return (
+                  <div
+                    key={lang.code}
+                    onClick={() => setSelectedLanguage(lang.name)}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
+                      isSelected
+                        ? 'bg-purple-500/20 border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.25)] text-white'
+                        : 'bg-white/5 border-white/5 text-zinc-300 hover:bg-white/10 hover:border-white/15'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{lang.icon}</span>
+                      <div>
+                        <p className={`text-sm font-extrabold ${isSelected ? 'text-purple-300' : 'text-white'}`}>
+                          {lang.name}
+                        </p>
+                        <p className="text-xs text-zinc-400">{lang.native}</p>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-400 flex items-center justify-center text-purple-400">
+                        <CheckCircle2 size={16} />
+                      </div>
+                    )}
                   </div>
-                  {selectedLanguage === lang.name && (
-                    <CheckCircle2 size={18} className="text-purple-400" />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <Button
               type="button"
-              onClick={() => {
-                setActiveModal(null);
-                showToast(`Language set to: ${selectedLanguage}`);
-              }}
-              className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-lg cursor-pointer"
+              onClick={handleSaveLanguage}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-xs shadow-lg cursor-pointer"
             >
               Apply Language
             </Button>
