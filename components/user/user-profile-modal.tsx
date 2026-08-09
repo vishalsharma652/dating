@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users } from 'lucide-react';
+import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, apiAssetUrl } from '@/lib/api';
 
@@ -24,7 +24,7 @@ export function UserProfileModal({
 }: UserProfileModalProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [isFollowingState, setIsFollowingState] = useState<boolean>(false);
+  const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none');
   const [followerCount, setFollowerCount] = useState<number>(0);
   const [followLoading, setFollowLoading] = useState<boolean>(false);
 
@@ -35,7 +35,7 @@ export function UserProfileModal({
       userApi.getPublicProfile(targetId)
         .then((res) => {
           setProfileData(res);
-          setIsFollowingState(Boolean(res.following));
+          setFollowStatus(res.status || (res.following ? 'accepted' : 'none'));
           setFollowerCount(Number(res.followerCount || 0));
         })
         .catch(() => {
@@ -51,7 +51,7 @@ export function UserProfileModal({
     setFollowLoading(true);
     try {
       const res = await userApi.toggleFollow(targetId);
-      setIsFollowingState(res.following);
+      setFollowStatus(res.status);
       setFollowerCount(res.followerCount);
     } catch (err: any) {
       console.error('Follow error:', err);
@@ -190,21 +190,28 @@ export function UserProfileModal({
           </div>
         </div>
 
-        {/* Full Width Instagram Style Follow / Following Button */}
+        {/* Full Width Instagram Style Follow / Requested / Following Button */}
         <Button
           type="button"
           disabled={followLoading}
           onClick={handleFollowToggle}
           className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg border-0 cursor-pointer ${
-            isFollowingState
+            followStatus === 'accepted'
               ? 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+              : followStatus === 'pending'
+              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
               : 'bg-[#0095F6] hover:bg-[#1877F2] text-white font-extrabold tracking-wide'
           }`}
         >
-          {isFollowingState ? (
+          {followStatus === 'accepted' ? (
             <>
               <UserCheck size={16} className="text-pink-400" />
               <span>Following ✓</span>
+            </>
+          ) : followStatus === 'pending' ? (
+            <>
+              <Clock size={16} />
+              <span>Requested ⏳</span>
             </>
           ) : (
             <>

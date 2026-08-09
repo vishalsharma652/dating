@@ -114,8 +114,7 @@ async function getPublicProfile(req, res) {
   const targetUser = await userModel.findById(targetId);
   if (!targetUser) throw new AppError('User not found', 404);
   const profile = await profileModel.getForUser(targetId);
-  const following = await socialModel.isFollowing(req.user.id, targetId);
-  const stats = await socialModel.getFollowStats(targetId);
+  const status = await socialModel.getFollowStatus(req.user.id, targetId);
   return ok(res, {
     user: {
       id: targetUser.id,
@@ -128,22 +127,37 @@ async function getPublicProfile(req, res) {
       created_at: targetUser.created_at
     },
     profile,
-    following,
-    ...stats
+    ...status
   });
 }
 
 async function toggleFollow(req, res) {
   const targetId = req.params.id;
   const result = await socialModel.toggleFollow(req.user.id, targetId);
-  return ok(res, result, result.following ? 'User followed' : 'User unfollowed');
+  const msg = result.status === 'pending'
+    ? 'Follow request sent'
+    : result.status === 'accepted'
+    ? 'User followed'
+    : 'Unfollowed / Request cancelled';
+  return ok(res, result, msg);
 }
 
 async function getFollowStatus(req, res) {
   const targetId = req.params.id;
-  const following = await socialModel.isFollowing(req.user.id, targetId);
-  const stats = await socialModel.getFollowStats(targetId);
-  return ok(res, { following, ...stats });
+  const status = await socialModel.getFollowStatus(req.user.id, targetId);
+  return ok(res, status);
+}
+
+async function respondFollowRequest(req, res) {
+  const requestId = req.params.requestId;
+  const action = req.body.action; // 'accept' | 'decline'
+  const result = await socialModel.respondFollowRequest(req.user.id, requestId, action);
+  return ok(res, result, action === 'accept' ? 'Follow request accepted' : 'Follow request declined');
+}
+
+async function getFollowRequests(req, res) {
+  const requests = await socialModel.getFollowRequests(req.user.id);
+  return ok(res, { requests });
 }
 
 async function getFollowing(req, res) {
@@ -587,6 +601,8 @@ module.exports = {
   getPublicProfile,
   toggleFollow,
   getFollowStatus,
+  respondFollowRequest,
+  getFollowRequests,
   getFollowing,
   getFollowers,
   updateProfile,

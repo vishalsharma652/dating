@@ -499,12 +499,18 @@ async function ensureFollowsTable() {
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         follower_id BIGINT UNSIGNED NOT NULL,
         following_id BIGINT UNSIGNED NOT NULL,
+        status ENUM('pending', 'accepted', 'rejected') NOT NULL DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY unique_follow (follower_id, following_id),
         CONSTRAINT fk_follows_follower FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
         CONSTRAINT fk_follows_following FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+    const cols = await query("SHOW COLUMNS FROM user_follows LIKE 'status'");
+    if (!cols || cols.length === 0) {
+      await query("ALTER TABLE user_follows ADD COLUMN status ENUM('pending', 'accepted', 'rejected') NOT NULL DEFAULT 'pending' AFTER following_id");
+    }
   } catch (e) {}
 }
 
@@ -518,17 +524,18 @@ async function toggleFollow(followerId, targetUserId) {
   }
 
   const existing = await query(
-    'SELECT id FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
+    'SELECT id, status FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
     { fId, tId }
   );
 
-  let following = false;
+  let status = 'none';
+
   if (existing.length) {
     await query('DELETE FROM user_follows WHERE follower_id = :fId AND following_id = :tId', { fId, tId });
-    following = false;
+    status = 'none';
   } else {
-    await query('INSERT INTO user_follows (follower_id, following_id) VALUES (:fId, :tId)', { fId, tId });
-    following = true;
+    await query('INSERT INTO user_follows (follower_id, following_id, status) VALUES (:fId, :tId, "pending")', { fId, tId });
+    status = 'pending';
 
     try {
       const followerRows = await query('SELECT name FROM users WHERE id = :fId LIMIT 1', { fId });
@@ -536,34 +543,104 @@ async function toggleFollow(followerId, targetUserId) {
       await notificationModel.create(
         tId,
         fId,
-        'follow',
-        'New Follower! 💖',
-        `${followerName} started following you.`,
-        `/user/chat/${fId}`
+        'follow_request',
+        'Follow Request 💖',
+        `${followerName} requested to follow you.`,
+        `/user/notifications`
       );
     } catch (e) {}
   }
 
   const stats = await getFollowStats(tId);
-  return { following, followerCount: stats.followerCount, followingCount: stats.followingCount };
+  return {
+    status,
+    following: status === 'accepted',
+    isPending: status === 'pending',
+    followerCount: stats.followerCount,
+    followingCount: stats.followingCount
+  };
 }
 
-async function isFollowing(followerId, targetUserId) {
+async function getFollowStatus(followerId, targetUserId) {
   await ensureFollowsTable();
   const fId = Number(followerId);
   const tId = Number(targetUserId);
   const rows = await query(
-    'SELECT id FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
+    'SELECT id, status FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
     { fId, tId }
   );
-  return rows.length > 0;
+  const status = rows.length ? rows[0].status : 'none';
+  const stats = await getFollowStats(tId);
+  return {
+    status,
+    following: status === 'accepted',
+    isPending: status === 'pending',
+    followerCount: stats.followerCount,
+    followingCount: stats.followingCount
+  };
+}
+
+async function respondFollowRequest(targetUserId, requestId, action) {
+  await ensureFollowsTable();
+  const tId = Number(targetUserId);
+  const reqId = Number(requestId);
+
+  const reqRows = await query(
+    'SELECT id, follower_id, following_id FROM user_follows WHERE id = :reqId AND following_id = :tId LIMIT 1',
+    { reqId, tId }
+  );
+
+  if (!reqRows.length) {
+    throw new AppError('Follow request not found', 404);
+  }
+
+  const req = reqRows[0];
+  const followerId = req.follower_id;
+
+  if (action === 'accept') {
+    await query("UPDATE user_follows SET status = 'accepted' WHERE id = :reqId", { reqId });
+
+    try {
+      const targetRows = await query('SELECT name FROM users WHERE id = :tId LIMIT 1', { tId });
+      const targetName = targetRows?.[0]?.name || 'User';
+      await notificationModel.create(
+        followerId,
+        tId,
+        'follow_accepted',
+        'Follow Request Accepted! 🎉',
+        `${targetName} accepted your follow request.`,
+        `/user/chat/${tId}`
+      );
+    } catch (e) {}
+
+    return { success: true, status: 'accepted' };
+  } else {
+    await query('DELETE FROM user_follows WHERE id = :reqId', { reqId });
+    return { success: true, status: 'none' };
+  }
+}
+
+async function getFollowRequests(targetUserId) {
+  await ensureFollowsTable();
+  const tId = Number(targetUserId);
+  return query(
+    `SELECT uf.id AS requestId, uf.status, uf.created_at AS createdAt,
+            u.id AS userId, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo
+     FROM user_follows uf
+     JOIN users u ON u.id = uf.follower_id
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE uf.following_id = :tId AND uf.status = 'pending'
+     ORDER BY uf.created_at DESC`,
+    { tId }
+  );
 }
 
 async function getFollowStats(userId) {
   await ensureFollowsTable();
   const uId = Number(userId);
-  const followers = await query('SELECT COUNT(*) AS count FROM user_follows WHERE following_id = :uId', { uId });
-  const following = await query('SELECT COUNT(*) AS count FROM user_follows WHERE follower_id = :uId', { uId });
+  const followers = await query("SELECT COUNT(*) AS count FROM user_follows WHERE following_id = :uId AND status = 'accepted'", { uId });
+  const following = await query("SELECT COUNT(*) AS count FROM user_follows WHERE follower_id = :uId AND status = 'accepted'", { uId });
   return {
     followerCount: Number(followers?.[0]?.count || 0),
     followingCount: Number(following?.[0]?.count || 0)
@@ -580,8 +657,8 @@ async function getFollowingList(userId) {
      JOIN users u ON u.id = uf.following_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
-     WHERE uf.follower_id = :uId
-     ORDER BY uf.created_at DESC`,
+     WHERE uf.follower_id = :uId AND uf.status = 'accepted'
+     ORDER BY uf.updated_at DESC`,
     { uId }
   );
 }
@@ -596,8 +673,8 @@ async function getFollowersList(userId) {
      JOIN users u ON u.id = uf.follower_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
-     WHERE uf.following_id = :uId
-     ORDER BY uf.created_at DESC`,
+     WHERE uf.following_id = :uId AND uf.status = 'accepted'
+     ORDER BY uf.updated_at DESC`,
     { uId }
   );
 }
@@ -620,7 +697,9 @@ module.exports = {
   activeChatSession,
   dueChatSessions,
   toggleFollow,
-  isFollowing,
+  getFollowStatus,
+  respondFollowRequest,
+  getFollowRequests,
   getFollowStats,
   getFollowingList,
   getFollowersList

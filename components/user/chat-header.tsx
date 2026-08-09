@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Phone, Video, Info, ArrowLeft, Coins, UserPlus, UserCheck } from 'lucide-react';
+import { Phone, Video, Info, ArrowLeft, Coins, UserPlus, UserCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ export function ChatHeader({
   isBoy,
 }: ChatHeaderProps) {
   const [showProfile, setShowProfile] = useState(false);
-  const [following, setFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none');
   const [followLoading, setFollowLoading] = useState(false);
 
   const name = user?.name || 'User';
@@ -34,7 +34,7 @@ export function ChatHeader({
   useEffect(() => {
     if (user?.id) {
       userApi.getFollowStatus(user.id)
-        .then((res) => setFollowing(Boolean(res.following)))
+        .then((res) => setFollowStatus(res.status || (res.following ? 'accepted' : 'none')))
         .catch(() => undefined);
     }
   }, [user?.id]);
@@ -44,7 +44,7 @@ export function ChatHeader({
     setFollowLoading(true);
     try {
       const res = await userApi.toggleFollow(user.id);
-      setFollowing(res.following);
+      setFollowStatus(res.status);
     } catch (err: any) {
       console.error(err);
     } finally {
@@ -107,15 +107,21 @@ export function ChatHeader({
             disabled={followLoading}
             onClick={handleFollowToggle}
             className={`h-8 px-2.5 sm:px-3 rounded-full text-xs font-bold transition flex items-center gap-1 border-0 cursor-pointer ${
-              following
+              followStatus === 'accepted'
                 ? 'bg-white/10 hover:bg-white/15 text-pink-300 border border-pink-500/30'
+                : followStatus === 'pending'
+                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
                 : 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white shadow-md'
             }`}
-            title={following ? 'Unfollow user' : 'Follow user'}
+            title={followStatus === 'accepted' ? 'Unfollow user' : followStatus === 'pending' ? 'Cancel follow request' : 'Send follow request'}
           >
-            {following ? (
+            {followStatus === 'accepted' ? (
               <>
                 <UserCheck size={14} /> <span className="hidden sm:inline">Following</span>
+              </>
+            ) : followStatus === 'pending' ? (
+              <>
+                <Clock size={14} /> <span className="hidden sm:inline">Requested</span>
               </>
             ) : (
               <>
