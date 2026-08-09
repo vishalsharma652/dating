@@ -35,6 +35,7 @@ import {
 import { useRef } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
+import { FollowersModal } from '@/components/user/followers-modal';
 
 
 export default function ProfilePage() {
@@ -44,6 +45,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
   const [photoUploading, setPhotoUploading] = useState<number | null>(null);
   const [targetSlot, setTargetSlot] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -531,16 +534,23 @@ export default function ProfilePage() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all duration-300">
+                <div 
+                  onClick={() => {
+                    setFollowersModalTab('followers');
+                    setShowFollowersModal(true);
+                  }}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-[#EC4899]/10 hover:border-[#EC4899]/30 transition-all duration-300 cursor-pointer group"
+                  title="Click to view Followers & Following list"
+                >
                   <div className="flex items-center gap-3">
-                    <Users size={16} className="text-[#EC4899]" />
+                    <Users size={16} className="text-[#EC4899] group-hover:scale-110 transition" />
                     <div>
-                      <span className="text-xs font-bold text-white block">Follow Status</span>
+                      <span className="text-xs font-bold text-white block group-hover:text-[#EC4899] transition">Follow Status</span>
                       <span className="text-[10px] text-zinc-400 font-semibold">{followerCount} Followers • {followingCount} Following</span>
                     </div>
                   </div>
-                  <Badge className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20">
-                    VERIFIED
+                  <Badge className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20 group-hover:bg-[#EC4899] group-hover:text-white transition">
+                    VERIFIED ↗
                   </Badge>
                 </div>
               </div>
@@ -608,6 +618,13 @@ export default function ProfilePage() {
         </div>
 
       </Container>
+
+      {/* Followers / Following List Popup Modal */}
+      <FollowersModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        initialTab={followersModalTab}
+      />
     </div>
   );
 }

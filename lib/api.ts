@@ -208,8 +208,10 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify({ action }),
     }),
-  getFollowing: () => apiRequest<{ users: any[] }>('/user/following'),
-  getFollowers: () => apiRequest<{ users: any[] }>('/user/followers'),
+  getFollowing: (userId?: string | number) =>
+    apiRequest<{ users: any[] }>(`/user/following${userId ? `?userId=${userId}` : ''}`),
+  getFollowers: (userId?: string | number) =>
+    apiRequest<{ users: any[] }>(`/user/followers${userId ? `?userId=${userId}` : ''}`),
   togglePinChat: (chatId: string | number) =>
     apiRequest<{ pinned: boolean }>(`/user/chat/${chatId}/pin`, { method: 'POST' }),
   updateProfile: (body: Record<string, unknown>) =>

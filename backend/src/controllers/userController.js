@@ -162,12 +162,14 @@ async function getFollowRequests(req, res) {
 }
 
 async function getFollowing(req, res) {
-  const users = await socialModel.getFollowingList(req.user.id);
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFollowingList(targetId);
   return ok(res, { users });
 }
 
 async function getFollowers(req, res) {
-  const users = await socialModel.getFollowersList(req.user.id);
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFollowersList(targetId);
   return ok(res, { users });
 }
 

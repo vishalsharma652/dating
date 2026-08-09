@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, apiAssetUrl } from '@/lib/api';
+import { FollowersModal } from '@/components/user/followers-modal';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ export function UserProfileModal({
   const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none');
   const [followerCount, setFollowerCount] = useState<number>(0);
   const [followLoading, setFollowLoading] = useState<boolean>(false);
+  const [showFollowersModal, setShowFollowersModal] = useState<boolean>(false);
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
 
   useEffect(() => {
     if (!isOpen || !(userId || initialUser?.id)) return;
@@ -108,7 +111,8 @@ export function UserProfileModal({
   const joinedDate = userObj.created_at ? new Date(userObj.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Member';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-sm sm:max-w-md bg-[#0D1424] border border-white/15 rounded-3xl p-6 shadow-2xl relative text-white space-y-5 max-h-[90vh] overflow-y-auto">
         
         {/* Glow Accents */}
@@ -205,12 +209,26 @@ export function UserProfileModal({
 
         {/* Instagram Style Stats Row */}
         <div className="grid grid-cols-3 gap-2 p-3 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl text-center">
-          <div>
-            <span className="block font-black text-base text-white">{followerCount}</span>
+          <div
+            onClick={() => {
+              setFollowersModalTab('followers');
+              setShowFollowersModal(true);
+            }}
+            className="cursor-pointer hover:bg-white/10 rounded-xl p-1 transition group"
+            title="Click to view Followers"
+          >
+            <span className="block font-black text-base text-white group-hover:text-[#EC4899] transition">{followerCount}</span>
             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Followers</span>
           </div>
-          <div>
-            <span className="block font-black text-base text-pink-400">{profileData?.followingCount || 0}</span>
+          <div
+            onClick={() => {
+              setFollowersModalTab('following');
+              setShowFollowersModal(true);
+            }}
+            className="cursor-pointer hover:bg-white/10 rounded-xl p-1 transition group"
+            title="Click to view Following"
+          >
+            <span className="block font-black text-base text-pink-400 group-hover:text-[#FF5DAB] transition">{profileData?.followingCount || 0}</span>
             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Following</span>
           </div>
           <div>
@@ -291,8 +309,16 @@ export function UserProfileModal({
             </Button>
           )}
         </div>
-
       </div>
     </div>
+
+    {/* Followers & Following List Modal */}
+    <FollowersModal
+      isOpen={showFollowersModal}
+      onClose={() => setShowFollowersModal(false)}
+      initialTab={followersModalTab}
+      userId={userId || initialUser?.id}
+    />
+  </>
   );
 }
