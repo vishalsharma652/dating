@@ -210,6 +210,8 @@ export const userApi = {
     }),
   getFollowing: () => apiRequest<{ users: any[] }>('/user/following'),
   getFollowers: () => apiRequest<{ users: any[] }>('/user/followers'),
+  togglePinChat: (chatId: string | number) =>
+    apiRequest<{ pinned: boolean }>(`/user/chat/${chatId}/pin`, { method: 'POST' }),
   updateProfile: (body: Record<string, unknown>) =>
     apiRequest<{ user: any; profile: any }>('/user/profile', {
       method: 'PUT',

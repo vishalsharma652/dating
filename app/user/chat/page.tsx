@@ -6,7 +6,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, ArrowLeft } from 'lucide-react';
+import { Search, ArrowLeft, Pin, PinOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
@@ -31,7 +31,8 @@ export default function ChatListPage() {
       userApi.chats()
         .then((data) => {
           if (!active) return;
-          setChats(data.chats || []);
+          const loadedChats = data.chats || [];
+          setChats(loadedChats.sort((a: any, b: any) => Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned))));
           setError('');
         })
         .catch((err) => {
@@ -50,6 +51,31 @@ export default function ChatListPage() {
       window.clearInterval(interval);
     };
   }, []);
+
+  const handlePinToggle = async (e: React.MouseEvent, chatId: number | string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Immediate Optimistic Update
+    setChats((prev) => {
+      const updated = prev.map((c) =>
+        c.id === chatId ? { ...c, isPinned: !c.isPinned } : c
+      );
+      return updated.sort((a, b) => Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned)));
+    });
+
+    try {
+      const res = await userApi.togglePinChat(chatId);
+      setChats((prev) => {
+        const updated = prev.map((c) =>
+          c.id === chatId ? { ...c, isPinned: res.pinned } : c
+        );
+        return updated.sort((a, b) => Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned)));
+      });
+    } catch (err: any) {
+      console.error('Pin error:', err);
+    }
+  };
 
   const filteredChats = useMemo(
     () => chats.filter((chat) => String(chat.name || '').toLowerCase().includes(search.toLowerCase())),
@@ -104,34 +130,60 @@ export default function ChatListPage() {
             </Card>
           )}
           {filteredChats.map((chat) => {
-            // Gender-based default: boy sees girl avatars, girl sees boy avatars
             const defaultAvatar = isBoy ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
             const photoVal = chat.photo && chat.photo.trim() && chat.photo !== '/placeholder.svg'
               ? (apiAssetUrl(chat.photo) || chat.photo)
               : defaultAvatar;
+            const isPinned = Boolean(chat.isPinned);
+
             return (
               <Link key={chat.id} href={`/user/chat/${chat.userId}`}>
-                <Card className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="relative">
+                <Card className={`p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer relative ${
+                  isPinned ? 'border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-500/[0.04]' : ''
+                }`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="relative shrink-0">
                         <Avatar src={photoVal} alt={chat.name} fallback={chat.name?.[0] || 'U'} />
                         {Boolean(chat.online) && (
                           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-zinc-950" />
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{chat.name}</h3>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-sm truncate">{chat.name}</h3>
+                          {isPinned && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-0.5 shrink-0">
+                              <Pin size={10} className="fill-amber-400 text-amber-400" /> Pinned
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate mt-0.5">
                           {chat.lastMessage || 'No messages yet'}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-zinc-500 mb-1">{chat.lastMessageTime}</p>
-                      {Number(chat.unread) > 0 && (
-                        <Badge className="bg-pink-500 text-white">{Number(chat.unread) > 99 ? '99+' : chat.unread}</Badge>
-                      )}
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <p className="text-xs text-zinc-500 mb-1">{chat.lastMessageTime}</p>
+                        {Number(chat.unread) > 0 && (
+                          <Badge className="bg-pink-500 text-white">{Number(chat.unread) > 99 ? '99+' : chat.unread}</Badge>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handlePinToggle(e, chat.id)}
+                        className={`p-2 rounded-xl transition cursor-pointer ${
+                          isPinned
+                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30'
+                            : 'hover:bg-white/10 text-zinc-400 hover:text-amber-400'
+                        }`}
+                        title={isPinned ? 'Unpin chat' : 'Pin chat to top'}
+                      >
+                        {isPinned ? <PinOff size={16} /> : <Pin size={16} />}
+                      </button>
                     </div>
                   </div>
                 </Card>

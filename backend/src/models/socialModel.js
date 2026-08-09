@@ -35,16 +35,56 @@ async function matches(userId) {
   );
 }
 
+async function ensureChatPinsTable() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS chat_pins (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        chat_id BIGINT UNSIGNED NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_chat_pin (user_id, chat_id),
+        CONSTRAINT fk_pins_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_pins_chat FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
+      )
+    `);
+  } catch (e) {}
+}
+
+async function togglePinChat(userId, chatId) {
+  await ensureChatPinsTable();
+  const uId = Number(userId);
+  const cId = Number(chatId);
+
+  const existing = await query(
+    'SELECT id FROM chat_pins WHERE user_id = :uId AND chat_id = :cId LIMIT 1',
+    { uId, cId }
+  );
+
+  let pinned = false;
+  if (existing.length) {
+    await query('DELETE FROM chat_pins WHERE user_id = :uId AND chat_id = :cId', { uId, cId });
+    pinned = false;
+  } else {
+    await query('INSERT INTO chat_pins (user_id, chat_id) VALUES (:uId, :cId)', { uId, cId });
+    pinned = true;
+  }
+  return { pinned };
+}
+
 async function chats(userId) {
+  await ensureChatPinsTable();
   return query(
     `SELECT c.id, other_user.id AS userId, other_user.name, COALESCE(pp.url, '') AS photo,
       COALESCE(last_msg.body, '') AS lastMessage, COALESCE(DATE_FORMAT(last_msg.created_at, '%l:%i %p'), '') AS lastMessageTime,
       COALESCE(unread_counts.unread, 0) AS unread,
-      (other_user.online_status = true AND other_user.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
+      (other_user.online_status = true AND other_user.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+      (cp.id IS NOT NULL) AS isPinned
      FROM chats c
      JOIN users other_user ON other_user.id = IF(c.user_one_id = :userId, c.user_two_id, c.user_one_id)
      LEFT JOIN profiles p ON p.user_id = other_user.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     LEFT JOIN chat_pins cp ON cp.chat_id = c.id AND cp.user_id = :userId
      LEFT JOIN messages last_msg ON last_msg.id = (
        SELECT id FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1
      )
@@ -55,7 +95,7 @@ async function chats(userId) {
        GROUP BY chat_id
      ) unread_counts ON unread_counts.chat_id = c.id
      WHERE :userId IN (c.user_one_id, c.user_two_id)
-     ORDER BY c.updated_at DESC`,
+     ORDER BY isPinned DESC, c.updated_at DESC`,
     { userId }
   );
 }
@@ -702,5 +742,6 @@ module.exports = {
   getFollowRequests,
   getFollowStats,
   getFollowingList,
-  getFollowersList
+  getFollowersList,
+  togglePinChat
 };

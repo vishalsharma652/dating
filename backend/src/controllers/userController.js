@@ -170,6 +170,12 @@ async function getFollowers(req, res) {
   return ok(res, { users });
 }
 
+async function togglePinChat(req, res) {
+  const chatId = req.params.chatId;
+  const result = await socialModel.togglePinChat(req.user.id, chatId);
+  return ok(res, result, result.pinned ? 'Chat pinned' : 'Chat unpinned');
+}
+
 async function updateProfile(req, res) {
   const currentProfile = await profileModel.getForUser(req.user.id);
   const nextName = req.body.name || req.user.name;
@@ -605,6 +611,7 @@ module.exports = {
   getFollowRequests,
   getFollowing,
   getFollowers,
+  togglePinChat,
   updateProfile,
   uploadPhoto,
   ageVerify,

@@ -27,6 +27,7 @@ router.get('/followers', asyncHandler(user.getFollowers));
 router.post('/discover/:id/action', [param('id').isInt(), body('action').isIn(['like', 'pass', 'super_like'])], validate, asyncHandler(user.reactToProfile));
 router.get('/matches', asyncHandler(user.matches));
 router.get('/chat', asyncHandler(user.chats));
+router.post('/chat/:chatId/pin', [param('chatId').isInt()], validate, asyncHandler(user.togglePinChat));
 router.get('/chat/requests', asyncHandler(user.chatRequests));
 router.post('/chat/:userId/request', [param('userId').isInt()], validate, asyncHandler(user.requestChat));
 router.patch('/chat/requests/:requestId', [param('requestId').isInt(), body('status').isIn(['accepted', 'rejected'])], validate, asyncHandler(user.respondToChatRequest));
