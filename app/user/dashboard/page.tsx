@@ -12,7 +12,6 @@ import {
   Coins,
   PenSquare,
   CheckCircle2,
-  Clock,
   Eye,
   Shield,
   ShieldCheck,
@@ -86,7 +85,8 @@ export default function DashboardPage() {
   const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
   const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
   const isFemale = isUserFemale;
-  const targetLabel = isUserFemale ? 'All Users' : 'All Users';
+  const targetLabel = 'All Users';
+  const activeTargetLabel = 'Active Users';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -97,28 +97,39 @@ export default function DashboardPage() {
     ? data.allUsers
     : (data?.activeUsers || data?.activeGirls || []);
 
-  // Filter master users by opposite gender
-  const oppositeGenderUsers = rawMasterUsers.filter((u: any) => {
-    const targetGender = String(u.gender || u.role || '').toLowerCase();
-    const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(targetGender);
+  // Priority sorting: Online users FIRST, then opposite gender, then rest
+  const sortedMasterUsers = [...rawMasterUsers].sort((a: any, b: any) => {
+    const isOnlineA = Boolean(a.online === true || a.isOnline === true || a.online_status === true || a.online === 1 || a.online === '1' || a.online_status === 1);
+    const isOnlineB = Boolean(b.online === true || b.isOnline === true || b.online_status === true || b.online === 1 || b.online === '1' || b.online_status === 1);
 
-    if (isUserMale && !isTargetFemale) return false;
-    if (isUserFemale && isTargetFemale) return false;
-    return true;
+    if (isOnlineA && !isOnlineB) return -1;
+    if (!isOnlineA && isOnlineB) return 1;
+
+    const targetGenderA = String(a.gender || a.role || '').toLowerCase();
+    const isTargetFemaleA = ['female', 'woman', 'girl', 'women'].includes(targetGenderA);
+    const isOppositeA = (isUserMale && isTargetFemaleA) || (isUserFemale && !isTargetFemaleA);
+
+    const targetGenderB = String(b.gender || b.role || '').toLowerCase();
+    const isTargetFemaleB = ['female', 'woman', 'girl', 'women'].includes(targetGenderB);
+    const isOppositeB = (isUserMale && isTargetFemaleB) || (isUserFemale && !isTargetFemaleB);
+
+    if (isOppositeA && !isOppositeB) return -1;
+    if (!isOppositeA && isOppositeB) return 1;
+
+    return 0;
   });
 
-  // Calculate accurate opposite-gender counts for stats cards:
-  const totalOppositeUsers = oppositeGenderUsers.length;
-  const pendingKycOppositeUsers = oppositeGenderUsers.filter((u: any) => {
+  const totalOppositeUsers = rawMasterUsers.length;
+  const pendingKycOppositeUsers = rawMasterUsers.filter((u: any) => {
     const kycStatus = u.kyc_status || (u.verified ? 'approved' : 'pending');
     return kycStatus !== 'approved';
   }).length;
-  const verifiedOppositeUsers = oppositeGenderUsers.filter((u: any) => {
+  const verifiedOppositeUsers = rawMasterUsers.filter((u: any) => {
     const kycStatus = u.kyc_status || (u.verified ? 'approved' : 'pending');
     return kycStatus === 'approved';
   }).length;
 
-  const activeGirlsList = oppositeGenderUsers.map((u: any, idx: number) => {
+  const activeGirlsList = sortedMasterUsers.map((u: any, idx: number) => {
     const isOnline = Boolean(
       u.online === true || 
       u.isOnline === true || 
@@ -127,6 +138,10 @@ export default function DashboardPage() {
       u.online === '1' ||
       u.online_status === 1
     );
+    const targetGender = String(u.gender || u.role || '').toLowerCase();
+    const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(targetGender);
+    const userFallbackPhotos = isTargetFemale ? girlFallbacks : boyFallbacks;
+
     return {
       id: u.id,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
@@ -134,11 +149,13 @@ export default function DashboardPage() {
       age: u.age || null,
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
-      photo: u.photo || fallbacks[idx % fallbacks.length]
+      isVerified: Boolean((u.kyc_status || u.kycStatus) === 'approved' || u.verified === true || u.verified === 1 || u.verified === '1'),
+      photo: u.photo || userFallbackPhotos[idx % userFallbackPhotos.length]
     };
   });
 
-  const displayActiveList = activeGirlsList.filter((g) => g.status === 'Online').slice(0, 3);
+  // Display top 6 user records
+  const displayActiveList = activeGirlsList.slice(0, 6);
 
   return (
     <div className="p-4 md:p-8 bg-[#070B18] text-white min-h-screen space-y-8 relative overflow-hidden">
@@ -195,7 +212,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
           {[
             {
-              label: 'All Users',
+              label: targetLabel,
               value: data?.userCounts?.totalUsers ?? totalOppositeUsers,
               icon: Users,
               change: 'Total Registered Users',
@@ -219,7 +236,7 @@ export default function DashboardPage() {
               color: '#10B981',
             },
             {
-              label: targetLabel,
+              label: activeTargetLabel,
               value: activeGirlsList.filter(g => g.status === 'Online').length,
               icon: Heart,
               change: 'Online Now',
@@ -343,6 +360,20 @@ export default function DashboardPage() {
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           />
 
+                          {/* Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+
+                          {/* Blue Verified Badge - Top Right */}
+                          {girl.isVerified && (
+                            <div
+                              className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
+                              title="Verified User"
+                            >
+                              <CheckCircle2 size={12} className="fill-white text-[#3B82F6]" />
+                              <span>Verified</span>
+                            </div>
+                          )}
+
                           {/* Pink Heart Action Badge - Bottom Right */}
                           <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                             <Heart size={13} className="fill-current text-white" />
@@ -351,10 +382,15 @@ export default function DashboardPage() {
 
                         {/* Dedicated Metadata Section Below Image */}
                         <div className="space-y-1.5 text-left px-0.5 pb-0.5">
-                          {/* Full Name (Line 1 - Full Width) */}
-                          <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
-                            {girl.name}
-                          </h3>
+                          {/* Full Name with Blue Tick (Line 1 - Full Width) */}
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
+                              {girl.name}
+                            </h3>
+                            {girl.isVerified && (
+                              <CheckCircle2 size={15} className="fill-[#3B82F6] text-white flex-shrink-0" />
+                            )}
+                          </div>
 
                           {/* Age & Location (Line 2) */}
                           <p className="text-xs font-semibold text-zinc-400 truncate">
@@ -385,7 +421,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-zinc-400 text-xs font-semibold relative z-10 overflow-hidden">
                     <div className="flex items-center gap-2">
                       <Sparkles size={14} className="text-[#EC4899]" />
-                      <span>Showing active {isFemale ? 'males' : 'females'} online right now!</span>
+                      <span>Showing members (Online users featured at the top)</span>
                     </div>
                   </div>
                 </>
@@ -473,27 +509,11 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-white/5">
+                <div className="flex items-center justify-between py-1">
                   <span className="text-zinc-400">Unique ID</span>
                   <div className="flex items-center gap-1.5 text-white">
                     <span>{user?.unique_id ? String(user.unique_id).replace(/^STK-/i, '') : 'Assigned'}</span>
                     <CheckCircle2 size={14} className="text-[#10B981]" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between py-1 border-b border-white/5">
-                  <span className="text-zinc-400">ID Verification</span>
-                  <div className="flex items-center gap-1.5 text-white">
-                    <span className="text-zinc-455 font-bold uppercase tracking-wider">Not_submitted</span>
-                    <Clock size={14} className="text-[#F59E0B]" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-zinc-400">Age Verification</span>
-                  <div className="flex items-center gap-1.5 text-white">
-                    <span className="text-zinc-455 font-bold">Pending</span>
-                    <Clock size={14} className="text-[#7C3AED]" />
                   </div>
                 </div>
 

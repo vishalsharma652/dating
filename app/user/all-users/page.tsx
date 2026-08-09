@@ -57,7 +57,8 @@ function AllUsersContent() {
   const userGender = String(user.gender || user.role || '').toLowerCase();
   const isUserMale = ['male', 'man', 'boy', 'men'].includes(userGender);
   const isUserFemale = ['female', 'woman', 'girl', 'women'].includes(userGender);
-  const targetLabel = isUserFemale ? 'Active Males' : 'Active Females';
+  const targetLabel = 'Active Users';
+  const allTargetLabel = 'All Users';
 
   const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
   const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
@@ -78,6 +79,7 @@ function AllUsersContent() {
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
       kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
+      isVerified: Boolean((u.kyc_status || u.kycStatus) === 'approved' || u.verified === true || u.verified === 1 || u.verified === '1'),
       photo: photoUrl,
       bio: u.bio || 'Looking for meaningful connections'
     };
@@ -128,7 +130,7 @@ function AllUsersContent() {
                 <Users size={24} className="text-[#EC4899]" />
                 <span>
                   {activeFilter === 'all'
-                    ? 'All Users'
+                    ? allTargetLabel
                     : activeFilter === 'new'
                     ? 'New Users'
                     : activeFilter === 'verified'
@@ -158,7 +160,7 @@ function AllUsersContent() {
         {/* Interactive Filter Tabs */}
         <div className="flex flex-wrap items-center gap-6">
           {[
-            { id: 'all', label: 'All Users', icon: Users },
+            { id: 'all', label: allTargetLabel, icon: Users },
             { id: 'new', label: 'New Users', icon: Clock },
             { id: 'verified', label: 'Verified Users', icon: ShieldCheck },
             { id: 'active', label: targetLabel, icon: Heart },
@@ -219,6 +221,17 @@ function AllUsersContent() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
+                  {/* Blue Verified Badge - Top Right */}
+                  {u.isVerified && (
+                    <div
+                      className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
+                      title="Verified User"
+                    >
+                      <CheckCircle2 size={13} className="fill-white text-[#3B82F6]" />
+                      <span>Verified</span>
+                    </div>
+                  )}
+
                   {/* Heart Action Badge - Bottom Right */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                     <Heart size={14} className="fill-current text-white" />
@@ -227,10 +240,15 @@ function AllUsersContent() {
 
                 {/* Metadata Details */}
                 <div className="space-y-2 text-left px-1 pb-1">
-                  {/* Line 1: Full Name */}
-                  <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
-                    {u.name}
-                  </h3>
+                  {/* Line 1: Full Name with Blue Tick */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
+                      {u.name}
+                    </h3>
+                    {u.isVerified && (
+                      <CheckCircle2 size={17} className="fill-[#3B82F6] text-white flex-shrink-0" />
+                    )}
+                  </div>
 
                   {/* Line 2: Age & Location */}
                   <p className="text-xs font-semibold text-zinc-400 truncate">
