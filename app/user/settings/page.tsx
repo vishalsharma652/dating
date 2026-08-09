@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { authApi, clearAuthSession, userApi } from '@/lib/api';
 import {
   Lock,
@@ -170,29 +169,6 @@ export default function SettingsPage() {
             </div>
           </Card>
         </div>
-
-        {/* About */}
-        <h2 className="text-lg font-semibold mb-4">About</h2>
-        <Card>
-          <div className="p-4 space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
-            <div className="flex justify-between">
-              <span>App Version</span>
-              <span className="font-semibold">1.0.0</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Last Updated</span>
-              <span className="font-semibold">July 3, 2024</span>
-            </div>
-            <div className="flex gap-4 pt-4 border-t border-zinc-200/80 dark:border-zinc-800">
-              <Button variant="ghost" size="sm">
-                Terms of Service
-              </Button>
-              <Button variant="ghost" size="sm">
-                Privacy Policy
-              </Button>
-            </div>
-          </div>
-        </Card>
       </Container>
     </div>
   );
