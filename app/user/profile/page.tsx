@@ -390,27 +390,25 @@ export default function ProfilePage() {
               </div>
             </Card>
 
-            {/* Photos Card - 6 Photo Gallery Grid */}
-            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#7C3AED]" />
+            {/* Photos Card - Perfectly Symmetrical 3x2 Photo Grid */}
+            <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/10 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group transition-all duration-300">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#EC4899]" />
+              
+              {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles size={14} className="text-[#EC4899]" />
-                  <span>My Photos ({Math.min(photos.length, 6)} / 6)</span>
-                </h3>
-                <span className="text-[10px] font-bold text-zinc-400">Up to 6 photos</span>
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-[#EC4899]" />
+                  <h3 className="font-extrabold text-white tracking-tight text-xs uppercase tracking-wider">
+                    My Photos
+                  </h3>
+                </div>
+                <Badge className="px-3 py-1 rounded-full text-[10px] font-black bg-[#EC4899]/15 text-[#EC4899] border border-[#EC4899]/30">
+                  {Math.min(photos.length, 6)} / 6
+                </Badge>
               </div>
 
-              {/* Progress bar */}
-              <div className="w-full h-1.5 bg-white/5 rounded-full mb-6 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-[#EC4899] to-[#7C3AED] transition-all duration-500"
-                  style={{ width: `${(Math.min(photos.length, 6) / 6) * 100}%` }}
-                />
-              </div>
-
-              {/* 6 Photo Slots Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+              {/* Perfectly Symmetrical 3x2 Grid */}
+              <div className="grid grid-cols-3 gap-3">
                 {[0, 1, 2, 3, 4, 5].map((index) => {
                   const photo = photos[index];
                   const isPrimary = index === 0 && Boolean(photo);
@@ -422,9 +420,9 @@ export default function ProfilePage() {
                       className={`relative aspect-[3/4] rounded-2xl overflow-hidden border transition-all duration-300 group flex flex-col items-center justify-center ${
                         photo
                           ? isPrimary
-                            ? 'border-[#EC4899]/60 shadow-[0_0_20px_rgba(236,72,153,0.25)] bg-[#070B18]'
+                            ? 'border-[#EC4899] shadow-[0_0_15px_rgba(236,72,153,0.3)] bg-[#070B18]'
                             : 'border-white/10 hover:border-white/30 bg-[#070B18]'
-                          : 'border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#EC4899]/40 cursor-pointer'
+                          : 'border-2 border-dashed border-white/10 bg-white/[0.01] hover:bg-[#EC4899]/5 hover:border-[#EC4899]/40 cursor-pointer'
                       }`}
                       onClick={() => {
                         if (!photo) {
@@ -437,18 +435,18 @@ export default function ProfilePage() {
                         <>
                           <img
                             src={photo}
-                            alt={`Profile Photo ${index + 1}`}
-                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
 
                           {/* Primary Cover Badge */}
                           {isPrimary && (
-                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#EC4899] text-white text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
-                              <Star size={10} className="fill-white text-white" /> Primary
+                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-[#EC4899] text-white text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
+                              <Star size={10} className="fill-white text-white" /> Cover
                             </div>
                           )}
 
-                          {/* Hover Action Overlay */}
+                          {/* Hover Actions */}
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 p-2 z-20">
                             {index > 0 && (
                               <button
@@ -457,7 +455,7 @@ export default function ProfilePage() {
                                   e.stopPropagation();
                                   handleSetPrimary(index);
                                 }}
-                                title="Make Primary Cover Photo"
+                                title="Make Cover Photo"
                                 className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 transition cursor-pointer"
                               >
                                 <Star size={14} />
@@ -478,16 +476,16 @@ export default function ProfilePage() {
                           </div>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center justify-center p-3 text-center space-y-2 text-zinc-400 group-hover:text-white transition">
+                        <div className="flex flex-col items-center justify-center p-2 text-center space-y-1.5 text-zinc-400 group-hover:text-white transition">
                           {isUploading ? (
                             <div className="w-6 h-6 border-2 border-[#EC4899] border-t-transparent rounded-full animate-spin" />
                           ) : (
                             <>
-                              <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:text-[#EC4899] group-hover:border-[#EC4899]/30 transition">
-                                <Plus size={18} />
+                              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:text-[#EC4899] group-hover:border-[#EC4899]/30 transition">
+                                <Plus size={16} />
                               </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">
-                                {index === 0 ? 'Add Cover' : `Slot ${index + 1}`}
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 group-hover:text-white">
+                                {index === 0 ? 'Cover' : `Photo ${index + 1}`}
                               </span>
                             </>
                           )}
