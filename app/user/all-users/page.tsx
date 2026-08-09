@@ -221,17 +221,6 @@ function AllUsersContent() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-                  {/* Blue Verified Badge - Top Right */}
-                  {u.isVerified && (
-                    <div
-                      className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
-                      title="Verified User"
-                    >
-                      <CheckCircle2 size={13} className="fill-white text-[#3B82F6]" />
-                      <span>Verified</span>
-                    </div>
-                  )}
-
                   {/* Heart Action Badge - Bottom Right */}
                   <div className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                     <Heart size={14} className="fill-current text-white" />
@@ -240,15 +229,10 @@ function AllUsersContent() {
 
                 {/* Metadata Details */}
                 <div className="space-y-2 text-left px-1 pb-1">
-                  {/* Line 1: Full Name with Blue Tick */}
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
-                      {u.name}
-                    </h3>
-                    {u.isVerified && (
-                      <CheckCircle2 size={17} className="fill-[#3B82F6] text-white flex-shrink-0" />
-                    )}
-                  </div>
+                  {/* Line 1: Full Name */}
+                  <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
+                    {u.name}
+                  </h3>
 
                   {/* Line 2: Age & Location */}
                   <p className="text-xs font-semibold text-zinc-400 truncate">

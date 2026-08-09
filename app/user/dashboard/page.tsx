@@ -363,17 +363,6 @@ export default function DashboardPage() {
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-                          {/* Blue Verified Badge - Top Right */}
-                          {girl.isVerified && (
-                            <div
-                              className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
-                              title="Verified User"
-                            >
-                              <CheckCircle2 size={12} className="fill-white text-[#3B82F6]" />
-                              <span>Verified</span>
-                            </div>
-                          )}
-
                           {/* Pink Heart Action Badge - Bottom Right */}
                           <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                             <Heart size={13} className="fill-current text-white" />
@@ -382,15 +371,10 @@ export default function DashboardPage() {
 
                         {/* Dedicated Metadata Section Below Image */}
                         <div className="space-y-1.5 text-left px-0.5 pb-0.5">
-                          {/* Full Name with Blue Tick (Line 1 - Full Width) */}
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
-                              {girl.name}
-                            </h3>
-                            {girl.isVerified && (
-                              <CheckCircle2 size={15} className="fill-[#3B82F6] text-white flex-shrink-0" />
-                            )}
-                          </div>
+                          {/* Full Name (Line 1 - Full Width) */}
+                          <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
+                            {girl.name}
+                          </h3>
 
                           {/* Age & Location (Line 2) */}
                           <p className="text-xs font-semibold text-zinc-400 truncate">
