@@ -58,9 +58,7 @@ export default function EditProfilePage() {
         const defaultPhoto = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
         const photoVal = data.profile?.avatar
           ? (apiAssetUrl(data.profile.avatar) || data.profile.avatar)
-          : data.profile?.photos?.[0]
-          ? (apiAssetUrl(data.profile.photos[0]) || data.profile.photos[0])
-          : (data.user?.photo || defaultPhoto);
+          : (data.user?.photo ? (apiAssetUrl(data.user.photo) || data.user.photo) : defaultPhoto);
 
         setFormData({
           name: data.user?.name || '',

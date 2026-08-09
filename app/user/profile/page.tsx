@@ -141,7 +141,7 @@ export default function ProfilePage() {
 
   const userAvatar = profile.avatar
     ? (apiAssetUrl(profile.avatar) || profile.avatar)
-    : (photos[0] || user.photo || defaultProfileAvatar);
+    : (user.photo ? (apiAssetUrl(user.photo) || user.photo) : defaultProfileAvatar);
 
   const interests = profile.interests || [];
 
