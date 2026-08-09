@@ -547,21 +547,21 @@ export default function ProfilePage() {
                     setFollowersModalTab('followers');
                     setShowFollowersModal(true);
                   }}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm"
+                  className="flex items-center p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm"
                   title="Click to view Followers & Following list"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="w-9 h-9 rounded-xl bg-[#EC4899]/15 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] group-hover:scale-105 transition shrink-0">
                       <Users size={18} />
                     </div>
-                    <div>
-                      <span className="text-xs font-black text-white block tracking-tight group-hover:text-[#EC4899] transition">Follow Status</span>
-                      <span className="text-[10px] text-zinc-400 font-semibold block mt-0.5">{followerCount} Followers • {followingCount} Following</span>
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <span className="text-xs font-black text-white group-hover:text-[#EC4899] transition shrink-0">Follow Status</span>
+                      <span className="text-xs font-semibold text-zinc-400 shrink-0">•</span>
+                      <span className="text-xs font-bold text-pink-400 shrink-0">{followerCount} Followers</span>
+                      <span className="text-xs font-semibold text-zinc-400 shrink-0">•</span>
+                      <span className="text-xs font-bold text-purple-400 shrink-0">{followingCount} Following</span>
                     </div>
                   </div>
-                  <Badge className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/15 text-[#EC4899] border border-[#EC4899]/30 group-hover:bg-[#EC4899] group-hover:text-white transition">
-                    View Network ↗
-                  </Badge>
                 </div>
               </div>
 
