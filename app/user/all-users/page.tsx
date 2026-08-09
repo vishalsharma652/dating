@@ -221,13 +221,12 @@ function AllUsersContent() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-                  {/* Top Right Blue Verified Badge */}
+                  {/* Top Right Blue Tick Icon */}
                   {u.isVerified && (
                     <div
-                      className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
+                      className="absolute top-2.5 right-2.5 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
                     >
-                      <CheckCircle2 size={13} className="fill-white text-[#3B82F6]" />
-                      <span>Verified</span>
+                      <CheckCircle2 size={15} className="fill-white text-[#3B82F6]" />
                     </div>
                   )}
 
