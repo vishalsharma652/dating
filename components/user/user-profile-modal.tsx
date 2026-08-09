@@ -174,39 +174,45 @@ export function UserProfileModal({
           </div>
         </div>
 
-        {/* Followers & Follow/Unfollow Card */}
-        <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-              <Users size={18} />
-            </div>
-            <div>
-              <span className="font-extrabold text-sm text-white">{followerCount}</span>
-              <span className="text-zinc-400 text-xs block">Followers</span>
-            </div>
+        {/* Instagram Style Stats Row */}
+        <div className="grid grid-cols-3 gap-2 p-3 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl text-center">
+          <div>
+            <span className="block font-black text-base text-white">{followerCount}</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Followers</span>
           </div>
-
-          <Button
-            type="button"
-            disabled={followLoading}
-            onClick={handleFollowToggle}
-            className={`rounded-xl px-4 py-2 text-xs font-bold transition flex items-center gap-1.5 shadow-md border-0 cursor-pointer ${
-              isFollowingState
-                ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10'
-                : 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white'
-            }`}
-          >
-            {isFollowingState ? (
-              <>
-                <UserCheck size={15} /> Following
-              </>
-            ) : (
-              <>
-                <UserPlus size={15} /> Follow
-              </>
-            )}
-          </Button>
+          <div>
+            <span className="block font-black text-base text-pink-400">{profileData?.followingCount || 0}</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Following</span>
+          </div>
+          <div>
+            <span className="block font-black text-base text-emerald-400">{isVerified ? '100%' : 'Standard'}</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Trust</span>
+          </div>
         </div>
+
+        {/* Full Width Instagram Style Follow / Following Button */}
+        <Button
+          type="button"
+          disabled={followLoading}
+          onClick={handleFollowToggle}
+          className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg border-0 cursor-pointer ${
+            isFollowingState
+              ? 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+              : 'bg-[#0095F6] hover:bg-[#1877F2] text-white font-extrabold tracking-wide'
+          }`}
+        >
+          {isFollowingState ? (
+            <>
+              <UserCheck size={16} className="text-pink-400" />
+              <span>Following ✓</span>
+            </>
+          ) : (
+            <>
+              <UserPlus size={16} />
+              <span>Follow</span>
+            </>
+          )}
+        </Button>
 
         {/* Bio Section */}
         <div className="space-y-1.5 p-3.5 bg-white/5 border border-white/5 rounded-xl text-xs">
