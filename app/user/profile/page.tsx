@@ -29,7 +29,8 @@ import {
   Plus,
   Trash2,
   Star,
-  Upload
+  Upload,
+  Users
 } from 'lucide-react';
 import { useRef } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
@@ -127,6 +128,8 @@ export default function ProfilePage() {
 
   const user = data?.user || {};
   const profile = data?.profile || {};
+  const followerCount = Number((data as any)?.followerCount || 0);
+  const followingCount = Number((data as any)?.followingCount || 0);
   const isFemale = user.gender === 'female';
   const defaultProfileAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
 
@@ -525,6 +528,19 @@ export default function ProfilePage() {
                     : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                     }`}>
                     {user.status || 'pending'}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <Users size={16} className="text-[#EC4899]" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">Follow Status</span>
+                      <span className="text-[10px] text-zinc-400 font-semibold">{followerCount} Followers • {followingCount} Following</span>
+                    </div>
+                  </div>
+                  <Badge className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20">
+                    VERIFIED
                   </Badge>
                 </div>
               </div>

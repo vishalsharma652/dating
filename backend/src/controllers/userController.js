@@ -106,7 +106,8 @@ function normalizeGender(value) {
 
 async function getProfile(req, res) {
   const profile = await profileModel.getForUser(req.user.id);
-  return ok(res, { user: req.user, profile });
+  const stats = await socialModel.getFollowStats(req.user.id);
+  return ok(res, { user: req.user, profile, ...stats });
 }
 
 async function getPublicProfile(req, res) {
