@@ -363,6 +363,16 @@ export default function DashboardPage() {
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
+                          {/* Top Right Blue Verified Badge */}
+                          {girl.isVerified && (
+                            <div
+                              className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-[#3B82F6] text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-[0_2px_10px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md uppercase tracking-wider"
+                            >
+                              <CheckCircle2 size={12} className="fill-white text-[#3B82F6]" />
+                              <span>Verified</span>
+                            </div>
+                          )}
+
                           {/* Pink Heart Action Badge - Bottom Right */}
                           <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                             <Heart size={13} className="fill-current text-white" />
