@@ -25,8 +25,13 @@ import {
   Compass,
   ArrowUpRight,
   Fingerprint,
-  Copy
+  Copy,
+  Plus,
+  Trash2,
+  Star,
+  Upload
 } from 'lucide-react';
+import { useRef } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
 
@@ -38,6 +43,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [photoUploading, setPhotoUploading] = useState<number | null>(null);
+  const [targetSlot, setTargetSlot] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     userApi.profile()
@@ -51,6 +59,59 @@ export default function ProfilePage() {
       })
       .catch(() => undefined);
   }, []);
+
+  const handlePhotoUploadForSlot = async (slotIndex: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(slotIndex);
+    setMessage('');
+    setError('');
+
+    const form = new FormData();
+    form.append('photo', file);
+    form.append('slotIndex', String(slotIndex));
+
+    try {
+      const res = await userApi.uploadPhoto(form);
+      if (res.photos) {
+        setData((prev) => prev ? { ...prev, profile: { ...prev.profile, photos: res.photos } } : null);
+      } else {
+        const fresh = await userApi.profile();
+        setData(fresh);
+      }
+      setMessage(`Photo ${slotIndex + 1} uploaded successfully!`);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'Photo upload failed');
+    } finally {
+      setPhotoUploading(null);
+      if (event.target) event.target.value = '';
+    }
+  };
+
+  const handleDeletePhoto = async (index: number) => {
+    setMessage('');
+    setError('');
+    try {
+      const res = await userApi.deletePhoto(index);
+      setData((prev) => prev ? { ...prev, profile: { ...prev.profile, photos: res.photos } } : null);
+      setMessage('Photo deleted successfully!');
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'Photo deletion failed');
+    }
+  };
+
+  const handleSetPrimary = async (index: number) => {
+    if (index === 0) return;
+    setMessage('');
+    setError('');
+    try {
+      const res = await userApi.setPrimaryPhoto(index);
+      setData((prev) => prev ? { ...prev, profile: { ...prev.profile, photos: res.photos } } : null);
+      setMessage('Primary cover photo updated!');
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'Failed to update cover photo');
+    }
+  };
 
   if (loading) return (
     <div className="p-8 text-center min-h-screen flex items-center justify-center">
@@ -323,57 +384,126 @@ export default function ProfilePage() {
               </div>
             </Card>
 
-            {/* Photos Card */}
+            {/* Photos Card - 6 Photo Gallery Grid */}
             <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/5 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-white/10 transition-all duration-300">
               <div className="absolute top-0 left-0 w-1 h-full bg-[#7C3AED]" />
-              <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider mb-5 flex items-center gap-2">
-                <Sparkles size={14} className="text-[#EC4899]" />
-                <span>My Photos</span>
-              </h3>
-
-              <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-stretch">
-                {/* Left Side: Single Portrait Photo */}
-                <div
-                  className="w-40 aspect-[3/4] rounded-[20px] overflow-hidden border border-white/10 hover:border-[#EC4899]/30 transition duration-300 relative group bg-[#070B18] shadow-lg cursor-pointer flex-shrink-0"
-                >
-                  <img
-                    src={photos[0]}
-                    alt="Current Profile Cover"
-                    className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <Sparkles size={16} className="text-white" />
-                  </div>
-                </div>
-
-                {/* Right Side: Photo Insights / Guidelines to fill space */}
-                <div className="flex-1 flex flex-col justify-between text-left space-y-4 py-1">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                      <span className="text-[10px] text-[#10B981] font-bold uppercase tracking-wider">Active Cover Photo</span>
-                    </div>
-                    <h4 className="text-sm font-black text-white">Your Primary Profile Image</h4>
-                    <p className="text-[11px] font-semibold text-zinc-400 leading-relaxed">
-                      This photo is displayed on discover cards and swiping queues. Ensure your face is clearly visible to get maximum match performance.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2.5 bg-white/[0.01] border border-white/5 rounded-2xl p-4">
-                    <h5 className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Photo Quality Tips</h5>
-                    <div className="space-y-1.5 text-[11px] font-semibold text-zinc-400">
-                      <p className="flex items-center gap-2">
-                        <span className="text-[#EC4899] font-bold">✓</span>
-                        <span>Good lighting & high resolution</span>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <span className="text-[#EC4899] font-bold">✓</span>
-                        <span>Friendly expression & clear face view</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-white tracking-tight text-xs uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles size={14} className="text-[#EC4899]" />
+                  <span>My Photos ({Math.min(photos.length, 6)} / 6)</span>
+                </h3>
+                <span className="text-[10px] font-bold text-zinc-400">Up to 6 photos</span>
               </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-1.5 bg-white/5 rounded-full mb-6 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#EC4899] to-[#7C3AED] transition-all duration-500"
+                  style={{ width: `${(Math.min(photos.length, 6) / 6) * 100}%` }}
+                />
+              </div>
+
+              {/* 6 Photo Slots Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                {[0, 1, 2, 3, 4, 5].map((index) => {
+                  const photo = photos[index];
+                  const isPrimary = index === 0 && Boolean(photo);
+                  const isUploading = photoUploading === index;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`relative aspect-[3/4] rounded-2xl overflow-hidden border transition-all duration-300 group flex flex-col items-center justify-center ${
+                        photo
+                          ? isPrimary
+                            ? 'border-[#EC4899]/60 shadow-[0_0_20px_rgba(236,72,153,0.25)] bg-[#070B18]'
+                            : 'border-white/10 hover:border-white/30 bg-[#070B18]'
+                          : 'border-dashed border-white/15 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#EC4899]/40 cursor-pointer'
+                      }`}
+                      onClick={() => {
+                        if (!photo) {
+                          setTargetSlot(index);
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                    >
+                      {photo ? (
+                        <>
+                          <img
+                            src={photo}
+                            alt={`Profile Photo ${index + 1}`}
+                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                          />
+
+                          {/* Primary Cover Badge */}
+                          {isPrimary && (
+                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#EC4899] text-white text-[9px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 z-10">
+                              <Star size={10} className="fill-white text-white" /> Primary
+                            </div>
+                          )}
+
+                          {/* Hover Action Overlay */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 p-2 z-20">
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetPrimary(index);
+                                }}
+                                title="Make Primary Cover Photo"
+                                className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 transition cursor-pointer"
+                              >
+                                <Star size={14} />
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePhoto(index);
+                              }}
+                              title="Delete photo"
+                              className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/40 transition cursor-pointer"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-3 text-center space-y-2 text-zinc-400 group-hover:text-white transition">
+                          {isUploading ? (
+                            <div className="w-6 h-6 border-2 border-[#EC4899] border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:text-[#EC4899] group-hover:border-[#EC4899]/30 transition">
+                                <Plus size={18} />
+                              </div>
+                              <span className="text-[10px] font-bold uppercase tracking-wider">
+                                {index === 0 ? 'Add Cover' : `Slot ${index + 1}`}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (targetSlot !== null) {
+                    handlePhotoUploadForSlot(targetSlot, e);
+                  }
+                }}
+              />
             </Card>
 
             {/* Verification Checklist Card */}

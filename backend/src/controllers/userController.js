@@ -200,9 +200,49 @@ async function uploadPhoto(req, res) {
   const photoUrl = `/uploads/${req.file.filename}`;
   const profile = await profileModel.getForUser(req.user.id);
   const photos = profile?.photos || [];
-  const newPhotos = [photoUrl, ...photos.filter(p => p !== photoUrl).slice(0, 5)];
+  const slotIndex = req.body.slotIndex !== undefined && req.body.slotIndex !== '' ? Number(req.body.slotIndex) : null;
+
+  let newPhotos = [...photos];
+  if (slotIndex !== null && slotIndex >= 0 && slotIndex < 6) {
+    newPhotos[slotIndex] = photoUrl;
+    newPhotos = newPhotos.filter(Boolean);
+  } else {
+    if (!newPhotos.includes(photoUrl)) {
+      if (newPhotos.length >= 6) {
+        newPhotos[5] = photoUrl;
+      } else {
+        newPhotos.push(photoUrl);
+      }
+    }
+  }
   await profileModel.upsert(req.user.id, { photos: newPhotos });
-  return ok(res, { url: photoUrl }, 'Photo uploaded successfully');
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { url: photoUrl, photos: updatedProfile?.photos || [] }, 'Photo uploaded successfully');
+}
+
+async function deletePhoto(req, res) {
+  const index = Number(req.params.index);
+  const profile = await profileModel.getForUser(req.user.id);
+  let photos = profile?.photos || [];
+  if (index >= 0 && index < photos.length) {
+    photos.splice(index, 1);
+    await profileModel.upsert(req.user.id, { photos });
+  }
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { photos: updatedProfile?.photos || [] }, 'Photo deleted successfully');
+}
+
+async function setPrimaryPhoto(req, res) {
+  const index = Number(req.body.index);
+  const profile = await profileModel.getForUser(req.user.id);
+  let photos = profile?.photos || [];
+  if (index > 0 && index < photos.length) {
+    const selected = photos.splice(index, 1)[0];
+    photos.unshift(selected);
+    await profileModel.upsert(req.user.id, { photos });
+  }
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { photos: updatedProfile?.photos || [] }, 'Primary cover photo updated');
 }
 
 async function ageVerify(req, res) {
@@ -614,6 +654,8 @@ module.exports = {
   togglePinChat,
   updateProfile,
   uploadPhoto,
+  deletePhoto,
+  setPrimaryPhoto,
   ageVerify,
   submitKyc,
   discover,

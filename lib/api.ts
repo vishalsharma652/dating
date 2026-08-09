@@ -218,9 +218,18 @@ export const userApi = {
       body: JSON.stringify(body),
     }),
   uploadPhoto: (formData: FormData) =>
-    apiRequest<{ url: string }>('/user/profile/photo', {
+    apiRequest<{ url: string; photos?: string[] }>('/user/profile/photo', {
       method: 'POST',
       body: formData,
+    }),
+  deletePhoto: (index: number) =>
+    apiRequest<{ photos: string[] }>(`/user/profile/photo/${index}`, {
+      method: 'DELETE',
+    }),
+  setPrimaryPhoto: (index: number) =>
+    apiRequest<{ photos: string[] }>('/user/profile/photo/set-primary', {
+      method: 'POST',
+      body: JSON.stringify({ index }),
     }),
   ageVerify: (dob: string) =>
     apiRequest<{ user: any; age: number }>('/user/profile/age-verify', {
