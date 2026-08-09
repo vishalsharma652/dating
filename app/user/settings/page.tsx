@@ -7,6 +7,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { authApi, clearAuthSession, userApi } from '@/lib/api';
+import { useLanguage, Language } from '@/context/language-context';
 import {
   Lock,
   Bell,
@@ -21,6 +22,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
   const [activeModal, setActiveModal] = useState<'notifications' | 'language' | null>(null);
 
   // Settings State
@@ -31,16 +33,17 @@ export default function SettingsPage() {
     emailDigest: false,
   });
 
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [selectedLang, setSelectedLang] = useState<Language>(language || 'en');
   const [toastMsg, setToastMsg] = useState('');
 
-  // Load language from localStorage
+  // Sync selectedLang with active language from context
+  useEffect(() => {
+    setSelectedLang(language);
+  }, [language]);
+
+  // Load notification settings from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('app_language');
-      if (savedLang) {
-        setSelectedLanguage(savedLang);
-      }
       const savedNotifications = localStorage.getItem('app_notifications');
       if (savedNotifications) {
         try {
@@ -80,12 +83,9 @@ export default function SettingsPage() {
   };
 
   const handleSaveLanguage = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('app_language', selectedLanguage);
-      window.dispatchEvent(new CustomEvent('language:changed', { detail: { language: selectedLanguage } }));
-    }
+    setLanguage(selectedLang);
     setActiveModal(null);
-    showToast(`App Language changed to: ${selectedLanguage}`);
+    showToast(selectedLang === 'hi' ? 'ऐप की भाषा हिंदी में बदल दी गई है!' : 'App Language set to English!');
   };
 
   const handleSaveNotifications = () => {
@@ -93,41 +93,44 @@ export default function SettingsPage() {
       localStorage.setItem('app_notifications', JSON.stringify(notificationSettings));
     }
     setActiveModal(null);
-    showToast('Notification preferences saved successfully!');
+    showToast(language === 'hi' ? 'सूचना प्राथमिकताएं सहेज ली गईं!' : 'Notification preferences saved successfully!');
   };
 
   const languagesList = [
-    { code: 'en', name: 'English', native: 'English (Default)', icon: '🇬🇧' },
-    { code: 'hi', name: 'Hindi', native: 'हिंदी (Hindi)', icon: '🇮🇳' },
+    { code: 'en' as Language, name: 'English', native: 'English (Default)', icon: '🇬🇧' },
+    { code: 'hi' as Language, name: 'Hindi', native: 'हिंदी (Hindi)', icon: '🇮🇳' },
   ];
 
   const settings = [
     {
       id: 'notifications',
       icon: Bell,
-      label: 'Notifications',
-      description: 'Manage push and chat notification preferences',
+      label: t('notifications', 'Notifications'),
+      description: language === 'hi' ? 'पुश और चैट सूचना प्राथमिकताएं प्रबंधित करें' : 'Manage push and chat notification preferences',
       action: () => setActiveModal('notifications'),
     },
     {
       id: 'security',
       icon: Lock,
-      label: 'Security',
-      description: 'Password and authentication settings',
+      label: t('securitySettings', 'Security'),
+      description: language === 'hi' ? 'पासवर्ड और प्रमाणीकरण सेटिंग्स' : 'Password and authentication settings',
       href: '/user/settings/security',
     },
     {
       id: 'language',
       icon: Languages,
-      label: 'Language',
-      description: `Active Language: ${selectedLanguage}`,
-      action: () => setActiveModal('language'),
+      label: t('appLanguage', 'Language'),
+      description: `${language === 'hi' ? 'सक्रिय भाषा:' : 'Active Language:'} ${language === 'hi' ? 'हिंदी (Hindi)' : 'English'}`,
+      action: () => {
+        setSelectedLang(language);
+        setActiveModal('language');
+      },
     },
     {
       id: 'help',
       icon: HelpCircle,
-      label: 'Help & Support',
-      description: 'Get help and contact support',
+      label: t('helpSupport', 'Help & Support'),
+      description: language === 'hi' ? 'मदद प्राप्त करें और संपर्क करें' : 'Get help and contact support',
       href: '/user/help',
     },
   ];
@@ -135,7 +138,7 @@ export default function SettingsPage() {
   return (
     <div className="p-4 md:p-8">
       <Container>
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold mb-8">{t('settings', 'Settings')}</h1>
 
         {/* Global Toast Message */}
         {toastMsg && (
@@ -182,7 +185,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Section */}
-        <h2 className="text-lg font-semibold mb-4">Account</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('account', 'Account')}</h2>
         <div className="space-y-2.5 mb-8">
           <Card
             className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer group"
@@ -194,9 +197,9 @@ export default function SettingsPage() {
                   <LogOut size={22} />
                 </div>
                 <div>
-                  <p className="font-semibold text-white">Logout</p>
+                  <p className="font-semibold text-white">{t('logout', 'Logout')}</p>
                   <p className="text-sm text-zinc-400">
-                    Sign out of your account
+                    {language === 'hi' ? 'अपने खाते से साइन आउट करें' : 'Sign out of your account'}
                   </p>
                 </div>
               </div>
@@ -215,10 +218,10 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-red-400">
-                    Delete Account
+                    {t('deleteAccount', 'Delete Account')}
                   </p>
                   <p className="text-sm text-zinc-400">
-                    Permanently delete your account
+                    {language === 'hi' ? 'अपना खाता हमेशा के लिए हटाएं' : 'Permanently delete your account'}
                   </p>
                 </div>
               </div>
@@ -235,7 +238,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Bell size={20} className="text-[#EC4899]" />
-                <span>Notification Preferences</span>
+                <span>{t('notificationPreferences', 'Notification Preferences')}</span>
               </h3>
               <button
                 type="button"
@@ -249,8 +252,8 @@ export default function SettingsPage() {
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
                 <div>
-                  <p className="font-bold text-sm">Push Notifications</p>
-                  <p className="text-xs text-zinc-400">Receive alerts on your device</p>
+                  <p className="font-bold text-sm">{t('pushNotifications', 'Push Notifications')}</p>
+                  <p className="text-xs text-zinc-400">{language === 'hi' ? 'डिवाइस पर अलर्ट प्राप्त करें' : 'Receive alerts on your device'}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -262,8 +265,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
                 <div>
-                  <p className="font-bold text-sm">Chat & Message Alerts</p>
-                  <p className="text-xs text-zinc-400">Notify when someone sends a message</p>
+                  <p className="font-bold text-sm">{t('chatAlerts', 'Chat & Message Alerts')}</p>
+                  <p className="text-xs text-zinc-400">{language === 'hi' ? 'मैसेज आने पर अलर्ट प्राप्त करें' : 'Notify when someone sends a message'}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -275,8 +278,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
                 <div>
-                  <p className="font-bold text-sm">Follow & Match Alerts</p>
-                  <p className="text-xs text-zinc-400">Notify on new followers or matches</p>
+                  <p className="font-bold text-sm">{t('followAlerts', 'Follow & Match Alerts')}</p>
+                  <p className="text-xs text-zinc-400">{language === 'hi' ? 'नए फॉलोअर्स या मैच पर अलर्ट' : 'Notify on new followers or matches'}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -288,8 +291,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-2xl">
                 <div>
-                  <p className="font-bold text-sm">Email Updates</p>
-                  <p className="text-xs text-zinc-400">Receive weekly digest via email</p>
+                  <p className="font-bold text-sm">{t('emailUpdates', 'Email Updates')}</p>
+                  <p className="text-xs text-zinc-400">{language === 'hi' ? 'साप्ताहिक डाइजेस्ट ईमेल पर पाएं' : 'Receive weekly digest via email'}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -305,7 +308,7 @@ export default function SettingsPage() {
               onClick={handleSaveNotifications}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white font-bold text-xs shadow-lg cursor-pointer"
             >
-              Save Preferences
+              {t('savePreferences', 'Save Preferences')}
             </Button>
           </div>
         </div>
@@ -318,7 +321,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Languages size={20} className="text-purple-400" />
-                <span>Choose App Language</span>
+                <span>{t('selectLanguage', 'Choose App Language')}</span>
               </h3>
               <button
                 type="button"
@@ -329,13 +332,13 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <div className="space-y-2.5 pt-2">
               {languagesList.map((lang) => {
-                const isSelected = selectedLanguage === lang.name;
+                const isSelected = selectedLang === lang.code;
                 return (
                   <div
                     key={lang.code}
-                    onClick={() => setSelectedLanguage(lang.name)}
+                    onClick={() => setSelectedLang(lang.code)}
                     className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
                       isSelected
                         ? 'bg-purple-500/20 border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.25)] text-white'
@@ -366,7 +369,7 @@ export default function SettingsPage() {
               onClick={handleSaveLanguage}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-xs shadow-lg cursor-pointer"
             >
-              Apply Language
+              {t('applyLanguage', 'Apply Language')}
             </Button>
           </div>
         </div>

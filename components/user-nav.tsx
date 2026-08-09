@@ -19,32 +19,34 @@ import {
 } from 'lucide-react';
 import { authApi, clearAuthSession, getStoredUser, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
-
-const sidebarItems = [
-  { label: 'Dashboard', href: '/user/dashboard', icon: Home },
-  { label: 'Search ID', href: '/user/search', icon: Search },
-  { label: 'Chat', href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
-  { label: 'Notifications', href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
-  { label: 'Wallet', href: '/user/wallet', icon: Wallet },
-  { label: 'Profile', href: '/user/profile', icon: User },
-  { label: 'Settings', href: '/user/settings', icon: Settings },
-  { label: 'Help & Support', href: '/user/help', icon: HelpCircle },
-];
-
-// Bottom nav items for mobile (most important 4 + menu)
-const bottomNavItems = [
-  { label: 'Home', href: '/user/dashboard', icon: Home },
-  { label: 'Chat', href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
-  { label: 'Alerts', href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
-  { label: 'Profile', href: '/user/profile', icon: User },
-];
+import { useLanguage } from '@/context/language-context';
 
 export function UserNav() {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [chatCount, setChatCount] = useState(0);
+
+  const sidebarItems = [
+    { label: t('dashboard', 'Dashboard'), href: '/user/dashboard', icon: Home },
+    { label: t('searchId', 'Search ID'), href: '/user/search', icon: Search },
+    { label: t('chats', 'Chat'), href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
+    { label: t('notifications', 'Notifications'), href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
+    { label: t('wallet', 'Wallet'), href: '/user/wallet', icon: Wallet },
+    { label: t('profile', 'Profile'), href: '/user/profile', icon: User },
+    { label: t('settings', 'Settings'), href: '/user/settings', icon: Settings },
+    { label: t('helpSupport', 'Help & Support'), href: '/user/help', icon: HelpCircle },
+  ];
+
+  // Bottom nav items for mobile
+  const bottomNavItems = [
+    { label: t('home', 'Home'), href: '/user/dashboard', icon: Home },
+    { label: t('chats', 'Chat'), href: '/user/chat', icon: MessageCircle, badgeKey: 'chat' },
+    { label: t('alerts', 'Alerts'), href: '/user/notifications', icon: Bell, badgeKey: 'notifications' },
+    { label: t('profile', 'Profile'), href: '/user/profile', icon: User },
+  ];
 
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -199,10 +201,10 @@ export function UserNav() {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.03] transition text-sm font-semibold"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.03] transition text-sm font-semibold cursor-pointer"
           >
             <LogOut size={16} />
-            <span>Logout</span>
+            <span>{t('logout', 'Logout')}</span>
           </button>
         </div>
       </aside>
@@ -245,7 +247,7 @@ export function UserNav() {
           <div className="p-2 rounded-2xl">
             <Menu size={20} className="text-zinc-400" />
           </div>
-          <span className="text-[10px] font-semibold text-zinc-500">More</span>
+          <span className="text-[10px] font-semibold text-zinc-500">{t('more', 'More')}</span>
         </button>
       </nav>
       )}
@@ -268,10 +270,10 @@ export function UserNav() {
             </div>
 
             {[
-              { label: 'Search ID', href: '/user/search', icon: Search },
-              { label: 'Wallet', href: '/user/wallet', icon: Wallet },
-              { label: 'Settings', href: '/user/settings', icon: Settings },
-              { label: 'Help & Support', href: '/user/help', icon: HelpCircle },
+              { label: t('searchId', 'Search ID'), href: '/user/search', icon: Search },
+              { label: t('wallet', 'Wallet'), href: '/user/wallet', icon: Wallet },
+              { label: t('settings', 'Settings'), href: '/user/settings', icon: Settings },
+              { label: t('helpSupport', 'Help & Support'), href: '/user/help', icon: HelpCircle },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = pathname.startsWith(item.href);
@@ -293,10 +295,10 @@ export function UserNav() {
             <div className="pt-2 border-t border-white/10">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition"
+                className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
               >
                 <LogOut size={20} />
-                <span className="font-semibold">Logout</span>
+                <span className="font-semibold">{t('logout', 'Logout')}</span>
               </button>
             </div>
           </div>

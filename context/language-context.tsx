@@ -13,68 +13,170 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
+    // Navigation & Sidebar
     dashboard: 'Dashboard',
-    allUsers: 'All Users',
-    chats: 'Chats',
+    searchId: 'Search ID',
+    chats: 'Chat',
+    notifications: 'Notifications',
     wallet: 'Wallet',
-    coins: 'Coins',
-    earnings: 'Earnings',
+    profile: 'Profile',
+    myProfile: 'My Profile',
     settings: 'Settings',
-    sayHi: 'Say Hi 👋',
-    startChat: 'Say Hi 👋',
-    rechargeNow: 'Recharge Now',
-    virtualGift: 'Virtual Gift',
-    camera: 'Camera',
-    gallery: 'Photo / Gallery',
-    search: 'Search',
-    online: 'Online',
-    offline: 'Offline',
-    language: 'Language',
-    selectLanguage: 'Select Language',
+    helpSupport: 'Help & Support',
+    logout: 'Logout',
+    deleteAccount: 'Delete Account',
+    account: 'Account',
+    more: 'More',
+    home: 'Home',
+    alerts: 'Alerts',
+
+    // Settings
+    securitySettings: 'Security Settings',
+    twoFactorAuth: 'Two-Factor Authentication',
+    changePassword: 'Change Password',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    updatePassword: 'Update Password',
+    appLanguage: 'App Language',
+    notificationPreferences: 'Notification Preferences',
+    pushNotifications: 'Push Notifications',
+    chatAlerts: 'Chat & Message Alerts',
+    followAlerts: 'Follow & Match Alerts',
+    emailUpdates: 'Email Updates',
+    savePreferences: 'Save Preferences',
+    applyLanguage: 'Apply Language',
+    selectLanguage: 'Choose App Language',
     english: 'English',
     hindi: 'Hindi (हिंदी)',
-    myProfile: 'My Profile',
-    logout: 'Log Out',
-    helpSupport: 'Help & Support',
-    notifications: 'Notifications',
+
+    // Profile & Verification
+    aboutMe: 'About Me',
+    interestsHobbies: 'Interests & Hobbies',
+    myPhotos: 'My Photos',
+    myPhotosGallery: 'My Photos Gallery',
+    coverPhoto: 'Main Cover Photo',
+    setAsCover: 'Set as Cover',
+    removePhoto: 'Remove Photo',
+    addPhoto: 'Add Photo',
+    verificationChecklist: 'Verification Checklist',
+    profileSecurity: 'Profile Security',
+    followStatus: 'Follow Status',
+    followers: 'Followers',
+    following: 'Following',
+    socialNetwork: 'Social Network',
+    uniqueId: 'Your Unique ID',
+    copyId: 'Copy ID',
+    editProfile: 'Edit Profile',
+    shareProfile: 'Share Profile',
+    report: 'Report',
+    activeNow: 'Active Now',
+    offline: 'Offline',
+    verified: 'Verified',
+    trustScore: 'Trust',
+
+    // Chat & Social Actions
+    sayHi: 'Say Hi 👋',
+    startChat: 'Start Chat',
+    follow: 'Follow',
+    requested: 'Requested ⏳',
+    followBack: 'Follow Back',
+    accept: 'Accept',
+    decline: 'Decline',
+    unfollow: 'Unfollow',
+    pinned: 'Pinned',
+    pinChat: 'Pin Chat',
+    unpinChat: 'Unpin Chat',
+    voiceCall: 'Voice Call',
+    videoCall: 'Video Call',
+    typeMessage: 'Type a message...',
+    send: 'Send',
+    rechargeNow: 'Recharge Now',
     buyCoins: 'Buy Coins',
     withdraw: 'Withdraw',
-    deleteForMe: 'Delete for me',
-    deleteForEveryone: 'Delete for everyone',
-    typeMessage: 'Type a message...',
-    lowCoinsNotice: 'Low coins balance. Recharge to keep chatting.',
   },
   hi: {
+    // Navigation & Sidebar
     dashboard: 'डैशबोर्ड',
-    allUsers: 'सभी यूज़र्स',
-    chats: 'चैट्स',
+    searchId: 'आईडी खोजें',
+    chats: 'चैट',
+    notifications: 'सूचनाएं',
     wallet: 'वॉलेट',
-    coins: 'कॉइन्स',
-    earnings: 'कमाई',
-    settings: 'सेटिंग्स',
-    sayHi: 'से हाय 👋',
-    startChat: 'चैट शुरू करें',
-    rechargeNow: 'रिचार्ज करें',
-    virtualGift: 'वर्चुअल गिफ्ट',
-    camera: 'कैमरा',
-    gallery: 'फोटो / गैलरी',
-    search: 'खोजें',
-    online: 'ऑनलाइन',
-    offline: 'ऑफलाइन',
-    language: 'भाषा',
-    selectLanguage: 'भाषा चुनें',
-    english: 'English',
-    hindi: 'Hindi (हिंदी)',
+    profile: 'प्रोफाइल',
     myProfile: 'मेरी प्रोफाइल',
+    settings: 'सेटिंग्स',
+    helpSupport: 'मदद और सहायता',
     logout: 'लॉग आउट',
-    helpSupport: 'हेल्प एवं सपोर्ट',
-    notifications: 'नोटिफिकेशन',
+    deleteAccount: 'खाता हटाएं',
+    account: 'खाता',
+    more: 'अन्य',
+    home: 'होम',
+    alerts: 'अलर्ट',
+
+    // Settings
+    securitySettings: 'सुरक्षा सेटिंग्स',
+    twoFactorAuth: 'टू-फैक्टर प्रमाणीकरण',
+    changePassword: 'पासवर्ड बदलें',
+    currentPassword: 'वर्तमान पासवर्ड',
+    newPassword: 'नया पासवर्ड',
+    confirmPassword: 'पासवर्ड की पुष्टि करें',
+    updatePassword: 'पासवर्ड अपडेट करें',
+    appLanguage: 'ऐप की भाषा',
+    notificationPreferences: 'सूचना प्राथमिकताएं',
+    pushNotifications: 'पुश नोटिफिकेशन',
+    chatAlerts: 'चैट और मैसेज अलर्ट',
+    followAlerts: 'फॉलो और मैच अलर्ट',
+    emailUpdates: 'ईमेल अपडेट्स',
+    savePreferences: 'प्राथमिकताएं सहेजें',
+    applyLanguage: 'भाषा लागू करें',
+    selectLanguage: 'ऐप की भाषा चुनें',
+    english: 'English',
+    hindi: 'हिंदी (Hindi)',
+
+    // Profile & Verification
+    aboutMe: 'मेरे बारे में',
+    interestsHobbies: 'रुचियां और शौक',
+    myPhotos: 'मेरी तस्वीरें',
+    myPhotosGallery: 'फोटो गैलरी',
+    coverPhoto: 'मुख्य कवर फोटो',
+    setAsCover: 'कवर फोटो बनाएं',
+    removePhoto: 'फोटो हटाएं',
+    addPhoto: 'फोटो जोड़ें',
+    verificationChecklist: 'सत्यापन चेकलिस्ट',
+    profileSecurity: 'प्रोफाइल सुरक्षा',
+    followStatus: 'फॉलो स्थिति',
+    followers: 'फॉलोअर्स',
+    following: 'फॉलोइंग',
+    socialNetwork: 'सोशल नेटवर्क',
+    uniqueId: 'आपकी यूनिक आईडी',
+    copyId: 'आईडी कॉपी करें',
+    editProfile: 'प्रोफाइल एडिट करें',
+    shareProfile: 'प्रोफाइल शेयर करें',
+    report: 'रिपोर्ट करें',
+    activeNow: 'अभी सक्रिय',
+    offline: 'ऑफलाइन',
+    verified: 'सत्यापित',
+    trustScore: 'विश्वास स्कोर',
+
+    // Chat & Social Actions
+    sayHi: 'नमस्ते कहें 👋',
+    startChat: 'चैट शुरू करें',
+    follow: 'फॉलो करें',
+    requested: 'अनुरोध भेजा ⏳',
+    followBack: 'फॉलो बैक करें',
+    accept: 'स्वीकार करें',
+    decline: 'अस्वीकार करें',
+    unfollow: 'अनफॉलो करें',
+    pinned: 'पिन किया गया',
+    pinChat: 'चैट पिन करें',
+    unpinChat: 'चैट अनपिन करें',
+    voiceCall: 'वॉयस कॉल',
+    videoCall: 'वीडियो कॉल',
+    typeMessage: 'मैसेज लिखें...',
+    send: 'भेजें',
+    rechargeNow: 'रिचार्ज करें',
     buyCoins: 'कॉइन्स खरीदें',
     withdraw: 'पैसे निकालें',
-    deleteForMe: 'मेरे लिए हटाएं',
-    deleteForEveryone: 'सभी के लिए हटाएं',
-    typeMessage: 'मैसेज टाइप करें...',
-    lowCoinsNotice: 'कम कॉइन्स बैलेंस। चैट जारी रखने के लिए रिचार्ज करें।',
   },
 };
 
@@ -88,15 +190,25 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('app_language') as Language;
-    if (savedLang === 'en' || savedLang === 'hi') {
-      setLanguageState(savedLang);
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('app_language');
+      if (savedLang === 'hi' || savedLang === 'en') {
+        setLanguageState(savedLang as Language);
+        document.documentElement.lang = savedLang;
+      } else if (savedLang === 'Hindi') {
+        setLanguageState('hi');
+        document.documentElement.lang = 'hi';
+      }
     }
   }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('app_language', lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app_language', lang);
+      document.documentElement.lang = lang;
+      window.dispatchEvent(new CustomEvent('language:changed', { detail: { language: lang } }));
+    }
   };
 
   const t = (key: string, fallback?: string): string => {
@@ -131,83 +243,5 @@ export function LanguageSwitcherButton() {
       <Globe size={14} className="text-pink-400" />
       <span>{language === 'en' ? 'EN | हिंदी' : 'हिंदी | EN'}</span>
     </button>
-  );
-}
-
-export function LanguageModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { language, setLanguage } = useLanguage();
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-sm bg-[#0D1424] border border-white/15 rounded-3xl p-5 shadow-2xl space-y-4 text-white">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center">
-              <Globe size={18} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Select Language / भाषा चुनें</h3>
-              <p className="text-[11px] text-zinc-400">Choose app interface language</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              setLanguage('en');
-              onClose();
-            }}
-            className={`w-full text-left p-3.5 rounded-2xl border transition flex items-center justify-between cursor-pointer ${
-              language === 'en'
-                ? 'bg-pink-500/15 border-pink-500/40 text-pink-400 font-bold'
-                : 'bg-white/[0.03] border-white/10 text-white hover:bg-white/10'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🇬🇧</span>
-              <div>
-                <div className="text-xs font-bold">English</div>
-                <div className="text-[10px] text-zinc-400">Default language</div>
-              </div>
-            </div>
-            {language === 'en' && <Check size={16} className="text-pink-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setLanguage('hi');
-              onClose();
-            }}
-            className={`w-full text-left p-3.5 rounded-2xl border transition flex items-center justify-between cursor-pointer ${
-              language === 'hi'
-                ? 'bg-pink-500/15 border-pink-500/40 text-pink-400 font-bold'
-                : 'bg-white/[0.03] border-white/10 text-white hover:bg-white/10'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🇮🇳</span>
-              <div>
-                <div className="text-xs font-bold">Hindi (हिंदी)</div>
-                <div className="text-[10px] text-zinc-400">भारतीय हिंदी भाषा</div>
-              </div>
-            </div>
-            {language === 'hi' && <Check size={16} className="text-pink-400" />}
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-white/10 text-xs font-bold text-zinc-300 hover:bg-white/15 transition cursor-pointer"
-        >
-          Close / बंद करें
-        </button>
-      </div>
-    </div>
   );
 }

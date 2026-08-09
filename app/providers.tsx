@@ -2,6 +2,7 @@
 
 import { type PropsWithChildren, useEffect, useState } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/context/language-context";
 import { Loader } from "@/components/ui/loader";
 
 export function Providers({ children }: PropsWithChildren) {
@@ -13,8 +14,10 @@ export function Providers({ children }: PropsWithChildren) {
 
   return (
     <ThemeProvider>
-      {!mounted && <Loader fullscreen text="Initializing premium experience..." />}
-      {children}
+      <LanguageProvider>
+        {!mounted && <Loader fullscreen text="Initializing premium experience..." />}
+        {children}
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
