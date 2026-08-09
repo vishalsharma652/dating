@@ -224,6 +224,11 @@ export const userApi = {
       method: 'POST',
       body: formData,
     }),
+  uploadChatMedia: (formData: FormData) =>
+    apiRequest<{ url: string }>('/user/chat/media', {
+      method: 'POST',
+      body: formData,
+    }),
   deletePhoto: (index: number) =>
     apiRequest<{ photos: string[] }>(`/user/profile/photo/${index}`, {
       method: 'DELETE',

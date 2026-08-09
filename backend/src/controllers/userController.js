@@ -223,6 +223,12 @@ async function uploadPhoto(req, res) {
   return ok(res, { url: photoUrl, photos: updatedProfile?.photos || [] }, 'Photo uploaded successfully');
 }
 
+async function uploadChatMedia(req, res) {
+  if (!req.file) throw new AppError('No media file uploaded', 400);
+  const mediaUrl = `/uploads/${req.file.filename}`;
+  return ok(res, { url: mediaUrl }, 'Chat media uploaded successfully');
+}
+
 async function deletePhoto(req, res) {
   const index = Number(req.params.index);
   const profile = await profileModel.getForUser(req.user.id);
@@ -637,8 +643,7 @@ async function settings(req, res) {
     }
   });
 }
-
-async function deleteAccount(req, res) {
+async function deleteAccount(req, res) {
   await userModel.remove(req.user.id);
   return ok(res, null, 'Account deleted permanently');
 }
@@ -710,5 +715,6 @@ module.exports = {
   markNotificationsRead,
   settings,
   deleteAccount,
-  changePassword
+  changePassword,
+  uploadChatMedia
 };

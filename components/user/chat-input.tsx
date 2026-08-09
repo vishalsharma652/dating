@@ -86,16 +86,16 @@ export function ChatInput({ onSend }: ChatInputProps) {
     setShowAttachmentMenu(false);
     setUploading(true);
     const form = new FormData();
-    form.append('photo', file);
+    form.append('media', file);
 
     try {
-      const data = await userApi.uploadPhoto(form);
+      const data = await userApi.uploadChatMedia(form);
       const photoUrl = apiAssetUrl(data.url) || data.url;
       if (photoUrl) {
         await onSend?.(photoUrl, 'image');
       }
     } catch (err) {
-      console.error('Camera photo upload failed', err);
+      console.error('Chat media upload failed', err);
     } finally {
       setUploading(false);
     }
