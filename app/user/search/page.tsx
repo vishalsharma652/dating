@@ -211,19 +211,24 @@ export default function UserSearchPage() {
 
                     {/* Action Button */}
                     <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          if (existingChatUserIds.has(Number(user.id))) {
-                            router.push(`/user/chat/${user.id}`);
-                          } else {
-                            setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city });
-                          }
-                        }}
-                        className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
-                      >
-                        <Sparkles size={16} /> Say Hi 👋 with #{user.id}
-                      </Button>
+                      {existingChatUserIds.has(Number(user.id)) ? (
+                        <Button
+                          asChild
+                          className="flex-1 h-11 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                        >
+                          <Link href={`/user/chat/${user.id}`}>
+                            <MessageSquare size={16} /> Open Chat 💬
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city })}
+                          className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                        >
+                          <Sparkles size={16} /> Say Hi 👋 with #{user.id}
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 );
