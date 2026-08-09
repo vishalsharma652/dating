@@ -171,7 +171,7 @@ export default function EditProfilePage() {
             </div>
 
             <div className="text-center sm:text-left space-y-2.5">
-              <p className="text-xs font-bold text-zinc-300">Take a live selfie to update your profile photo.</p>
+              <p className="text-xs font-bold text-zinc-300">Take a photo to update your profile picture.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <Button 
                   type="button" 
@@ -179,7 +179,7 @@ export default function EditProfilePage() {
                   className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl border-0 shadow-md flex items-center gap-2 transition-transform duration-300 hover:scale-[1.01] cursor-pointer"
                 >
                   <Camera size={15} />
-                  <span>Take Live Photo 📸</span>
+                  <span>Take Photo 📸</span>
                 </Button>
               </div>
             </div>
