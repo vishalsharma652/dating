@@ -22,8 +22,16 @@ export default function UserSearchPage() {
   const [sayHiTarget, setSayHiTarget] = useState<any>(null);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [existingChatUserIds, setExistingChatUserIds] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     setCurrentUser(getStoredUser());
+    userApi.chats()
+      .then((res) => {
+        const ids = new Set<number>((res?.chats || []).map((c: any) => Number(c.userId || c.user_id || c.id)));
+        setExistingChatUserIds(ids);
+      })
+      .catch(() => undefined);
   }, []);
 
   const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
@@ -201,13 +209,24 @@ export default function UserSearchPage() {
 
                     {/* Action Button */}
                     <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
-                      <Button
-                        type="button"
-                        onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city })}
-                        className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
-                      >
-                        <Sparkles size={16} /> Say Hi 👋 with #{user.id}
-                      </Button>
+                      {existingChatUserIds.has(Number(user.id)) ? (
+                        <Button
+                          asChild
+                          className="flex-1 h-11 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                        >
+                          <Link href={`/user/chat/${user.id}`}>
+                            <MessageSquare size={16} /> Open Chat 💬
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={() => setSayHiTarget({ id: user.id, name: user.name, photo: photoVal, location: user.city })}
+                          className="flex-1 h-11 bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:opacity-90 font-semibold rounded-xl gap-2 cursor-pointer"
+                        >
+                          <Sparkles size={16} /> Say Hi 👋 with #{user.id}
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 );

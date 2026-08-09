@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
+import { Heart, Search, ArrowLeft, Users, Clock, ShieldCheck, CheckCircle2, Sparkles, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
@@ -16,6 +16,7 @@ function AllUsersContent() {
   const paramFilter = searchParams.get('filter');
 
   const [data, setData] = useState<any>(null);
+  const [existingChatUserIds, setExistingChatUserIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,9 +30,16 @@ function AllUsersContent() {
   }, [paramFilter]);
 
   useEffect(() => {
-    userApi.dashboard()
-      .then((res) => {
-        setData(res);
+    Promise.all([
+      userApi.dashboard(),
+      userApi.chats().catch(() => ({ chats: [] }))
+    ])
+      .then(([dashRes, chatsRes]) => {
+        setData(dashRes);
+        const ids = new Set<number>(
+          (chatsRes?.chats || []).map((c: any) => Number(c.userId || c.user_id || c.id))
+        );
+        setExistingChatUserIds(ids);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load users'))
       .finally(() => setLoading(false));
@@ -263,14 +271,26 @@ function AllUsersContent() {
                   </div>
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
-                  className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
-                >
-                  <Sparkles size={14} className="text-white" />
-                  <span>Say Hi 👋</span>
-                </Button>
+                {existingChatUserIds.has(Number(u.id)) ? (
+                  <Button
+                    asChild
+                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                  >
+                    <Link href={`/user/chat/${u.id}`}>
+                      <MessageCircle size={14} className="text-white" />
+                      <span>Message 💬</span>
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
+                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                  >
+                    <Sparkles size={14} className="text-white" />
+                    <span>Say Hi 👋</span>
+                  </Button>
+                )}
               </Card>
             ))}
           </div>
