@@ -18,6 +18,10 @@ router.post('/profile/mobile/verify', asyncHandler((req, res) => res.json({ succ
 
 router.get('/discover', asyncHandler(user.discover));
 router.get('/search', asyncHandler(user.searchUsers));
+router.post('/follow/:id', [param('id').isInt()], validate, asyncHandler(user.toggleFollow));
+router.get('/follow/:id/status', [param('id').isInt()], validate, asyncHandler(user.getFollowStatus));
+router.get('/following', asyncHandler(user.getFollowing));
+router.get('/followers', asyncHandler(user.getFollowers));
 router.post('/discover/:id/action', [param('id').isInt(), body('action').isIn(['like', 'pass', 'super_like'])], validate, asyncHandler(user.reactToProfile));
 router.get('/matches', asyncHandler(user.matches));
 router.get('/chat', asyncHandler(user.chats));

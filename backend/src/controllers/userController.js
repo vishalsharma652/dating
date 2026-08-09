@@ -114,6 +114,8 @@ async function getPublicProfile(req, res) {
   const targetUser = await userModel.findById(targetId);
   if (!targetUser) throw new AppError('User not found', 404);
   const profile = await profileModel.getForUser(targetId);
+  const following = await socialModel.isFollowing(req.user.id, targetId);
+  const stats = await socialModel.getFollowStats(targetId);
   return ok(res, {
     user: {
       id: targetUser.id,
@@ -125,8 +127,33 @@ async function getPublicProfile(req, res) {
       kyc_status: targetUser.kyc_status,
       created_at: targetUser.created_at
     },
-    profile
+    profile,
+    following,
+    ...stats
   });
+}
+
+async function toggleFollow(req, res) {
+  const targetId = req.params.id;
+  const result = await socialModel.toggleFollow(req.user.id, targetId);
+  return ok(res, result, result.following ? 'User followed' : 'User unfollowed');
+}
+
+async function getFollowStatus(req, res) {
+  const targetId = req.params.id;
+  const following = await socialModel.isFollowing(req.user.id, targetId);
+  const stats = await socialModel.getFollowStats(targetId);
+  return ok(res, { following, ...stats });
+}
+
+async function getFollowing(req, res) {
+  const users = await socialModel.getFollowingList(req.user.id);
+  return ok(res, { users });
+}
+
+async function getFollowers(req, res) {
+  const users = await socialModel.getFollowersList(req.user.id);
+  return ok(res, { users });
 }
 
 async function updateProfile(req, res) {
@@ -558,6 +585,10 @@ module.exports = {
   dashboard,
   getProfile,
   getPublicProfile,
+  toggleFollow,
+  getFollowStatus,
+  getFollowing,
+  getFollowers,
   updateProfile,
   uploadPhoto,
   ageVerify,

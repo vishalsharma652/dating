@@ -195,7 +195,15 @@ export const userApi = {
     assignedGirl?: any | null;
   }>('/user/dashboard'),
   profile: () => apiRequest<{ user: any; profile: any }>('/user/profile'),
-  getPublicProfile: (id: string | number) => apiRequest<{ user: any; profile: any }>(`/user/profile/${id}`),
+  getPublicProfile: (id: string | number) => apiRequest<{ user: any; profile: any; following?: boolean; followerCount?: number; followingCount?: number }>(`/user/profile/${id}`),
+  toggleFollow: (id: string | number) =>
+    apiRequest<{ following: boolean; followerCount: number; followingCount: number }>(`/user/follow/${id}`, {
+      method: 'POST',
+    }),
+  getFollowStatus: (id: string | number) =>
+    apiRequest<{ following: boolean; followerCount: number; followingCount: number }>(`/user/follow/${id}/status`),
+  getFollowing: () => apiRequest<{ users: any[] }>('/user/following'),
+  getFollowers: () => apiRequest<{ users: any[] }>('/user/followers'),
   updateProfile: (body: Record<string, unknown>) =>
     apiRequest<{ user: any; profile: any }>('/user/profile', {
       method: 'PUT',

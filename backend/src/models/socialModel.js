@@ -492,6 +492,116 @@ async function dueChatSessions() {
   return query(`SELECT id FROM chat_sessions WHERE status = 'active' AND COALESCE(last_charged_at, started_at) <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MINUTE)`);
 }
 
+async function ensureFollowsTable() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS user_follows (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        follower_id BIGINT UNSIGNED NOT NULL,
+        following_id BIGINT UNSIGNED NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_follow (follower_id, following_id),
+        CONSTRAINT fk_follows_follower FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_follows_following FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+  } catch (e) {}
+}
+
+async function toggleFollow(followerId, targetUserId) {
+  await ensureFollowsTable();
+  const fId = Number(followerId);
+  const tId = Number(targetUserId);
+
+  if (fId === tId) {
+    throw new AppError('You cannot follow yourself', 400);
+  }
+
+  const existing = await query(
+    'SELECT id FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
+    { fId, tId }
+  );
+
+  let following = false;
+  if (existing.length) {
+    await query('DELETE FROM user_follows WHERE follower_id = :fId AND following_id = :tId', { fId, tId });
+    following = false;
+  } else {
+    await query('INSERT INTO user_follows (follower_id, following_id) VALUES (:fId, :tId)', { fId, tId });
+    following = true;
+
+    try {
+      const followerRows = await query('SELECT name FROM users WHERE id = :fId LIMIT 1', { fId });
+      const followerName = followerRows?.[0]?.name || 'Someone';
+      await notificationModel.create(
+        tId,
+        fId,
+        'follow',
+        'New Follower! 💖',
+        `${followerName} started following you.`,
+        `/user/chat/${fId}`
+      );
+    } catch (e) {}
+  }
+
+  const stats = await getFollowStats(tId);
+  return { following, followerCount: stats.followerCount, followingCount: stats.followingCount };
+}
+
+async function isFollowing(followerId, targetUserId) {
+  await ensureFollowsTable();
+  const fId = Number(followerId);
+  const tId = Number(targetUserId);
+  const rows = await query(
+    'SELECT id FROM user_follows WHERE follower_id = :fId AND following_id = :tId LIMIT 1',
+    { fId, tId }
+  );
+  return rows.length > 0;
+}
+
+async function getFollowStats(userId) {
+  await ensureFollowsTable();
+  const uId = Number(userId);
+  const followers = await query('SELECT COUNT(*) AS count FROM user_follows WHERE following_id = :uId', { uId });
+  const following = await query('SELECT COUNT(*) AS count FROM user_follows WHERE follower_id = :uId', { uId });
+  return {
+    followerCount: Number(followers?.[0]?.count || 0),
+    followingCount: Number(following?.[0]?.count || 0)
+  };
+}
+
+async function getFollowingList(userId) {
+  await ensureFollowsTable();
+  const uId = Number(userId);
+  return query(
+    `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
+            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
+     FROM user_follows uf
+     JOIN users u ON u.id = uf.following_id
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE uf.follower_id = :uId
+     ORDER BY uf.created_at DESC`,
+    { uId }
+  );
+}
+
+async function getFollowersList(userId) {
+  await ensureFollowsTable();
+  const uId = Number(userId);
+  return query(
+    `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
+            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
+     FROM user_follows uf
+     JOIN users u ON u.id = uf.follower_id
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE uf.following_id = :uId
+     ORDER BY uf.created_at DESC`,
+    { uId }
+  );
+}
+
 module.exports = {
   like,
   matches,
@@ -508,5 +618,10 @@ module.exports = {
   chargeChatMinute,
   endChatSession,
   activeChatSession,
-  dueChatSessions
+  dueChatSessions,
+  toggleFollow,
+  isFollowing,
+  getFollowStats,
+  getFollowingList,
+  getFollowersList
 };

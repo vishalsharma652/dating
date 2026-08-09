@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video } from 'lucide-react';
+import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, apiAssetUrl } from '@/lib/api';
 
@@ -24,6 +24,9 @@ export function UserProfileModal({
 }: UserProfileModalProps) {
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [isFollowingState, setIsFollowingState] = useState<boolean>(false);
+  const [followerCount, setFollowerCount] = useState<number>(0);
+  const [followLoading, setFollowLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen && (userId || initialUser?.id)) {
@@ -32,14 +35,30 @@ export function UserProfileModal({
       userApi.getPublicProfile(targetId)
         .then((res) => {
           setProfileData(res);
+          setIsFollowingState(Boolean(res.following));
+          setFollowerCount(Number(res.followerCount || 0));
         })
         .catch(() => {
-          // Fallback to initial user if API fails
           setProfileData(null);
         })
         .finally(() => setLoading(false));
     }
   }, [isOpen, userId, initialUser]);
+
+  const handleFollowToggle = async () => {
+    const targetId = userId || initialUser?.id;
+    if (!targetId || followLoading) return;
+    setFollowLoading(true);
+    try {
+      const res = await userApi.toggleFollow(targetId);
+      setIsFollowingState(res.following);
+      setFollowerCount(res.followerCount);
+    } catch (err: any) {
+      console.error('Follow error:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -153,6 +172,40 @@ export function UserProfileModal({
               <span className="font-semibold text-white truncate block">{isOnline ? 'Active' : 'Away'}</span>
             </div>
           </div>
+        </div>
+
+        {/* Followers & Follow/Unfollow Card */}
+        <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+              <Users size={18} />
+            </div>
+            <div>
+              <span className="font-extrabold text-sm text-white">{followerCount}</span>
+              <span className="text-zinc-400 text-xs block">Followers</span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            disabled={followLoading}
+            onClick={handleFollowToggle}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition flex items-center gap-1.5 shadow-md border-0 cursor-pointer ${
+              isFollowingState
+                ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10'
+                : 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white'
+            }`}
+          >
+            {isFollowingState ? (
+              <>
+                <UserCheck size={15} /> Following
+              </>
+            ) : (
+              <>
+                <UserPlus size={15} /> Follow
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Bio Section */}
