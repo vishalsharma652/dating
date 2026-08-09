@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Users, Search, MessageCircle } from 'lucide-react';
+import { X, Users, Search, MessageCircle, Check, Clock, UserCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { userApi, apiAssetUrl } from '@/lib/api';
@@ -28,21 +28,49 @@ export function FollowersModal({
   const [search, setSearch] = useState('');
   const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
 
+  const loadData = () => {
+    setLoading(true);
+    Promise.all([
+      userApi.getFollowers(userId).catch(() => ({ users: [] })),
+      userApi.getFollowing(userId).catch(() => ({ users: [] }))
+    ])
+      .then(([fRes, gRes]) => {
+        setFollowers(fRes.users || []);
+        setFollowing(gRes.users || []);
+      })
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
-      setLoading(true);
-      Promise.all([
-        userApi.getFollowers(userId).catch(() => ({ users: [] })),
-        userApi.getFollowing(userId).catch(() => ({ users: [] }))
-      ])
-        .then(([fRes, gRes]) => {
-          setFollowers(fRes.users || []);
-          setFollowing(gRes.users || []);
-        })
-        .finally(() => setLoading(false));
+      loadData();
     }
   }, [isOpen, initialTab, userId]);
+
+  const handleToggleFollowUser = async (targetUserId: number | string) => {
+    try {
+      const res = await userApi.toggleFollow(targetUserId);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('follow:updated', { detail: { targetUserId, status: res.status } }));
+      }
+      loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRespondFollowReq = async (requestId: number, action: 'accept' | 'decline', followerId: number) => {
+    try {
+      await userApi.respondFollowRequest(requestId, action);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('follow:updated', { detail: { targetUserId: followerId, status: action === 'accept' ? 'accepted' : 'none' } }));
+      }
+      loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -148,13 +176,64 @@ export function FollowersModal({
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {activeTab === 'followers' && u.status === 'pending' ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleRespondFollowReq(u.requestId, 'accept', u.id)}
+                            className="h-7 px-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-[10px] border-0 cursor-pointer flex items-center gap-1"
+                          >
+                            <Check size={12} /> Accept
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleRespondFollowReq(u.requestId, 'decline', u.id)}
+                            className="h-7 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 font-bold text-[10px] border border-white/10 cursor-pointer flex items-center gap-1"
+                          >
+                            <X size={12} /> Decline
+                          </Button>
+                        </>
+                      ) : activeTab === 'following' && u.status === 'pending' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleToggleFollowUser(u.id)}
+                          className="h-7 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-[10px] cursor-pointer flex items-center gap-1"
+                        >
+                          <Clock size={12} /> Requested
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleToggleFollowUser(u.id)}
+                          className={`h-7 px-2.5 rounded-xl font-bold text-[10px] border-0 cursor-pointer flex items-center gap-1 ${
+                            u.status === 'accepted'
+                              ? 'bg-white/10 hover:bg-white/20 text-pink-300 border border-pink-500/30'
+                              : 'bg-[#0095F6] hover:bg-[#1877F2] text-white'
+                          }`}
+                        >
+                          {u.status === 'accepted' ? (
+                            <>
+                              <UserCheck size={12} /> Following
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus size={12} /> Follow
+                            </>
+                          )}
+                        </Button>
+                      )}
+
                       <Link href={`/user/chat/${u.id}`} onClick={onClose}>
                         <Button
                           size="icon"
-                          className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer border border-white/10"
+                          className="w-7 h-7 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer border border-white/10"
                           title="Chat with user"
                         >
-                          <MessageCircle size={14} />
+                          <MessageCircle size={13} />
                         </Button>
                       </Link>
                     </div>
