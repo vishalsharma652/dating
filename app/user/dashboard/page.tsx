@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
+import { SayHiModal } from '@/components/user/say-hi-modal';
 
 export default function DashboardPage() {
   const [data, setData] = useState<{
@@ -53,6 +54,8 @@ export default function DashboardPage() {
   const [showReferModal, setShowReferModal] = useState(false);
   const [referCopied, setReferCopied] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
+  const [existingChatUserIds, setExistingChatUserIds] = useState<Set<number>>(new Set());
+  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
 
   useEffect(() => {
     userApi.dashboard()
@@ -64,6 +67,10 @@ export default function DashboardPage() {
       .then((res) => {
         const sum = (res.chats || []).reduce((acc: number, c: any) => acc + (Number(c.unreadCount) || 0), 0);
         setUnreadMessages(sum);
+        const ids = new Set<number>(
+          (res.chats || []).map((c: any) => Number(c.userId || c.user_id || c.id))
+        );
+        setExistingChatUserIds(ids);
       })
       .catch(() => undefined);
   }, []);
@@ -148,7 +155,7 @@ export default function DashboardPage() {
       id: u.id,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
-      age: u.age || null,
+      age: u.age || (22 + (Number(u.id || 0) % 8)),
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
       isVerified: Boolean((u.kyc_status || u.kycStatus) === 'approved' || u.verified === true || u.verified === 1 || u.verified === '1'),
@@ -377,72 +384,102 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {displayActiveList.map((girl) => (
-                      <Link
-                        key={girl.id}
-                        href={`/user/chat/${girl.id}`}
-                        className="bg-[#0D1424]/90 border border-white/10 rounded-[22px] p-3.5 hover:border-[#EC4899]/50 hover:-translate-y-1 transition-all duration-300 relative group flex flex-col justify-between shadow-lg"
-                      >
-                        {/* Portrait Image Container */}
-                        <div className="relative aspect-[3/4] rounded-[16px] overflow-hidden mb-3 shadow-inner">
-                          <img
-                            src={girl.photo}
-                            alt={girl.name}
-                            className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).onerror = null;
-                              (e.currentTarget as HTMLImageElement).src = isUserMale ? '/female-logo.svg' : '/male-logo.svg';
-                            }}
-                          />
+                    {displayActiveList.map((girl) => {
+                      const girlAge = girl.age || (22 + (Number(girl.id || 0) % 8));
+                      const hasChat = existingChatUserIds.has(Number(girl.id));
 
-                          {/* Gradient Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                      return (
+                        <div
+                          key={girl.id}
+                          className="bg-[#0D1424]/90 border border-white/10 rounded-[22px] p-3.5 hover:border-[#EC4899]/50 hover:-translate-y-1 transition-all duration-300 relative group flex flex-col justify-between shadow-lg"
+                        >
+                          {/* Portrait Image Container */}
+                          <Link href={`/user/chat/${girl.id}`} className="relative aspect-[3/4] rounded-[16px] overflow-hidden mb-3 shadow-inner block">
+                            <img
+                              src={girl.photo}
+                              alt={girl.name}
+                              className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).onerror = null;
+                                (e.currentTarget as HTMLImageElement).src = isUserMale ? '/female-logo.svg' : '/male-logo.svg';
+                              }}
+                            />
 
-                          {/* Top Right Blue Tick Icon */}
-                          {girl.isVerified && (
-                            <div
-                              className="absolute top-1 right-1 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
-                            >
-                              <CheckCircle2 size={15} className="fill-white text-[#3B82F6]" />
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+
+                            {/* Top Right Blue Tick Icon */}
+                            {girl.isVerified && (
+                              <div
+                                className="absolute top-1 right-1 z-10 flex items-center justify-center w-6 h-6 rounded-full bg-[#3B82F6] text-white shadow-[0_2px_8px_rgba(59,130,246,0.6)] border border-white/40 backdrop-blur-md"
+                              >
+                                <CheckCircle2 size={15} className="fill-white text-[#3B82F6]" />
+                              </div>
+                            )}
+
+                            {/* Pink Heart Action Badge - Bottom Right */}
+                            <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
+                              <Heart size={13} className="fill-current text-white" />
                             </div>
-                          )}
+                          </Link>
 
-                          {/* Pink Heart Action Badge - Bottom Right */}
-                          <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
-                            <Heart size={13} className="fill-current text-white" />
-                          </div>
-                        </div>
+                          {/* Dedicated Metadata Section Below Image */}
+                          <div className="space-y-1.5 text-left px-0.5 pb-0.5">
+                            {/* Full Name */}
+                            <Link href={`/user/chat/${girl.id}`}>
+                              <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
+                                {girl.name}
+                              </h3>
+                            </Link>
 
-                        {/* Dedicated Metadata Section Below Image */}
-                        <div className="space-y-1.5 text-left px-0.5 pb-0.5">
-                          {/* Full Name (Line 1 - Full Width) */}
-                          <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
-                            {girl.name}
-                          </h3>
+                            {/* Age & Location */}
+                            <p className="text-xs font-semibold text-zinc-400 truncate">
+                              {girlAge} yrs{girl.location ? ` • ${girl.location}` : ''}
+                            </p>
 
-                          {/* Age & Location (Line 2) */}
-                          <p className="text-xs font-semibold text-zinc-400 truncate">
-                            {girl.age ? `${girl.age} yrs` : ''}{girl.age && girl.location ? ' • ' : ''}{girl.location ? `${girl.location}` : ''}
-                          </p>
+                            {/* Online Status & Unique ID */}
+                            <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/5">
+                              {/* Online Indicator */}
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
+                                <span className={`text-[10px] font-extrabold uppercase tracking-wider ${girl.status === 'Online' ? 'text-[#10B981]' : 'text-zinc-400'}`}>
+                                  {girl.status === 'Online' ? 'Online' : 'Offline'}
+                                </span>
+                              </div>
 
-                          {/* Online Status & Unique ID (Line 3 - Bottom Bar) */}
-                          <div className="flex items-center justify-between gap-1 pt-2 border-t border-white/5">
-                            {/* Online Indicator */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
-                              <span className={`text-[10px] font-extrabold uppercase tracking-wider ${girl.status === 'Online' ? 'text-[#10B981]' : 'text-zinc-400'}`}>
-                                {girl.status === 'Online' ? 'Online' : 'Offline'}
+                              {/* Unique ID Badge */}
+                              <span className="text-[10px] font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 shadow-sm whitespace-nowrap">
+                                {girl.uniqueId}
                               </span>
                             </div>
-
-                            {/* Unique ID Badge */}
-                            <span className="text-[10px] font-mono font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 shadow-sm whitespace-nowrap">
-                              {girl.uniqueId}
-                            </span>
                           </div>
+
+                          {/* Action Button: Message or Say Hi */}
+                          {hasChat ? (
+                            <Button
+                              size="sm"
+                              asChild
+                              className="w-full mt-2.5 h-8.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm border-0 cursor-pointer"
+                            >
+                              <Link href={`/user/chat/${girl.id}`}>
+                                <MessageCircle size={13} className="text-white" />
+                                <span>Message 💬</span>
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              type="button"
+                              onClick={() => setSayHiTarget({ id: girl.id, name: girl.name, photo: girl.photo, location: girl.location })}
+                              className="w-full mt-2.5 h-8.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm border-0 cursor-pointer"
+                            >
+                              <Sparkles size={13} className="text-white" />
+                              <span>Say Hi 👋</span>
+                            </Button>
+                          )}
                         </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Bottom alert banner */}
@@ -678,6 +715,12 @@ export default function DashboardPage() {
           </div>
         );
       })()}
+      <SayHiModal
+        isOpen={Boolean(sayHiTarget)}
+        onClose={() => setSayHiTarget(null)}
+        targetUser={sayHiTarget}
+        currentCoins={user?.coins}
+      />
     </div>
   );
 }

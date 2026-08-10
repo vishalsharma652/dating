@@ -39,7 +39,7 @@ async function dashboard(req, res) {
       COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, 
       u.name,
       COALESCE(u.gender, p.gender, '') AS gender,
-      COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age,
+      COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age, (22 + (u.id % 8))) AS age,
       COALESCE(p.city, '') AS location, 
       COALESCE(p.bio, '') AS bio, 
       COALESCE((SELECT url FROM profile_photos WHERE profile_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1), '') AS photo,

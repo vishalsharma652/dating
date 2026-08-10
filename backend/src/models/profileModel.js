@@ -94,7 +94,7 @@ async function discover(userId, { limit = 20 } = {}) {
   const genderParams = genderAliasParams(targetGender);
 
   const rows = await query(
-    `SELECT u.id, COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age, p.city AS location, p.bio,
+    `SELECT u.id, COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age, (22 + (u.id % 8))) AS age, p.city AS location, p.bio,
       COALESCE(pp.url, '') AS photo, u.kyc_status = 'approved' AS verified,
       p.interests, 85 AS matchScore
      FROM users u
@@ -118,7 +118,7 @@ async function activeOppositeGenderUsers(userId, { limit = 8 } = {}) {
   const genderParams = genderAliasParams(targetGender);
 
   const rows = await query(
-    `SELECT u.id, COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age) AS age,
+    `SELECT u.id, COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS unique_id, u.name, COALESCE(TIMESTAMPDIFF(YEAR, u.dob, CURDATE()), p.age, (22 + (u.id % 8))) AS age,
       p.city AS location, p.bio, COALESCE(pp.url, '') AS photo,
       u.kyc_status = 'approved' AS verified, p.interests,
       u.online_status AS online, u.last_seen_at AS lastSeenAt

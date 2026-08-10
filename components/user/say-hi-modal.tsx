@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Sparkles, MessageCircle, Coins, Check, Loader2 } from 'lucide-react';
 import { userApi } from '@/lib/api';
@@ -30,6 +30,17 @@ export function SayHiModal({ isOpen, onClose, targetUser, currentCoins }: SayHiM
   const [selectedQuestion, setSelectedQuestion] = useState(SAY_HI_QUESTIONS[0]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   if (!isOpen || !targetUser) return null;
 

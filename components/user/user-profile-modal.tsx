@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, apiAssetUrl } from '@/lib/api';
 import { FollowersModal } from '@/components/user/followers-modal';
+import { SayHiModal } from '@/components/user/say-hi-modal';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export function UserProfileModal({
   onVoiceCall,
   onVideoCall,
 }: UserProfileModalProps) {
+  const router = useRouter();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none');
@@ -30,6 +33,9 @@ export function UserProfileModal({
   const [followLoading, setFollowLoading] = useState<boolean>(false);
   const [showFollowersModal, setShowFollowersModal] = useState<boolean>(false);
   const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
+  const [hasExistingChat, setHasExistingChat] = useState<boolean>(false);
+  const [sayHiTarget, setSayHiTarget] = useState<any>(null);
+  const [userCoins, setUserCoins] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isOpen || !(userId || initialUser?.id)) return;
@@ -47,6 +53,23 @@ export function UserProfileModal({
       })
       .finally(() => setLoading(false));
 
+    userApi.chats()
+      .then((res) => {
+        const ids = new Set<number>(
+          (res.chats || []).map((c: any) => Number(c.userId || c.user_id || c.id))
+        );
+        setHasExistingChat(ids.has(Number(targetId)));
+      })
+      .catch(() => setHasExistingChat(false));
+
+    userApi.dashboard()
+      .then((dash) => {
+        if (dash?.user?.coins !== undefined) {
+          setUserCoins(dash.user.coins);
+        }
+      })
+      .catch(() => undefined);
+
     const handleGlobalFollowUpdate = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && Number(detail.targetUserId) === Number(targetId)) {
@@ -60,6 +83,17 @@ export function UserProfileModal({
       window.removeEventListener('follow:updated', handleGlobalFollowUpdate);
     };
   }, [isOpen, userId, initialUser]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const handleFollowToggle = async () => {
     const targetId = userId || initialUser?.id;
@@ -112,8 +146,8 @@ export function UserProfileModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-sm sm:max-w-md bg-[#0D1424] border border-white/15 rounded-3xl p-6 shadow-2xl relative text-white space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-sm sm:max-w-md bg-[#0D1424] border border-white/15 rounded-3xl p-4.5 sm:p-5 shadow-2xl relative text-white space-y-3.5 max-h-[92vh] overflow-y-auto">
         
         {/* Glow Accents */}
         <div className="absolute -top-12 -left-12 w-36 h-36 bg-[#EC4899]/20 rounded-full blur-3xl pointer-events-none" />
@@ -123,13 +157,13 @@ export function UserProfileModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition cursor-pointer z-10"
+          className="absolute top-3.5 right-3.5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition cursor-pointer z-10"
         >
           <X size={18} />
         </button>
 
         {/* Main Header / Image Banner */}
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border border-white/10 mt-2">
+        <div className="relative h-40 sm:h-44 rounded-2xl overflow-hidden shadow-xl border border-white/10 mt-1">
           <img
             src={photoUrl}
             alt={name}
@@ -169,10 +203,10 @@ export function UserProfileModal({
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="grid grid-cols-2 gap-2 text-xs">
           {location && (
-            <div className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2.5">
-              <MapPin size={16} className="text-[#EC4899] shrink-0" />
+            <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2">
+              <MapPin size={15} className="text-[#EC4899] shrink-0" />
               <div>
                 <span className="text-zinc-400 block text-[10px]">Location</span>
                 <span className="font-semibold text-white truncate block">{location}</span>
@@ -180,8 +214,8 @@ export function UserProfileModal({
             </div>
           )}
 
-          <div className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2.5">
-            <ShieldCheck size={16} className={isVerified ? "text-emerald-400 shrink-0" : "text-amber-400 shrink-0"} />
+          <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2">
+            <ShieldCheck size={15} className={isVerified ? "text-emerald-400 shrink-0" : "text-amber-400 shrink-0"} />
             <div>
               <span className="text-zinc-400 block text-[10px]">Verification</span>
               <span className="font-semibold text-white truncate block">
@@ -190,16 +224,16 @@ export function UserProfileModal({
             </div>
           </div>
 
-          <div className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2.5">
-            <Calendar size={16} className="text-purple-400 shrink-0" />
+          <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2">
+            <Calendar size={15} className="text-purple-400 shrink-0" />
             <div>
               <span className="text-zinc-400 block text-[10px]">Joined</span>
               <span className="font-semibold text-white truncate block">{joinedDate}</span>
             </div>
           </div>
 
-          <div className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2.5">
-            <User size={16} className="text-blue-400 shrink-0" />
+          <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2">
+            <User size={15} className="text-blue-400 shrink-0" />
             <div>
               <span className="text-zinc-400 block text-[10px]">Status</span>
               <span className="font-semibold text-white truncate block">{isOnline ? 'Active' : 'Away'}</span>
@@ -208,7 +242,7 @@ export function UserProfileModal({
         </div>
 
         {/* Instagram Style Stats Row */}
-        <div className="grid grid-cols-3 gap-2 p-3 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl text-center">
+        <div className="grid grid-cols-3 gap-2 p-2.5 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 rounded-2xl text-center">
           <div
             onClick={() => {
               setFollowersModalTab('followers');
@@ -237,36 +271,64 @@ export function UserProfileModal({
           </div>
         </div>
 
-        {/* Full Width Instagram Style Follow / Requested / Following Button */}
-        <Button
-          type="button"
-          disabled={followLoading}
-          onClick={handleFollowToggle}
-          className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg border-0 cursor-pointer ${
-            followStatus === 'accepted'
-              ? 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
-              : followStatus === 'pending'
-              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
-              : 'bg-[#0095F6] hover:bg-[#1877F2] text-white font-extrabold tracking-wide'
-          }`}
-        >
-          {followStatus === 'accepted' ? (
-            <>
-              <UserCheck size={16} className="text-pink-400" />
-              <span>Following ✓</span>
-            </>
-          ) : followStatus === 'pending' ? (
-            <>
-              <Clock size={16} />
-              <span>Requested ⏳</span>
-            </>
+        {/* Actions Row: Follow & Say Hi / Message */}
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            disabled={followLoading}
+            onClick={handleFollowToggle}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer ${
+              followStatus === 'accepted'
+                ? 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+                : followStatus === 'pending'
+                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                : 'bg-[#0095F6] hover:bg-[#1877F2] text-white font-extrabold tracking-wide'
+            }`}
+          >
+            {followStatus === 'accepted' ? (
+              <>
+                <UserCheck size={15} className="text-pink-400" />
+                <span>Following ✓</span>
+              </>
+            ) : followStatus === 'pending' ? (
+              <>
+                <Clock size={15} />
+                <span>Requested ⏳</span>
+              </>
+            ) : (
+              <>
+                <UserPlus size={15} />
+                <span>Follow</span>
+              </>
+            )}
+          </Button>
+
+          {hasExistingChat ? (
+            <Button
+              type="button"
+              onClick={() => {
+                onClose();
+                router.push(`/user/chat/${userId || initialUser?.id}`);
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+            >
+              <MessageCircle size={15} />
+              <span>Message 💬</span>
+            </Button>
           ) : (
-            <>
-              <UserPlus size={16} />
-              <span>Follow</span>
-            </>
+            <Button
+              type="button"
+              onClick={() => {
+                const targetId = userId || initialUser?.id;
+                setSayHiTarget({ id: targetId, name, photo: photoUrl, location });
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#EC4899] via-pink-600 to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+            >
+              <Sparkles size={15} />
+              <span>Say Hi 👋</span>
+            </Button>
           )}
-        </Button>
+        </div>
 
         {/* Bio Section */}
         <div className="space-y-1.5 p-3.5 bg-white/5 border border-white/5 rounded-xl text-xs">
@@ -318,6 +380,17 @@ export function UserProfileModal({
       onClose={() => setShowFollowersModal(false)}
       initialTab={followersModalTab}
       userId={userId || initialUser?.id}
+    />
+
+    {/* Say Hi Modal */}
+    <SayHiModal
+      isOpen={Boolean(sayHiTarget)}
+      onClose={() => {
+        setSayHiTarget(null);
+        onClose();
+      }}
+      targetUser={sayHiTarget}
+      currentCoins={userCoins}
     />
   </>
   );

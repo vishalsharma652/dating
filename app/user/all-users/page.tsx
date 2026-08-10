@@ -84,7 +84,7 @@ function AllUsersContent() {
       isTargetFemale,
       uniqueId: String(u.unique_id || u.uniqueId || u.id || '').replace(/^STK-/i, '').padStart(6, '0'),
       name: u.name || 'User',
-      age: u.age || null,
+      age: u.age || (22 + (Number(u.id || 0) % 8)),
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
       kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
@@ -278,21 +278,23 @@ function AllUsersContent() {
 
                 {existingChatUserIds.has(Number(u.id)) ? (
                   <Button
+                    size="sm"
                     asChild
-                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                    className="w-full mt-2.5 h-8.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm border-0 cursor-pointer"
                   >
                     <Link href={`/user/chat/${u.id}`}>
-                      <MessageCircle size={14} className="text-white" />
+                      <MessageCircle size={13} className="text-white" />
                       <span>Message 💬</span>
                     </Link>
                   </Button>
                 ) : (
                   <Button
+                    size="sm"
                     type="button"
                     onClick={() => setSayHiTarget({ id: u.id, name: u.name, photo: u.photo, location: u.location })}
-                    className="w-full mt-3.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs py-2 flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
+                    className="w-full mt-2.5 h-8.5 rounded-xl bg-gradient-to-r from-[#EC4899] to-[#7C3AED] hover:from-[#FF5DAB] hover:to-[#8B5CF6] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm border-0 cursor-pointer"
                   >
-                    <Sparkles size={14} className="text-white" />
+                    <Sparkles size={13} className="text-white" />
                     <span>Say Hi 👋</span>
                   </Button>
                 )}
