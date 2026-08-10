@@ -42,9 +42,12 @@ function App() {
   const [userKyc, setUserKyc] = useState('');
   const [userSort, setUserSort] = useState('newest');
 
-  // Wallet Pagination States
+  // Wallet Pagination & Filter States
   const [walletPage, setWalletPage] = useState(1);
   const [walletTotal, setWalletTotal] = useState(0);
+  const [walletGender, setWalletGender] = useState('');
+  const [walletSearch, setWalletSearch] = useState('');
+  const [walletDate, setWalletDate] = useState('');
 
   // Modals States
   const [detailModal, setDetailModal] = useState({
@@ -135,7 +138,7 @@ function App() {
 
   const loadWalletTransactions = async () => {
     try {
-      const res = await apiRequest(`/admin/wallet/transactions?page=${walletPage}&limit=10`);
+      const res = await apiRequest(`/admin/wallet/transactions?page=${walletPage}&limit=10&gender=${walletGender}&search=${encodeURIComponent(walletSearch)}&date=${walletDate}`);
       setWalletTransactions(res.data.transactions || []);
       setWalletTotal(res.data.total || 0);
     } catch (err) {
@@ -147,7 +150,7 @@ function App() {
     if (token) {
       loadWalletTransactions();
     }
-  }, [token, walletPage]);
+  }, [token, walletPage, walletGender, walletSearch, walletDate]);
 
   const loadAllData = async () => {
     setLoading(true);
@@ -554,12 +557,16 @@ function App() {
       case 'wallet':
         return (
           <window.Wallet
-            users={dropdownUsers}
             transactions={walletTransactions}
             total={walletTotal}
             page={walletPage}
             onPageChange={setWalletPage}
-            onAdjust={handleAdjustWallet}
+            gender={walletGender}
+            onGenderChange={setWalletGender}
+            search={walletSearch}
+            onSearchChange={setWalletSearch}
+            date={walletDate}
+            onDateChange={setWalletDate}
             dateStr={dateStr}
           />
         );

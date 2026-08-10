@@ -142,18 +142,71 @@ async function updateKyc(id, { status }) {
 }
 
 
-async function walletLogs({ page = 1, limit = 10 } = {}) {
+async function walletLogs({ page = 1, limit = 10, search = '', gender = '', date = '', type = '' } = {}) {
   const pageNumber = Math.max(Number(page) || 1, 1);
   const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 100);
   const offset = (pageNumber - 1) * limitNumber;
+
+  const filters = ['1=1'];
+  const params = {};
+
+  if (search && String(search).trim() !== '') {
+    const rawSearch = String(search).trim();
+    params.search = `%${rawSearch}%`;
+    const extractedNum = rawSearch.replace(/^(id|#|stk-?)[:\s]*/i, '');
+    if (/^\d+$/.test(extractedNum)) {
+      params.exactId = Number(extractedNum);
+      filters.push('(u.id = :exactId OR u.unique_id LIKE :search OR u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR wt.title LIKE :search OR wt.description LIKE :search)');
+    } else {
+      filters.push('(u.unique_id LIKE :search OR u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR wt.title LIKE :search OR wt.description LIKE :search)');
+    }
+  }
+
+  if (gender && String(gender).trim() !== '') {
+    const cleanGender = String(gender).trim().toLowerCase();
+    if (['male', 'man', 'boy', 'men'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("male", "man", "boy", "men")');
+    } else if (['female', 'woman', 'girl', 'women'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("female", "woman", "girl", "women")');
+    } else {
+      filters.push('LOWER(u.gender) = :gender');
+      params.gender = cleanGender;
+    }
+  }
+
+  if (date && String(date).trim() !== '') {
+    filters.push('DATE(wt.created_at) = :date');
+    params.date = String(date).trim();
+  }
+
+  if (type && String(type).trim() !== '') {
+    const cleanType = String(type).trim().toLowerCase();
+    if (cleanType === 'add' || cleanType === 'credit') {
+      filters.push('(wt.coins > 0 OR wt.type IN ("purchase", "earning", "reward"))');
+    } else if (cleanType === 'deduct' || cleanType === 'debit') {
+      filters.push('(wt.coins < 0 OR wt.type IN ("spending", "chat", "call", "withdrawal"))');
+    } else {
+      filters.push('wt.type = :type');
+      params.type = cleanType;
+    }
+  }
+
+  const whereClause = filters.join(' AND ');
+
   const [transactions, countRows] = await Promise.all([
     query(
-      `SELECT wt.*, u.name AS user_name, u.phone AS user_phone
+      `SELECT wt.id, wt.user_id, wt.type, wt.title, wt.description, wt.amount, wt.coins, wt.status, wt.created_at,
+              DATE_FORMAT(wt.created_at, '%d %b %Y') AS tx_date,
+              DATE_FORMAT(wt.created_at, '%h:%i:%s %p') AS tx_time,
+              u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.gender AS user_gender,
+              COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id
        FROM wallet_transactions wt
        LEFT JOIN users u ON u.id = wt.user_id
-       ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`
+       WHERE ${whereClause}
+       ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+      params
     ),
-    query('SELECT COUNT(*) AS total FROM wallet_transactions')
+    query(`SELECT COUNT(*) AS total FROM wallet_transactions wt LEFT JOIN users u ON u.id = wt.user_id WHERE ${whereClause}`, params)
   ]);
   const total = countRows[0]?.total || 0;
   return { transactions, total };

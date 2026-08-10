@@ -15,7 +15,7 @@ async function start() {
     await pool.query('ALTER TABLE users ADD COLUMN unique_id VARCHAR(20) NULL UNIQUE AFTER id');
   } catch {}
   try {
-    await pool.query("UPDATE users SET unique_id = CONCAT('STK-', LPAD(id, 6, '0')) WHERE unique_id IS NULL OR unique_id = ''");
+    await pool.query("UPDATE users SET unique_id = LPAD(id, 6, '0') WHERE unique_id IS NULL OR unique_id = '' OR unique_id LIKE 'STK-%'");
   } catch {}
   try {
     await pool.query(`

@@ -2,22 +2,19 @@ const { useState } = React;
 
 const PAGE_SIZE = 10;
 
-window.Wallet = function Wallet({ users, transactions, total, page, onPageChange, onAdjust, dateStr }) {
-  const [filterText, setFilterText] = useState('');
-
-  // Local search filter on the current page of transactions
-  const filteredTransactions = transactions.filter((tx) => {
-    const userName = tx.user_name || `User #${tx.user_id}`;
-    const desc = tx.description || tx.title || '';
-    const type = tx.type || '';
-    const term = filterText.toLowerCase();
-    return (
-      userName.toLowerCase().includes(term) ||
-      desc.toLowerCase().includes(term) ||
-      type.toLowerCase().includes(term)
-    );
-  });
-
+window.Wallet = function Wallet({
+  transactions,
+  total,
+  page,
+  onPageChange,
+  gender,
+  onGenderChange,
+  search,
+  onSearchChange,
+  date,
+  onDateChange,
+  dateStr
+}) {
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
   const getPageNumbers = () => {
@@ -36,86 +33,173 @@ window.Wallet = function Wallet({ users, transactions, total, page, onPageChange
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo   = Math.min(page * PAGE_SIZE, total);
 
+  // Helper to format time cleanly
+  const formatTime = (timeStr, txTime) => {
+    if (txTime) return txTime;
+    if (!timeStr) return '-';
+    try {
+      const d = new Date(timeStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    } catch {
+      return '-';
+    }
+  };
+
+  // Helper to format date cleanly
+  const formatDate = (timeStr, txDate) => {
+    if (txDate) return txDate;
+    if (!timeStr) return '-';
+    return dateStr ? dateStr(timeStr) : new Date(timeStr).toLocaleDateString();
+  };
+
+  // Helper to format type badge
+  const getTypeBadge = (type, title, coins) => {
+    const rawType = String(type || '').toLowerCase();
+    const rawTitle = String(title || '').toLowerCase();
+    const isCredit = coins > 0 || ['purchase', 'earning', 'credit', 'reward'].includes(rawType);
+
+    let label = type || 'Transaction';
+    if (rawType === 'purchase') label = 'Coin Purchase';
+    else if (rawType === 'spending') label = 'Spent / Deduct';
+    else if (rawType === 'earning') label = 'Earned / Credit';
+    else if (rawType === 'chat') label = 'Chat Message';
+    else if (rawType === 'call') label = 'Voice / Video Call';
+    else if (rawType === 'gift') label = 'Gift Sent';
+    else if (rawType === 'reward') label = 'Daily Reward';
+    else if (rawTitle.includes('admin') || rawType.includes('admin')) label = isCredit ? 'Admin Credit' : 'Admin Deduct';
+
+    return (
+      <span className={`badge ${isCredit ? 'green' : 'red'}`} style={{ fontWeight: 600, fontSize: '11px' }}>
+        {label}
+      </span>
+    );
+  };
+
   return (
     <section className="panel">
       <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        {/* ── Wallet Adjustment Form ─────────────────────────── */}
-        <form
-          className="toolbar"
-          onSubmit={onAdjust}
-          style={{
-            background: 'rgba(255,255,255,0.015)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '16px',
-            display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <select className="select" name="userId" required style={{ flex: '1', minWidth: '200px' }}>
-            <option value="">Select user</option>
-            {users.filter((u) => u.role === 'user').map((u) => (
-              <option key={u.id} value={u.id}>{u.name} ({u.email || u.unique_id || `ID #${u.id}`})</option>
-            ))}
-          </select>
-          <input className="input" name="coins" type="number" min="1" placeholder="Coin amount" required style={{ flex: '1', minWidth: '150px' }} />
-          <input className="input" name="reason" placeholder="Admin reason" style={{ flex: '2', minWidth: '200px' }} />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn success" name="mode" value="add" type="submit">Add Coins</button>
-            <button className="btn danger" name="mode" value="deduct" type="submit">Deduct</button>
-          </div>
-        </form>
-
-        {/* ── Transaction History Header ─────────────────────── */}
+        {/* ── Filters Bar ─────────────────────────────────────── */}
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: '4px', flexWrap: 'wrap', gap: '10px'
+          background: 'rgba(255,255,255,0.015)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          padding: '18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px'
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>Transaction History</h3>
-
-          {/* Local search filter */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
-            <span style={{
-              position: 'absolute', left: '10px', top: '50%',
-              transform: 'translateY(-50%)', color: '#71717a',
-              display: 'flex', alignItems: 'center', pointerEvents: 'none'
+          {/* Top Title & Quick Stats */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 'bold', color: '#f4f4f5', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🪙</span> Daily Coin Activity & Transaction History
+              </h3>
+              <p className="muted" style={{ fontSize: '12px', marginTop: '2px' }}>
+                Track real-time coin additions, deductions, spendings, and earnings of all users
+              </p>
+            </div>
+            <div style={{
+              fontSize: '12px',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.25)',
+              color: '#818cf8',
+              fontWeight: 'bold'
             }}>
-              <window.Icon name="search" size={14} />
-            </span>
-            <input
-              className="input"
-              placeholder="Search by user or description..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              style={{ paddingLeft: '30px', paddingRight: '30px', height: '36px', fontSize: '13px', borderRadius: '8px' }}
-            />
-            {filterText && (
-              <button
-                type="button"
-                onClick={() => setFilterText('')}
-                style={{
-                  position: 'absolute', right: '10px', top: '50%',
-                  transform: 'translateY(-50%)', background: 'none', border: 'none',
-                  color: '#71717a', padding: 0, display: 'flex', alignItems: 'center', cursor: 'pointer'
-                }}
+              Total Records: {total}
+            </div>
+          </div>
+
+          {/* Filter Inputs Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+
+            {/* Search Input */}
+            <div style={{ position: 'relative', gridColumn: 'span 2', minWidth: '220px' }}>
+              <span style={{
+                position: 'absolute', left: '12px', top: '50%',
+                transform: 'translateY(-50%)', color: '#71717a',
+                display: 'flex', alignItems: 'center', pointerEvents: 'none'
+              }}>
+                <window.Icon name="search" size={15} />
+              </span>
+              <input
+                className="input"
+                placeholder="Search by User Name, Unique ID, Email, or Reason..."
+                value={search || ''}
+                onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
+                style={{ paddingLeft: '36px', paddingRight: '36px', height: '40px', width: '100%', borderRadius: '8px', fontSize: '13px' }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => { onSearchChange(''); onPageChange(1); }}
+                  style={{
+                    position: 'absolute', right: '12px', top: '50%',
+                    transform: 'translateY(-50%)', background: 'none', border: 'none',
+                    color: '#71717a', padding: 0, display: 'flex', alignItems: 'center', cursor: 'pointer'
+                  }}
+                >
+                  <window.Icon name="x" size={15} />
+                </button>
+              )}
+            </div>
+
+            {/* Gender Filter */}
+            <div>
+              <select
+                className="select"
+                value={gender || ''}
+                onChange={(e) => { onGenderChange(e.target.value); onPageChange(1); }}
+                style={{ height: '40px', width: '100%', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', fontSize: '13px', border: '1px solid var(--border)' }}
               >
-                <window.Icon name="x" size={14} />
-              </button>
-            )}
+                <option value="">All</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            {/* Date Filter */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="date"
+                className="input"
+                value={date || ''}
+                title="Filter by specific date"
+                onChange={(e) => { onDateChange(e.target.value); onPageChange(1); }}
+                style={{ height: '40px', width: '100%', borderRadius: '8px', fontSize: '13px', background: 'rgba(255,255,255,0.04)' }}
+              />
+              {date && (
+                <button
+                  type="button"
+                  title="Clear Date"
+                  onClick={() => { onDateChange(''); onPageChange(1); }}
+                  style={{
+                    position: 'absolute', right: '28px', top: '50%',
+                    transform: 'translateY(-50%)', background: 'none', border: 'none',
+                    color: '#71717a', padding: 0, display: 'flex', alignItems: 'center', cursor: 'pointer'
+                  }}
+                >
+                  <window.Icon name="x" size={13} />
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
 
         {/* ── Transactions Table ─────────────────────────────── */}
         <div className="table-wrap">
-          {filteredTransactions.length === 0 ? (
+          {transactions.length === 0 ? (
             <div className="empty">
               <div>
                 <div className="metric-icon" style={{ margin: '0 auto' }}>--</div>
-                <p className="empty-title">No Data Found</p>
-                <h3 style={{ marginTop: '8px' }}>No wallet transactions</h3>
-                <p className="muted" style={{ marginTop: '8px' }}>No transactions match your search or filter.</p>
+                <p className="empty-title">No Activity Found</p>
+                <h3 style={{ marginTop: '8px' }}>No coin transactions found</h3>
+                <p className="muted" style={{ marginTop: '8px' }}>
+                  No coin activity matches your selected filters or date.
+                </p>
               </div>
             </div>
           ) : (
@@ -123,34 +207,116 @@ window.Wallet = function Wallet({ users, transactions, total, page, onPageChange
               <table>
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Coins</th>
+                    <th>User Details</th>
+                    <th>Date & Time</th>
+                    <th>Coin Amount</th>
+                    <th>Transaction Type</th>
+                    <th>Reason / Source</th>
                     <th>Status</th>
-                    <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((tx, idx) => (
-                    <tr key={tx.id || idx}>
-                      <td>
-                        {tx.user_name || `User #${tx.user_id}`}<br />
-                        <span className="muted" style={{ fontSize: '12px' }}>{tx.user_email || ''}</span>
-                      </td>
-                      <td>{tx.type || '-'}</td>
-                      <td>{tx.description || tx.title || '-'}</td>
-                      <td style={{ fontWeight: 'bold', color: tx.coins > 0 ? 'var(--success)' : 'var(--danger)' }}>
-                        {tx.coins > 0 ? `+${tx.coins}` : tx.coins}
-                      </td>
-                      <td>
-                        <span className={`badge ${tx.status === 'completed' || tx.status === 'success' ? 'green' : 'red'}`}>
-                          {tx.status || '-'}
-                        </span>
-                      </td>
-                      <td>{dateStr(tx.created_at)}</td>
-                    </tr>
-                  ))}
+                  {transactions.map((tx, idx) => {
+                    const avatarLetter = tx.user_name ? tx.user_name.charAt(0).toUpperCase() : '?';
+                    const displayId = String(tx.user_unique_id || tx.user_id || '').replace(/^STK-/i, '').padStart(6, '0');
+                    const rawType = String(tx.type || '').toLowerCase();
+                    const isCredit = Number(tx.coins) > 0 || ['purchase', 'earning', 'credit', 'reward'].includes(rawType);
+                    const coinVal = Math.abs(Number(tx.coins) || 0);
+
+                    return (
+                      <tr key={tx.id || idx}>
+                        {/* User Details */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '36px', height: '36px', borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #6366f1, #4338ca)',
+                              display: 'grid', placeItems: 'center', fontSize: '13px',
+                              fontWeight: 'bold', color: 'white', flexShrink: 0,
+                              border: '1px solid rgba(255,255,255,0.15)'
+                            }}>
+                              {avatarLetter}
+                            </div>
+                            <div>
+                              <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
+                                {tx.user_name || `User #${tx.user_id}`}
+                              </strong>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                <span style={{
+                                  fontFamily: 'monospace',
+                                  fontWeight: 800,
+                                  color: '#10b981',
+                                  background: 'rgba(16,185,129,0.1)',
+                                  padding: '1px 6px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  border: '1px solid rgba(16,185,129,0.2)'
+                                }}>🆔 {displayId}</span>
+                                {tx.user_email && (
+                                  <span className="muted" style={{ fontSize: '11px' }}>
+                                    {tx.user_email}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Date & Time */}
+                        <td>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7' }}>
+                            📅 {formatDate(tx.created_at, tx.tx_date)}
+                          </div>
+                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '2px', fontFamily: 'monospace' }}>
+                            ⏰ {formatTime(tx.created_at, tx.tx_time)}
+                          </div>
+                        </td>
+
+                        {/* Coin Amount */}
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '16px',
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            fontFamily: 'monospace',
+                            color: isCredit ? '#10b981' : '#f43f5e',
+                            background: isCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
+                            border: `1px solid ${isCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
+                          }}>
+                            {isCredit ? `+${coinVal}` : `-${coinVal}`} Coins
+                          </span>
+                        </td>
+
+                        {/* Transaction Type */}
+                        <td>
+                          {getTypeBadge(tx.type, tx.title, tx.coins)}
+                        </td>
+
+                        {/* Reason / Source */}
+                        <td>
+                          <div style={{ fontSize: '13px', color: '#d4d4d8', maxWidth: '280px', wordBreak: 'break-word' }}>
+                            {tx.description || tx.title || '-'}
+                          </div>
+                          {tx.amount > 0 && (
+                            <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                              Amount: ₹{Number(tx.amount).toFixed(2)}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td>
+                          <span className={`badge ${tx.status === 'completed' || tx.status === 'success' ? 'green' : 'yellow'}`}>
+                            {tx.status || 'completed'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -162,7 +328,7 @@ window.Wallet = function Wallet({ users, transactions, total, page, onPageChange
               }}>
                 {/* Record count */}
                 <div className="muted" style={{ fontSize: '13px' }}>
-                  Showing <strong>{showingFrom}</strong> to <strong>{showingTo}</strong> of <strong>{total}</strong> transactions
+                  Showing <strong>{showingFrom}</strong> to <strong>{showingTo}</strong> of <strong>{total}</strong> coin records
                 </div>
 
                 {/* Navigation buttons */}
