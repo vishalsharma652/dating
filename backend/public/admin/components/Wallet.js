@@ -87,121 +87,6 @@ window.Wallet = function Wallet({
     <section className="panel">
       <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        {/* ── Daily Summary & Totals Cards ────────────────────── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '14px'
-        }}>
-          {/* Card 1: Total Deducted / Spent */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(244,63,94,0.08), rgba(244,63,94,0.02))',
-            border: '1px solid rgba(244,63,94,0.22)',
-            borderRadius: '12px',
-            padding: '16px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px'
-          }}>
-            <div style={{
-              width: '42px', height: '42px', borderRadius: '10px',
-              background: 'rgba(244,63,94,0.15)',
-              display: 'grid', placeItems: 'center', color: '#fb7185', flexShrink: 0
-            }}>
-              <window.Icon name="trending-down" size={20} />
-            </div>
-            <div>
-              <span className="muted" style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                Total Used / Deducted
-              </span>
-              <h4 style={{ fontSize: '19px', fontWeight: 800, color: '#f43f5e', margin: '3px 0 0', fontFamily: 'monospace' }}>
-                -{totalDeducted.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600, color: '#fb7185' }}>Coins</span>
-              </h4>
-            </div>
-          </div>
-
-          {/* Card 2: Total Added / Earned */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))',
-            border: '1px solid rgba(16,185,129,0.22)',
-            borderRadius: '12px',
-            padding: '16px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px'
-          }}>
-            <div style={{
-              width: '42px', height: '42px', borderRadius: '10px',
-              background: 'rgba(16,185,129,0.15)',
-              display: 'grid', placeItems: 'center', color: '#34d399', flexShrink: 0
-            }}>
-              <window.Icon name="trending-up" size={20} />
-            </div>
-            <div>
-              <span className="muted" style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                Total Earned / Credited
-              </span>
-              <h4 style={{ fontSize: '19px', fontWeight: 800, color: '#10b981', margin: '3px 0 0', fontFamily: 'monospace' }}>
-                +{totalCredited.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600, color: '#34d399' }}>Coins</span>
-              </h4>
-            </div>
-          </div>
-
-          {/* Card 3: Net Balance Flow */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02))',
-            border: '1px solid rgba(99,102,241,0.22)',
-            borderRadius: '12px',
-            padding: '16px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px'
-          }}>
-            <div style={{
-              width: '42px', height: '42px', borderRadius: '10px',
-              background: 'rgba(99,102,241,0.15)',
-              display: 'grid', placeItems: 'center', color: '#818cf8', flexShrink: 0
-            }}>
-              <window.Icon name="activity" size={20} />
-            </div>
-            <div>
-              <span className="muted" style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                Net Activity Flow
-              </span>
-              <h4 style={{ fontSize: '19px', fontWeight: 800, color: netCoins >= 0 ? '#38bdf8' : '#fb7185', margin: '3px 0 0', fontFamily: 'monospace' }}>
-                {(netCoins >= 0 ? '+' : '') + netCoins.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600, color: '#a5b4fc' }}>Coins</span>
-              </h4>
-            </div>
-          </div>
-
-          {/* Card 4: Total Filtered Activities */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(168,85,247,0.08), rgba(168,85,247,0.02))',
-            border: '1px solid rgba(168,85,247,0.22)',
-            borderRadius: '12px',
-            padding: '16px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px'
-          }}>
-            <div style={{
-              width: '42px', height: '42px', borderRadius: '10px',
-              background: 'rgba(168,85,247,0.15)',
-              display: 'grid', placeItems: 'center', color: '#c084fc', flexShrink: 0
-            }}>
-              <window.Icon name="layers" size={20} />
-            </div>
-            <div>
-              <span className="muted" style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                Total Transactions
-              </span>
-              <h4 style={{ fontSize: '19px', fontWeight: 800, color: '#f4f4f5', margin: '3px 0 0', fontFamily: 'monospace' }}>
-                {total.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600, color: '#c084fc' }}>Records</span>
-              </h4>
-            </div>
-          </div>
-        </div>
-
         {/* ── Filters Bar ─────────────────────────────────────── */}
         <div style={{
           background: 'rgba(255,255,255,0.015)',
@@ -221,6 +106,17 @@ window.Wallet = function Wallet({
               <p className="muted" style={{ fontSize: '12px', marginTop: '2px' }}>
                 Track real-time coin additions, deductions, spendings, and earnings of all users
               </p>
+            </div>
+            <div style={{
+              fontSize: '12px',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.25)',
+              color: '#818cf8',
+              fontWeight: 'bold'
+            }}>
+              Total Records: {total}
             </div>
           </div>
 
@@ -385,23 +281,29 @@ window.Wallet = function Wallet({
                           </div>
                         </td>
 
-                        {/* Coin Amount */}
+                        {/* User Pure Day Total Coin Amount */}
                         <td>
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            padding: '4px 10px',
-                            borderRadius: '16px',
-                            fontWeight: 800,
-                            fontSize: '13px',
-                            fontFamily: 'monospace',
-                            color: isCredit ? '#10b981' : '#f43f5e',
-                            background: isCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
-                            border: `1px solid ${isCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
-                          }}>
-                            {isCredit ? `+${coinVal}` : `-${coinVal}`} Coins
-                          </span>
+                          {(() => {
+                            const dayTotal = Number(tx.user_day_total || 0);
+                            const isDayCredit = dayTotal >= 0;
+                            return (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '5px 12px',
+                                borderRadius: '16px',
+                                fontWeight: 800,
+                                fontSize: '13.5px',
+                                fontFamily: 'monospace',
+                                color: isDayCredit ? '#10b981' : '#f43f5e',
+                                background: isDayCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
+                                border: `1px solid ${isDayCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
+                              }}>
+                                {isDayCredit ? `+${dayTotal}` : `${dayTotal}`} Coins
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Transaction Type */}

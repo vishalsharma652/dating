@@ -199,7 +199,21 @@ async function walletLogs({ page = 1, limit = 10, search = '', gender = '', date
               DATE_FORMAT(wt.created_at, '%d %b %Y') AS tx_date,
               DATE_FORMAT(wt.created_at, '%h:%i:%s %p') AS tx_time,
               u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.gender AS user_gender,
-              COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id
+              COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id,
+              (SELECT COALESCE(SUM(wsub.coins), 0)
+               FROM wallet_transactions wsub
+               WHERE wsub.user_id = wt.user_id
+                 AND DATE(wsub.created_at) = DATE(wt.created_at)) AS user_day_total,
+              (SELECT COALESCE(SUM(ABS(wsub.coins)), 0)
+               FROM wallet_transactions wsub
+               WHERE wsub.user_id = wt.user_id
+                 AND DATE(wsub.created_at) = DATE(wt.created_at)
+                 AND wsub.coins < 0) AS user_day_spent,
+              (SELECT COALESCE(SUM(wsub.coins), 0)
+               FROM wallet_transactions wsub
+               WHERE wsub.user_id = wt.user_id
+                 AND DATE(wsub.created_at) = DATE(wt.created_at)
+                 AND wsub.coins > 0) AS user_day_earned
        FROM wallet_transactions wt
        LEFT JOIN users u ON u.id = wt.user_id
        WHERE ${whereClause}
