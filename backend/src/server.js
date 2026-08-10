@@ -18,9 +18,6 @@ async function start() {
     await pool.query("UPDATE users SET unique_id = CONCAT('STK-', LPAD(id, 6, '0')) WHERE unique_id IS NULL OR unique_id = ''");
   } catch {}
   try {
-    await pool.query("UPDATE users SET status = 'active' WHERE status = 'inactive'");
-  } catch {}
-  try {
     await pool.query(`
       INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
       ('Starter', 50, 250.00, 0, FALSE),
@@ -47,6 +44,7 @@ async function start() {
     transports: ['websocket', 'polling'],
   });
 
+  global.io = io;
   setupCallSignaling(io);
   startChatBillingScheduler();
 

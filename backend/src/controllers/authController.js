@@ -392,7 +392,12 @@ async function login(req, res) {
     });
   }
   if (user.status && user.status !== 'active') {
-    throw new AppError('Your account is currently inactive or suspended', 403);
+    return res.status(403).json({
+      status: 'fail',
+      message: 'Your account is inactive. Please contact the administrator.',
+      isInactive: true,
+      userExists: true
+    });
   }
   const onlineUser = await userModel.markOnline(user.id);
   const token = signToken(onlineUser);

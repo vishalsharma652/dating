@@ -17,7 +17,9 @@ async function authenticate(req, res, next) {
 
     const user = await userModel.findById(payload.id);
     if (!user) return next(new AppError('Account not found', 401));
-    if (user.status && user.status !== 'active') return next(new AppError('Your account is currently inactive or suspended', 403));
+    if (user.status && user.status !== 'active') {
+      return next(new AppError('Your account is inactive. Please contact the administrator.', 403));
+    }
 
     await userModel.markOnline(user.id);
     delete user.password_hash;

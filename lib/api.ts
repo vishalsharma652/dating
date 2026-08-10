@@ -86,7 +86,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
     data: null,
   }))) as ApiResponse<T>;
 
-  if (response.status === 401) {
+  if (response.status === 401 || (response.status === 403 && payload?.message?.toLowerCase().includes('inactive'))) {
     clearAuthSession();
     if (
       typeof window !== 'undefined' &&
@@ -94,7 +94,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
       !window.location.pathname.startsWith('/register') &&
       !window.location.pathname.startsWith('/forgot-password')
     ) {
-      window.location.href = '/login';
+      const errorMsg = payload?.message || 'Your account is inactive. Please contact the administrator.';
+      window.location.href = `/login?error=${encodeURIComponent(errorMsg)}`;
     }
   }
 

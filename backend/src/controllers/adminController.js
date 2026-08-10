@@ -94,7 +94,24 @@ async function users(req, res) {
 }
 
 async function updateUser(req, res) {
-  return ok(res, { user: await userModel.update(Number(req.params.id), req.body) }, 'User updated');
+  const userId = Number(req.params.id);
+  const updatedUser = await userModel.update(userId, req.body);
+  if (req.body.status === 'inactive') {
+    await userModel.markOffline(userId);
+    if (global.io) {
+      global.io.to(`user:${userId}`).emit('auth:logout', {
+        reason: 'inactive',
+        message: 'Your account is inactive. Please contact the administrator.'
+      });
+      try {
+        const sockets = await global.io.in(`user:${userId}`).fetchSockets();
+        for (const s of sockets) {
+          s.disconnect(true);
+        }
+      } catch {}
+    }
+  }
+  return ok(res, { user: updatedUser }, 'User updated');
 }
 
 async function deleteUser(req, res) {

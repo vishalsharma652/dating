@@ -164,6 +164,7 @@ window.Users = function Users({
                   <tr>
                     <th>User Profile Info</th>
                     <th>Unique ID / Contact</th>
+                    <th>Account Status</th>
                     <th>Activity Status</th>
                     <th>KYC Option</th>
                     <th>Actions</th>
@@ -173,6 +174,7 @@ window.Users = function Users({
                   {users.map((u) => {
                     const avatarLetter = u.name ? u.name.charAt(0).toUpperCase() : '?';
                     const displayId = String(u.unique_id || u.id || '').replace(/^STK-/i, '').padStart(6, '0');
+                    const isActive = (u.status || 'active').toLowerCase() === 'active';
                     return (
                       <tr key={u.id}>
                         <td>
@@ -209,6 +211,19 @@ window.Users = function Users({
                           <span className="muted" style={{ fontSize: '12px', marginTop: '3px', display: 'inline-block' }}>✉ {u.email || '-'}</span>
                         </td>
                         <td>
+                          {isActive ? (
+                            <span className="badge green" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
+                              Active
+                            </span>
+                          ) : (
+                            <span className="badge red" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           {u.online_status ? (
                             <span className="badge green" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
@@ -231,8 +246,19 @@ window.Users = function Users({
                             <button className="btn-action btn-primary" style={{ width: '34px', padding: 0 }} onClick={() => onViewProfile(u)} title="View Profile">
                               <window.Icon name="eye" size={14} />
                             </button>
-                            <button className="btn-action btn-outline" style={{ width: '34px', padding: 0, color: u.status === 'active' ? '#f43f5e' : '#10b981', borderColor: u.status === 'active' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(16, 185, 129, 0.2)', backgroundColor: u.status === 'active' ? 'rgba(244, 63, 94, 0.02)' : 'rgba(16, 185, 129, 0.02)' }} onClick={() => onChangeStatus(u.id)} title={u.status === 'active' ? 'Deactivate User' : 'Activate User'}>
-                              <window.Icon name={u.status === 'active' ? 'user-x' : 'user-check'} size={14} />
+                            <button
+                              className="btn-action btn-outline"
+                              style={{
+                                width: '34px',
+                                padding: 0,
+                                color: isActive ? '#f43f5e' : '#10b981',
+                                borderColor: isActive ? 'rgba(244, 63, 94, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                                backgroundColor: isActive ? 'rgba(244, 63, 94, 0.06)' : 'rgba(16, 185, 129, 0.06)'
+                              }}
+                              onClick={() => onChangeStatus(u.id)}
+                              title={isActive ? 'Click to Deactivate User' : 'Click to Activate User'}
+                            >
+                              <window.Icon name={isActive ? 'user-x' : 'user-check'} size={14} />
                             </button>
                             <button className="btn-action btn-danger-outline" style={{ width: '34px', padding: 0 }} onClick={() => onDeleteUser(u.id)} title="Delete User">
                               <window.Icon name="trash-2" size={14} />

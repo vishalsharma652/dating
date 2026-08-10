@@ -206,18 +206,24 @@ function App() {
   // User actions
   const changeUserStatus = (id) => {
     const user = usersList.find((u) => u.id === id);
-    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    const currentStatus = (user?.status || 'active').toLowerCase();
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const isDeactivating = newStatus === 'inactive';
     confirmAction(
-      'Update User Status?',
-      `${user.name} status will be set to ${newStatus}.`,
-      'Update Status',
+      isDeactivating ? 'Deactivate User Account?' : 'Activate User Account?',
+      isDeactivating
+        ? `Are you sure you want to deactivate ${user ? user.name : 'this user'}? Their active session will be logged out immediately and they will not be able to Sign In until reactivated.`
+        : `Are you sure you want to activate ${user ? user.name : 'this user'}? They will be allowed to Sign In and access their dashboard normally.`,
+      isDeactivating ? 'Deactivate User' : 'Activate User',
       async () => {
         await apiRequest(`/admin/users/${id}`, {
           method: 'PATCH',
           body: JSON.stringify({ status: newStatus })
         });
-        showNotice('User status updated successfully.');
-      }
+        showNotice(`User account marked as ${newStatus}.`);
+        await loadUsersList();
+      },
+      isDeactivating
     );
   };
 

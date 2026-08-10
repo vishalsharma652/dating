@@ -20,9 +20,19 @@ export default function LoginPage() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isRegisteredUser, setIsRegisteredUser] = useState(true);
 
-  // Already logged in? Go straight to dashboard
+  // Check for error param in URL (e.g. inactive account kickout)
   useEffect(() => {
-    if (getStoredUser()) router.replace('/user/dashboard');
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlError = urlParams.get('error');
+      if (urlError) {
+        setError(urlError);
+        return;
+      }
+    }
+    if (getStoredUser()) {
+      router.replace('/user/dashboard');
+    }
   }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
