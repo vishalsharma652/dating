@@ -195,37 +195,44 @@ export function FollowersModal({
                             <X size={12} /> Decline
                           </Button>
                         </>
-                      ) : activeTab === 'following' && u.status === 'pending' ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => handleToggleFollowUser(u.id)}
-                          className="h-7 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-[10px] cursor-pointer flex items-center gap-1"
-                        >
-                          <Clock size={12} /> Requested
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => handleToggleFollowUser(u.id)}
-                          className={`h-7 px-2.5 rounded-xl font-bold text-[10px] border-0 cursor-pointer flex items-center gap-1 ${
-                            u.status === 'accepted'
-                              ? 'bg-white/10 hover:bg-white/20 text-pink-300 border border-pink-500/30'
-                              : 'bg-[#0095F6] hover:bg-[#1877F2] text-white'
-                          }`}
-                        >
-                          {u.status === 'accepted' ? (
-                            <>
-                              <UserCheck size={12} /> Following
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus size={12} /> Follow
-                            </>
-                          )}
-                        </Button>
-                      )}
+                      ) : (() => {
+                        const currentStatus = u.myFollowStatus || (activeTab === 'following' ? 'accepted' : u.status);
+                        if (currentStatus === 'pending') {
+                          return (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleToggleFollowUser(u.id)}
+                              className="h-7 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-[10px] cursor-pointer flex items-center gap-1"
+                            >
+                              <Clock size={12} /> Requested
+                            </Button>
+                          );
+                        }
+                        const isFollowing = currentStatus === 'accepted';
+                        return (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleToggleFollowUser(u.id)}
+                            className={`h-7 px-2.5 rounded-xl font-bold text-[10px] border-0 cursor-pointer flex items-center gap-1 ${
+                              isFollowing
+                                ? 'bg-white/10 hover:bg-white/20 text-pink-300 border border-pink-500/30'
+                                : 'bg-[#0095F6] hover:bg-[#1877F2] text-white'
+                            }`}
+                          >
+                            {isFollowing ? (
+                              <>
+                                <UserCheck size={12} /> Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus size={12} /> Follow
+                              </>
+                            )}
+                          </Button>
+                        );
+                      })()}
 
                       <Link href={`/user/chat/${u.id}`} onClick={onClose}>
                         <Button

@@ -52,16 +52,29 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    userApi.profile()
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load profile'))
-      .finally(() => setLoading(false));
+    const loadProfile = () => {
+      userApi.profile()
+        .then(setData)
+        .catch((err) => setError(err instanceof Error ? err.message : 'Unable to load profile'))
+        .finally(() => setLoading(false));
 
-    userApi.matches()
-      .then((res) => {
-        setMatchesCount(res.matches?.length || 0);
-      })
-      .catch(() => undefined);
+      userApi.matches()
+        .then((res) => {
+          setMatchesCount(res.matches?.length || 0);
+        })
+        .catch(() => undefined);
+    };
+
+    loadProfile();
+
+    const handleFollowUpdated = () => {
+      userApi.profile().then(setData).catch(() => undefined);
+    };
+
+    window.addEventListener('follow:updated', handleFollowUpdated);
+    return () => {
+      window.removeEventListener('follow:updated', handleFollowUpdated);
+    };
   }, []);
 
   const handlePhotoUploadForSlot = async (slotIndex: number, event: React.ChangeEvent<HTMLInputElement>) => {

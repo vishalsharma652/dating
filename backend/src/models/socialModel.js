@@ -687,37 +687,43 @@ async function getFollowStats(userId) {
   };
 }
 
-async function getFollowingList(userId) {
+async function getFollowingList(userId, viewerId) {
   await ensureFollowsTable();
   const uId = Number(userId);
+  const vId = viewerId ? Number(viewerId) : uId;
   return query(
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
-            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
+            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            COALESCE(my_f.status, 'none') AS myFollowStatus
      FROM user_follows uf
      JOIN users u ON u.id = uf.following_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
-     WHERE uf.follower_id = :uId
+     LEFT JOIN user_follows my_f ON my_f.follower_id = :vId AND my_f.following_id = u.id
+     WHERE uf.follower_id = :uId AND uf.status = 'accepted'
      ORDER BY uf.created_at DESC`,
-    { uId }
+    { uId, vId }
   );
 }
 
-async function getFollowersList(userId) {
+async function getFollowersList(userId, viewerId) {
   await ensureFollowsTable();
   const uId = Number(userId);
+  const vId = viewerId ? Number(viewerId) : uId;
   return query(
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
-            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online
+            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            COALESCE(my_f.status, 'none') AS myFollowStatus
      FROM user_follows uf
      JOIN users u ON u.id = uf.follower_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
-     WHERE uf.following_id = :uId
+     LEFT JOIN user_follows my_f ON my_f.follower_id = :vId AND my_f.following_id = u.id
+     WHERE uf.following_id = :uId AND uf.status = 'accepted'
      ORDER BY uf.created_at DESC`,
-    { uId }
+    { uId, vId }
   );
 }
 

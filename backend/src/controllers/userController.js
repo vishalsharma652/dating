@@ -163,13 +163,13 @@ async function getFollowRequests(req, res) {
 
 async function getFollowing(req, res) {
   const targetId = req.query.userId || req.user.id;
-  const users = await socialModel.getFollowingList(targetId);
+  const users = await socialModel.getFollowingList(targetId, req.user.id);
   return ok(res, { users });
 }
 
 async function getFollowers(req, res) {
   const targetId = req.query.userId || req.user.id;
-  const users = await socialModel.getFollowersList(targetId);
+  const users = await socialModel.getFollowersList(targetId, req.user.id);
   return ok(res, { users });
 }
 
