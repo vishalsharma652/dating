@@ -119,19 +119,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     setSendError('');
     try {
       const data = await userApi.sendMessage(id, message, type);
-      setMessages((prev) => [
-        ...prev,
-        {
-          ...data.message,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      const msgData = await userApi.messages(id);
+      setMessages(msgData.messages || []);
+
       if (data.remainingCoins !== undefined && data.remainingCoins !== null) {
         setWalletBalance(Number(data.remainingCoins));
       }
       if (data.rechargeExhausted || (isBoy && data.remainingCoins !== null && Number(data.remainingCoins) < 5)) {
         setChatBlocked(true);
-        setSendError('Recharge khatam ho gaya');
       }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('app:wallet-updated', { detail: {} }));
@@ -253,6 +248,24 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               </div>
             )}
             {messages.map((msg) => {
+              if (msg.type === 'system' || msg.text === 'Recharge khatam ho gaya') {
+                return (
+                  <div key={msg.id} className="flex justify-center my-3">
+                    <div className="px-4 py-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2 shadow-lg">
+                      <span>⚠️ Recharge khatam ho gaya</span>
+                      {isBoy && (
+                        <Link
+                          href="/user/wallet/coins"
+                          className="ml-2 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs transition shadow-md whitespace-nowrap"
+                        >
+                          Buy Coins 🪙
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
               const isMine = Number(msg.senderId) === Number(currentUser?.id);
               const isDeleted = msg.text === '🚫 This message was deleted' || msg.deletedForEveryone;
 

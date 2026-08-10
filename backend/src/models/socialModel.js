@@ -344,51 +344,53 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
       const currentCoins = Number(sender.coins || 0);
 
       if (currentCoins < COIN_COST) {
-        throw new AppError('Recharge khatam ho gaya. Message deliver nahi hua.', 400);
-      }
-
-      remainingCoins = Math.max(0, currentCoins - COIN_COST);
-      if (remainingCoins < 5) {
+        deliveryStatus = 'undelivered';
         rechargeExhausted = true;
-      }
+        remainingCoins = currentCoins;
+      } else {
+        remainingCoins = Math.max(0, currentCoins - COIN_COST);
+        if (remainingCoins < 5) {
+          rechargeExhausted = true;
+        }
 
-      // Deduct COIN_COST from male sender (updates existing today's record or creates 1 record per day)
-      await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
-      await connection.execute(
-        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
-         ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
-        { senderId, cost: COIN_COST }
-      );
-      await recordOrUpdateDailyWalletTransaction(connection, {
-        userId: senderId,
-        type: 'chat_charge',
-        title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
-        description: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
-        coins: -COIN_COST
-      });
+        // Deduct COIN_COST from male sender (updates existing today'record or creates 1 record per day)
+        await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
+        await connection.execute(
+          `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
+           ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
+          { senderId, cost: COIN_COST }
+        );
+        await recordOrUpdateDailyWalletTransaction(connection, {
+          userId: senderId,
+          type: 'chat_charge',
+          title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
+          description: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
+          coins: -COIN_COST
+        });
 
-      // Credit COIN_COST to female recipient if applicable
-      if (recipientUserId) {
-        const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
-        const recipient = recipients[0];
-        const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
+        // Credit COIN_COST to female recipient if applicable
+        if (recipientUserId) {
+          const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
+          const recipient = recipients[0];
+          const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
 
-        if (isFemaleEarner) {
-          const EARNING_COINS = COIN_COST;
-          await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
-          await connection.execute(
-            `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
-             VALUES (:recipientUserId, :earn, :earn, :earn)
-             ON DUPLICATE KEY UPDATE balance = balance + :earn, total_earned = total_earned + :earn, withdrawal_balance = withdrawal_balance + :earn`,
-            { recipientUserId, earn: EARNING_COINS }
-          );
-          await recordOrUpdateDailyWalletTransaction(connection, {
-            userId: recipientUserId,
-            type: 'earning',
-            title: 'Message Received Earning',
-            description: `Earned coins from message in chat #${chatId}`,
-            coins: EARNING_COINS
-          });
+          if (isFemaleEarner) {
+            const EARNING_COINS = COIN_COST;
+            await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
+            await connection.execute(
+              `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
+               VALUES (:recipientUserId, :earn, :earn, :earn)
+               ON DUPLICATE KEY UPDATE balance = balance + :earn, total_earned = total_earned + :earn, withdrawal_balance = withdrawal_balance + :earn`,
+              { recipientUserId, earn: EARNING_COINS }
+            );
+            await recordOrUpdateDailyWalletTransaction(connection, {
+              userId: recipientUserId,
+              type: 'earning',
+              title: 'Message Received Earning',
+              description: `Earned coins from message in chat #${chatId}`,
+              coins: EARNING_COINS
+            });
+          }
         }
       }
     }
@@ -398,6 +400,21 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
       { chatId, senderId, body, type, deliveryStatus }
     );
     messageId = msgRes.insertId;
+
+    if (rechargeExhausted) {
+      const [lastMsgRows] = await connection.execute(
+        'SELECT body FROM messages WHERE chat_id = :chatId ORDER BY id DESC LIMIT 1',
+        { chatId }
+      );
+      if (!lastMsgRows[0] || lastMsgRows[0].body !== 'Recharge khatam ho gaya') {
+        await connection.execute(
+          `INSERT INTO messages (chat_id, sender_id, body, type, delivery_status, deleted_for_recipient)
+           VALUES (:chatId, :senderId, 'Recharge khatam ho gaya', 'system', 'sent', 1)`,
+          { chatId, senderId }
+        );
+      }
+    }
+
     await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   });
 
