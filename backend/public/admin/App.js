@@ -37,6 +37,7 @@ function App() {
   const [usersTotal, setUsersTotal] = useState(0);
   const [userSearch, setUserSearch] = useState('');
   const [userStatus, setUserStatus] = useState('');
+  const [userGender, setUserGender] = useState('');
   const [userOnline, setUserOnline] = useState('');
   const [userKyc, setUserKyc] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -119,7 +120,7 @@ function App() {
 
   const loadUsersList = async () => {
     try {
-      const res = await apiRequest(`/admin/users?page=${usersPage}&limit=10&search=${encodeURIComponent(userSearch)}&status=${userStatus}&online_status=${userOnline}&kyc_status=${userKyc}&role=${userRole}`);
+      const res = await apiRequest(`/admin/users?page=${usersPage}&limit=10&search=${encodeURIComponent(userSearch)}&status=${userStatus}&gender=${userGender}&online_status=${userOnline}&kyc_status=${userKyc}&role=${userRole}&sort=${userSort}`);
       setUsersList(res.data.users || []);
       setUsersTotal(res.data.total || 0);
     } catch (err) {
@@ -131,7 +132,7 @@ function App() {
     if (token) {
       loadUsersList();
     }
-  }, [token, usersPage, userSearch, userStatus, userOnline, userKyc, userRole]);
+  }, [token, usersPage, userSearch, userStatus, userGender, userOnline, userKyc, userRole, userSort]);
 
   const loadWalletTransactions = async () => {
     try {
@@ -520,6 +521,8 @@ function App() {
             onSearchChange={setUserSearch}
             status={userStatus}
             onStatusChange={setUserStatus}
+            gender={userGender}
+            onGenderChange={setUserGender}
             online={userOnline}
             onOnlineChange={setUserOnline}
             kyc={userKyc}

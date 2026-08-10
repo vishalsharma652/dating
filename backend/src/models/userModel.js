@@ -75,7 +75,7 @@ async function findByEmailOrPhone(identifier) {
   return rows[0] || null;
 }
 
-async function list({ page = 1, limit = 10, search = '', role = null, status = null, online_status = null, kyc_status = null }) {
+async function list({ page = 1, limit = 10, search = '', role = null, status = null, online_status = null, kyc_status = null, gender = null, sort = 'newest' }) {
   const pageNumber = Math.max(Number(page) || 1, 1);
   const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 200);
   const offset = (pageNumber - 1) * limitNumber;
@@ -102,6 +102,17 @@ async function list({ page = 1, limit = 10, search = '', role = null, status = n
     filters.push('u.status = :status');
     params.status = status;
   }
+  if (gender && String(gender).trim() !== '') {
+    const cleanGender = String(gender).trim().toLowerCase();
+    if (['male', 'man', 'boy', 'men'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("male", "man", "boy", "men")');
+    } else if (['female', 'woman', 'girl', 'women'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("female", "woman", "girl", "women")');
+    } else {
+      filters.push('LOWER(u.gender) = :gender');
+      params.gender = cleanGender;
+    }
+  }
   if (online_status !== null && online_status !== undefined && online_status !== '') {
     const isOnlineFilter = online_status === 'true' || online_status === true || online_status === 1 || online_status === '1' || online_status === 'online';
     if (isOnlineFilter) {
@@ -114,10 +125,12 @@ async function list({ page = 1, limit = 10, search = '', role = null, status = n
     filters.push('u.kyc_status = :kyc_status');
     params.kyc_status = kyc_status;
   }
-  return query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE ${filters.join(' AND ')} ORDER BY u.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`, params);
+
+  const orderBy = sort === 'oldest' ? 'ORDER BY u.created_at ASC' : 'ORDER BY u.created_at DESC';
+  return query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE ${filters.join(' AND ')} ${orderBy} LIMIT ${limitNumber} OFFSET ${offset}`, params);
 }
 
-async function count({ search = '', role = null, status = null, online_status = null, kyc_status = null }) {
+async function count({ search = '', role = null, status = null, online_status = null, kyc_status = null, gender = null }) {
   const filters = ['1=1'];
   const params = {};
 
@@ -140,6 +153,17 @@ async function count({ search = '', role = null, status = null, online_status = 
   if (status) {
     filters.push('u.status = :status');
     params.status = status;
+  }
+  if (gender && String(gender).trim() !== '') {
+    const cleanGender = String(gender).trim().toLowerCase();
+    if (['male', 'man', 'boy', 'men'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("male", "man", "boy", "men")');
+    } else if (['female', 'woman', 'girl', 'women'].includes(cleanGender)) {
+      filters.push('LOWER(COALESCE(u.gender, "")) IN ("female", "woman", "girl", "women")');
+    } else {
+      filters.push('LOWER(u.gender) = :gender');
+      params.gender = cleanGender;
+    }
   }
   if (online_status !== null && online_status !== undefined && online_status !== '') {
     const isOnlineFilter = online_status === 'true' || online_status === true || online_status === 1 || online_status === '1' || online_status === 'online';
