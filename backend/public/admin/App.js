@@ -373,7 +373,7 @@ function App() {
             <p style={{ margin: '6px 0 0' }}><strong>Unique User ID:</strong> #{user.id}</p>
             {user.unique_id && (
               <p style={{ margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <strong>🆔 Saathika ID:</strong>
+                <strong>ID:</strong>
                 <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#10b981', fontSize: '14px', letterSpacing: '2px', background: 'rgba(16,185,129,0.1)', padding: '2px 10px', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.25)' }}>
                   {user.unique_id}
                 </span>

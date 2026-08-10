@@ -253,7 +253,7 @@ window.Wallet = function Wallet({
                                   borderRadius: '6px',
                                   fontSize: '11px',
                                   border: '1px solid rgba(16,185,129,0.2)'
-                                }}>🆔 {displayId}</span>
+                                }}>ID {displayId}</span>
                                 {tx.user_email && (
                                   <span className="muted" style={{ fontSize: '11px' }}>
                                     {tx.user_email}

@@ -461,7 +461,7 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
                           borderRadius: '12px',
                           fontSize: '12px',
                           border: '1px solid rgba(16,185,129,0.2)'
-                        }}>🆔 {displayId}</span>
+                        }}>ID {displayId}</span>
                         <div className="muted" style={{ fontSize: '11px', marginTop: '3px' }}>✉ {u.email || '-'}</div>
                       </td>
                       <td>

@@ -39,7 +39,7 @@ window.Kyc = function Kyc({ requests, onViewRecord, onApprove, onReject, dateStr
                         borderRadius: '12px',
                         fontSize: '12px',
                         border: '1px solid rgba(16,185,129,0.2)'
-                      }}>🆔 {String(u.unique_id || u.id || '').replace(/^STK-/i, '').padStart(6, '0')}</span>
+                      }}>ID {String(u.unique_id || u.id || '').replace(/^STK-/i, '').padStart(6, '0')}</span>
                       <br />
                       <span className="muted" style={{ fontSize: '12px', marginTop: '3px', display: 'inline-block' }}>✉ {u.email || '-'}</span>
                     </td>

@@ -141,7 +141,7 @@ export default function UserSearchPage() {
                           </div>
                           <div className="mt-1.5 flex items-center gap-2 text-sm text-zinc-400 flex-wrap">
                             <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20 text-xs">
-                              🆔 {displayId}
+                              ID {displayId}
                             </span>
                             <span>&bull;</span>
                             <span className="text-xs text-zinc-400">User #{user.id}</span>

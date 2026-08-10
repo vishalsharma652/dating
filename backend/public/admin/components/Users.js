@@ -205,7 +205,7 @@ window.Users = function Users({
                             borderRadius: '12px',
                             fontSize: '12px',
                             border: '1px solid rgba(16,185,129,0.2)'
-                          }}>🆔 {displayId}</span>
+                          }}>ID {displayId}</span>
                           <br />
                           <span className="muted" style={{ fontSize: '12px', marginTop: '3px', display: 'inline-block' }}>✉ {u.email || '-'}</span>
                         </td>
