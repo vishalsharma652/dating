@@ -164,7 +164,6 @@ window.Users = function Users({
                   <tr>
                     <th>User Profile Info</th>
                     <th>Unique ID / Contact</th>
-                    <th>Account Status</th>
                     <th>Activity Status</th>
                     <th>KYC Option</th>
                     <th>Actions</th>
@@ -209,19 +208,6 @@ window.Users = function Users({
                           }}>🆔 {displayId}</span>
                           <br />
                           <span className="muted" style={{ fontSize: '12px', marginTop: '3px', display: 'inline-block' }}>✉ {u.email || '-'}</span>
-                        </td>
-                        <td>
-                          {isActive ? (
-                            <span className="badge green" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                              Active
-                            </span>
-                          ) : (
-                            <span className="badge red" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                              Inactive
-                            </span>
-                          )}
                         </td>
                         <td>
                           {u.online_status ? (
