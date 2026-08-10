@@ -54,27 +54,28 @@ window.Wallet = function Wallet({
   };
 
   // Helper to format type badge
-  const getTypeBadge = (type, title, coins) => {
+  const getTypeBadge = (type, title, coins, count) => {
     const rawType = String(type || '').toLowerCase();
-    const rawTitle = String(title || '').toLowerCase();
     const isCredit = Number(coins) > 0 || ['purchase', 'earning', 'credit', 'reward', 'welcome_bonus'].includes(rawType);
 
-    let label = type || 'Transaction';
-    if (rawType === 'purchase') label = 'Coin Purchase';
-    else if (rawType === 'spending') label = 'Spent / Deduct';
-    else if (rawType === 'earning') label = 'Earned / Credit';
-    else if (rawType === 'chat' || rawType === 'chat_charge') label = 'Chat Message';
-    else if (rawType === 'call' || rawType === 'call_charge') label = 'Call Charge';
-    else if (rawType === 'gift' || rawType === 'gift_charge') label = 'Gift Sent';
-    else if (rawType === 'reward' || rawType === 'welcome_bonus') label = 'Bonus Reward';
-    else if (rawTitle.includes('admin') || rawType.includes('admin')) label = isCredit ? 'Admin Credit' : 'Admin Deduct';
+    let label = type || 'Activity';
+    if (rawType.includes('purchase')) label = 'Coin Purchase';
+    else if (rawType.includes('chat')) label = 'Chat Message';
+    else if (rawType.includes('call')) label = 'Call Charge';
+    else if (rawType.includes('gift')) label = 'Gift Sent';
+    else if (rawType.includes('reward') || rawType.includes('welcome_bonus')) label = 'Bonus Reward';
+    else if (rawType.includes('earning')) label = 'Earned / Credit';
+    else if (rawType.includes('spending')) label = 'Spent / Deduct';
+    else if (rawType.includes('admin')) label = isCredit ? 'Admin Credit' : 'Admin Deduct';
     else {
       label = String(type).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     }
 
+    const countText = count && count > 1 ? ` (${count})` : '';
+
     return (
       <span className={`badge ${isCredit ? 'green' : 'red'}`} style={{ fontWeight: 600, fontSize: '11px', whiteSpace: 'nowrap' }}>
-        {label}
+        {label}{countText}
       </span>
     );
   };
@@ -281,11 +282,11 @@ window.Wallet = function Wallet({
                           </div>
                         </td>
 
-                        {/* User Pure Day Total Coin Amount */}
+                        {/* Coin Amount (Pure Day Total) */}
                         <td>
                           {(() => {
-                            const dayTotal = Number(tx.user_day_total || 0);
-                            const isDayCredit = dayTotal >= 0;
+                            const dayCoins = Number(tx.coins || 0);
+                            const isDayCredit = dayCoins > 0;
                             return (
                               <span style={{
                                 display: 'inline-flex',
@@ -300,15 +301,15 @@ window.Wallet = function Wallet({
                                 background: isDayCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
                                 border: `1px solid ${isDayCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
                               }}>
-                                {isDayCredit ? `+${dayTotal}` : `${dayTotal}`} Coins
+                                {isDayCredit ? `+${dayCoins}` : `${dayCoins}`} Coins
                               </span>
                             );
                           })()}
                         </td>
 
-                        {/* Transaction Type */}
+                        {/* Transaction Type / Activities */}
                         <td>
-                          {getTypeBadge(tx.type, tx.title, tx.coins)}
+                          {getTypeBadge(tx.combined_types || tx.type, tx.title, tx.coins, tx.total_activities)}
                         </td>
 
                         {/* Status */}

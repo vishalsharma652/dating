@@ -193,57 +193,48 @@ async function walletLogs({ page = 1, limit = 10, search = '', gender = '', date
 
   const whereClause = filters.join(' AND ');
 
-  const [transactions, statsRows] = await Promise.all([
+  const [transactions, countRows] = await Promise.all([
     query(
-      `SELECT wt.id, wt.user_id, wt.type, wt.title, wt.description, wt.amount, wt.coins, wt.status, wt.created_at,
-              DATE_FORMAT(wt.created_at, '%d %b %Y') AS tx_date,
-              DATE_FORMAT(wt.created_at, '%h:%i:%s %p') AS tx_time,
-              u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.gender AS user_gender,
-              COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id,
-              (SELECT COALESCE(SUM(wsub.coins), 0)
-               FROM wallet_transactions wsub
-               WHERE wsub.user_id = wt.user_id
-                 AND DATE(wsub.created_at) = DATE(wt.created_at)) AS user_day_total,
-              (SELECT COALESCE(SUM(ABS(wsub.coins)), 0)
-               FROM wallet_transactions wsub
-               WHERE wsub.user_id = wt.user_id
-                 AND DATE(wsub.created_at) = DATE(wt.created_at)
-                 AND wsub.coins < 0) AS user_day_spent,
-              (SELECT COALESCE(SUM(wsub.coins), 0)
-               FROM wallet_transactions wsub
-               WHERE wsub.user_id = wt.user_id
-                 AND DATE(wsub.created_at) = DATE(wt.created_at)
-                 AND wsub.coins > 0) AS user_day_earned
+      `SELECT 
+        MAX(wt.id) AS id,
+        wt.user_id,
+        DATE(wt.created_at) AS tx_raw_date,
+        DATE_FORMAT(MAX(wt.created_at), '%d %b %Y') AS tx_date,
+        DATE_FORMAT(MAX(wt.created_at), '%h:%i:%s %p') AS tx_time,
+        MAX(wt.created_at) AS created_at,
+        u.name AS user_name,
+        u.email AS user_email,
+        u.phone AS user_phone,
+        u.gender AS user_gender,
+        COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id,
+        SUM(wt.coins) AS coins,
+        SUM(CASE WHEN wt.coins > 0 THEN wt.coins ELSE 0 END) AS total_credited,
+        SUM(CASE WHEN wt.coins < 0 THEN ABS(wt.coins) ELSE 0 END) AS total_deducted,
+        COUNT(*) AS total_activities,
+        GROUP_CONCAT(DISTINCT wt.type SEPARATOR ', ') AS combined_types,
+        MAX(wt.status) AS status
        FROM wallet_transactions wt
        LEFT JOIN users u ON u.id = wt.user_id
        WHERE ${whereClause}
-       ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
+       GROUP BY wt.user_id, DATE(wt.created_at)
+       ORDER BY MAX(wt.created_at) DESC
+       LIMIT ${limitNumber} OFFSET ${offset}`,
       params
     ),
     query(
-      `SELECT 
-         COUNT(*) AS total,
-         COALESCE(SUM(CASE WHEN wt.coins > 0 THEN wt.coins ELSE 0 END), 0) AS total_credited,
-         COALESCE(SUM(CASE WHEN wt.coins < 0 THEN ABS(wt.coins) ELSE 0 END), 0) AS total_deducted,
-         COALESCE(SUM(wt.coins), 0) AS net_coins
-       FROM wallet_transactions wt 
-       LEFT JOIN users u ON u.id = wt.user_id 
-       WHERE ${whereClause}`,
+      `SELECT COUNT(*) AS total FROM (
+        SELECT wt.user_id, DATE(wt.created_at)
+        FROM wallet_transactions wt
+        LEFT JOIN users u ON u.id = wt.user_id
+        WHERE ${whereClause}
+        GROUP BY wt.user_id, DATE(wt.created_at)
+      ) AS grouped_days`,
       params
     )
   ]);
-  const stats = statsRows[0] || { total: 0, total_credited: 0, total_deducted: 0, net_coins: 0 };
-  const total = Number(stats.total) || 0;
-  return { 
-    transactions, 
-    total,
-    stats: {
-      totalCount: total,
-      totalCredited: Number(stats.total_credited) || 0,
-      totalDeducted: Number(stats.total_deducted) || 0,
-      netCoins: Number(stats.net_coins) || 0
-    }
-  };
+
+  const total = Number(countRows[0]?.total) || 0;
+  return { transactions, total };
 }
 
 async function adjustCoins({ userId, coins, reason, mode }) {
