@@ -3,16 +3,15 @@ const { useState } = React;
 const PAGE_SIZE = 10;
 
 window.Wallet = function Wallet({
-  transactions,
-  total,
-  stats = { totalCount: 0, totalCredited: 0, totalDeducted: 0, netCoins: 0 },
-  page,
+  transactions = [],
+  total = 0,
+  page = 1,
   onPageChange,
-  gender,
+  gender = '',
   onGenderChange,
-  search,
+  search = '',
   onSearchChange,
-  date,
+  date = '',
   onDateChange,
   dateStr
 }) {
@@ -34,55 +33,12 @@ window.Wallet = function Wallet({
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo   = Math.min(page * PAGE_SIZE, total);
 
-  // Helper to format time cleanly
-  const formatTime = (timeStr, txTime) => {
-    if (txTime) return txTime;
-    if (!timeStr) return '-';
-    try {
-      const d = new Date(timeStr);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-    } catch {
-      return '-';
-    }
-  };
-
   // Helper to format date cleanly
   const formatDate = (timeStr, txDate) => {
     if (txDate) return txDate;
     if (!timeStr) return '-';
     return dateStr ? dateStr(timeStr) : new Date(timeStr).toLocaleDateString();
   };
-
-  // Helper to format type badge
-  const getTypeBadge = (type, title, coins, count) => {
-    const rawType = String(type || '').toLowerCase();
-    const isCredit = Number(coins) > 0 || ['purchase', 'earning', 'credit', 'reward', 'welcome_bonus'].includes(rawType);
-
-    let label = type || 'Activity';
-    if (rawType.includes('purchase')) label = 'Coin Purchase';
-    else if (rawType.includes('chat')) label = 'Chat Message';
-    else if (rawType.includes('call')) label = 'Call Charge';
-    else if (rawType.includes('gift')) label = 'Gift Sent';
-    else if (rawType.includes('reward') || rawType.includes('welcome_bonus')) label = 'Bonus Reward';
-    else if (rawType.includes('earning')) label = 'Earned / Credit';
-    else if (rawType.includes('spending')) label = 'Spent / Deduct';
-    else if (rawType.includes('admin')) label = isCredit ? 'Admin Credit' : 'Admin Deduct';
-    else {
-      label = String(type).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    }
-
-    const countText = count && count > 1 ? ` (${count})` : '';
-
-    return (
-      <span className={`badge ${isCredit ? 'green' : 'red'}`} style={{ fontWeight: 600, fontSize: '11px', whiteSpace: 'nowrap' }}>
-        {label}{countText}
-      </span>
-    );
-  };
-
-  const totalCredited = Number(stats?.totalCredited || 0);
-  const totalDeducted = Number(stats?.totalDeducted || 0);
-  const netCoins = Number(stats?.netCoins || 0);
 
   return (
     <section className="panel">
@@ -104,9 +60,6 @@ window.Wallet = function Wallet({
               <h3 style={{ fontSize: '17px', fontWeight: 'bold', color: '#f4f4f5', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>🪙</span> Daily Coin Activity & Transaction History
               </h3>
-              <p className="muted" style={{ fontSize: '12px', marginTop: '2px' }}>
-                Track real-time coin additions, deductions, spendings, and earnings of all users
-              </p>
             </div>
             <div style={{
               fontSize: '12px',
@@ -117,15 +70,15 @@ window.Wallet = function Wallet({
               color: '#818cf8',
               fontWeight: 'bold'
             }}>
-              Total Records: {total}
+              Total Daily Records: {total}
             </div>
           </div>
 
-          {/* Filter Inputs Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+          {/* Filter Inputs Grid: Search, Gender (All/Male/Female), Date */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
 
             {/* Search Input */}
-            <div style={{ position: 'relative', gridColumn: 'span 2', minWidth: '220px' }}>
+            <div style={{ position: 'relative', gridColumn: 'span 2', minWidth: '240px' }}>
               <span style={{
                 position: 'absolute', left: '12px', top: '50%',
                 transform: 'translateY(-50%)', color: '#71717a',
@@ -155,7 +108,7 @@ window.Wallet = function Wallet({
               )}
             </div>
 
-            {/* Gender Filter */}
+            {/* Gender Filter (All / Male / Female) */}
             <div>
               <select
                 className="select"
@@ -198,16 +151,16 @@ window.Wallet = function Wallet({
           </div>
         </div>
 
-        {/* ── Transactions Table ─────────────────────────────── */}
+        {/* ── Daily Summary Table ─────────────────────────────── */}
         <div className="table-wrap">
           {transactions.length === 0 ? (
             <div className="empty">
               <div>
                 <div className="metric-icon" style={{ margin: '0 auto' }}>--</div>
                 <p className="empty-title">No Activity Found</p>
-                <h3 style={{ marginTop: '8px' }}>No coin transactions found</h3>
+                <h3 style={{ marginTop: '8px' }}>No daily coin records found</h3>
                 <p className="muted" style={{ marginTop: '8px' }}>
-                  No coin activity matches your selected filters or date.
+                  No coin activity matches your selected search, gender, or date filter.
                 </p>
               </div>
             </div>
@@ -216,24 +169,22 @@ window.Wallet = function Wallet({
               <table>
                 <thead>
                   <tr>
-                    <th>User Details</th>
-                    <th>Date & Time</th>
-                    <th>Coin Amount</th>
-                    <th>Transaction Type</th>
-                    <th>Status</th>
+                    <th>User Name</th>
+                    <th>Unique User ID</th>
+                    <th>Date</th>
+                    <th>Total Coin Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((tx, idx) => {
                     const avatarLetter = tx.user_name ? tx.user_name.charAt(0).toUpperCase() : '?';
                     const displayId = String(tx.user_unique_id || tx.user_id || '').replace(/^STK-/i, '').padStart(6, '0');
-                    const rawType = String(tx.type || '').toLowerCase();
-                    const isCredit = Number(tx.coins) > 0 || ['purchase', 'earning', 'credit', 'reward'].includes(rawType);
-                    const coinVal = Math.abs(Number(tx.coins) || 0);
+                    const totalCoins = Math.round(Number(tx.total_coins !== undefined ? tx.total_coins : tx.coins) || 0);
+                    const isCredit = totalCoins >= 0;
 
                     return (
-                      <tr key={tx.id || idx}>
-                        {/* User Details */}
+                      <tr key={tx.id || `${tx.user_id}_${tx.tx_date}` || idx}>
+                        {/* 1. User Name */}
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
@@ -249,73 +200,55 @@ window.Wallet = function Wallet({
                               <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
                                 {tx.user_name || `User #${tx.user_id}`}
                               </strong>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                                <span style={{
-                                  fontFamily: 'monospace',
-                                  fontWeight: 800,
-                                  color: '#10b981',
-                                  background: 'rgba(16,185,129,0.1)',
-                                  padding: '1px 6px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  border: '1px solid rgba(16,185,129,0.2)'
-                                }}>ID {displayId}</span>
-                                {tx.user_email && (
-                                  <span className="muted" style={{ fontSize: '11px' }}>
-                                    {tx.user_email}
-                                  </span>
-                                )}
-                              </div>
+                              {tx.user_email && (
+                                <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                                  {tx.user_email}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
 
-                        {/* Date & Time */}
-                        <td style={{ whiteSpace: 'nowrap', minWidth: '135px' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                        {/* 2. Unique User ID */}
+                        <td>
+                          <span style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            color: '#10b981',
+                            background: 'rgba(16,185,129,0.1)',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            border: '1px solid rgba(16,185,129,0.2)'
+                          }}>
+                            ID {displayId}
+                          </span>
+                        </td>
+
+                        {/* 3. Date */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <window.Icon name="calendar" size={13} style={{ color: '#818cf8', flexShrink: 0 }} />
                             <span>{formatDate(tx.created_at, tx.tx_date)}</span>
                           </div>
-                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '3px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                            <window.Icon name="clock" size={12} style={{ color: '#71717a', flexShrink: 0 }} />
-                            <span>{formatTime(tx.created_at, tx.tx_time)}</span>
-                          </div>
                         </td>
 
-                        {/* Coin Amount (Pure Day Total) */}
+                        {/* 4. Total Coin Amount */}
                         <td>
-                          {(() => {
-                            const dayCoins = Number(tx.coins || 0);
-                            const isDayCredit = dayCoins > 0;
-                            return (
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '5px 12px',
-                                borderRadius: '16px',
-                                fontWeight: 800,
-                                fontSize: '13.5px',
-                                fontFamily: 'monospace',
-                                color: isDayCredit ? '#10b981' : '#f43f5e',
-                                background: isDayCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
-                                border: `1px solid ${isDayCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
-                              }}>
-                                {isDayCredit ? `+${dayCoins}` : `${dayCoins}`} Coins
-                              </span>
-                            );
-                          })()}
-                        </td>
-
-                        {/* Transaction Type / Activities */}
-                        <td>
-                          {getTypeBadge(tx.combined_types || tx.type, tx.title, tx.coins, tx.total_activities)}
-                        </td>
-
-                        {/* Status */}
-                        <td>
-                          <span className={`badge ${tx.status === 'completed' || tx.status === 'success' ? 'green' : 'yellow'}`}>
-                            {tx.status || 'completed'}
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '5px 12px',
+                            borderRadius: '16px',
+                            fontWeight: 800,
+                            fontSize: '13.5px',
+                            fontFamily: 'monospace',
+                            color: isCredit ? '#10b981' : '#f43f5e',
+                            background: isCredit ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
+                            border: `1px solid ${isCredit ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`
+                          }}>
+                            {isCredit ? `+${totalCoins.toLocaleString()}` : totalCoins.toLocaleString()} Coins
                           </span>
                         </td>
                       </tr>
@@ -332,7 +265,7 @@ window.Wallet = function Wallet({
               }}>
                 {/* Record count */}
                 <div className="muted" style={{ fontSize: '13px' }}>
-                  Showing <strong>{showingFrom}</strong> to <strong>{showingTo}</strong> of <strong>{total}</strong> coin records
+                  Showing <strong>{showingFrom}</strong> to <strong>{showingTo}</strong> of <strong>{total}</strong> daily records
                 </div>
 
                 {/* Navigation buttons */}
@@ -370,6 +303,7 @@ window.Wallet = function Wallet({
             </>
           )}
         </div>
+
       </div>
     </section>
   );

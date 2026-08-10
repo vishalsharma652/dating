@@ -2,6 +2,58 @@ const { query, transaction } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const notificationModel = require('./notificationModel');
 
+/**
+ * Helper to ensure 1 day = 1 record in wallet_transactions per user.
+ * If a transaction for this user already exists today (CURDATE()),
+ * it updates the existing record by accumulating the coins instead of inserting a new minute-wise row.
+ */
+async function recordOrUpdateDailyWalletTransaction(connection, { userId, type, title, description, coins, status = 'completed' }) {
+  const numCoins = Number(coins) || 0;
+  const [existing] = await connection.execute(
+    `SELECT id, coins, title, description 
+     FROM wallet_transactions 
+     WHERE user_id = :userId 
+       AND type = :type 
+       AND DATE(created_at) = CURDATE() 
+     ORDER BY id DESC LIMIT 1`,
+    { userId, type }
+  );
+
+  if (existing && existing.length > 0) {
+    const row = existing[0];
+    const updatedCoins = Number(row.coins || 0) + numCoins;
+    await connection.execute(
+      `UPDATE wallet_transactions 
+       SET coins = :updatedCoins, 
+           description = :description,
+           status = :status,
+           created_at = CURRENT_TIMESTAMP
+       WHERE id = :id`,
+      {
+        id: row.id,
+        updatedCoins,
+        description: description || row.description,
+        status
+      }
+    );
+    return row.id;
+  } else {
+    const [res] = await connection.execute(
+      `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+       VALUES (:userId, :type, :title, :description, 0, :coins, :status)`,
+      {
+        userId,
+        type,
+        title,
+        description,
+        coins: numCoins,
+        status
+      }
+    );
+    return res.insertId;
+  }
+}
+
 async function like(userId, targetUserId, action) {
   await query(
     `INSERT INTO likes (user_id, target_user_id, action) VALUES (:userId, :targetUserId, :action)
@@ -304,47 +356,46 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
         );
       }
 
-      // Deduct COIN_COST from male sender
+      // Deduct COIN_COST from male sender (updates existing today's record or creates 1 record per day)
       await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
       await connection.execute(
         `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
          ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
         { senderId, cost: COIN_COST }
       );
-      await connection.execute(
-        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-         VALUES (:senderId, 'chat_charge', :title, :desc, 0, :coins, 'completed')`,
-        {
-          senderId,
-          title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
-          desc: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
-          coins: -COIN_COST
-        }
-      );
+      await recordOrUpdateDailyWalletTransaction(connection, {
+        userId: senderId,
+        type: 'chat_charge',
+        title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
+        description: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
+        coins: -COIN_COST
+      });
 
-        // Credit COIN_COST to female recipient if applicable
-        if (recipientUserId) {
-          const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
-          const recipient = recipients[0];
-          const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
+      // Credit COIN_COST to female recipient if applicable
+      if (recipientUserId) {
+        const [recipients] = await connection.execute('SELECT id, gender FROM users WHERE id = :recipientUserId LIMIT 1 FOR UPDATE', { recipientUserId });
+        const recipient = recipients[0];
+        const isFemaleEarner = ['female', 'woman', 'girl', 'women'].includes(String(recipient?.gender || '').toLowerCase());
 
-          if (isFemaleEarner) {
-            const EARNING_COINS = COIN_COST;
-            await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
-            await connection.execute(
-              `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
-               VALUES (:recipientUserId, :earn, :earn, :earn)
-               ON DUPLICATE KEY UPDATE balance = balance + :earn, total_earned = total_earned + :earn, withdrawal_balance = withdrawal_balance + :earn`,
-              { recipientUserId, earn: EARNING_COINS }
-            );
-            await connection.execute(
-              `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-               VALUES (:recipientUserId, 'earning', 'Message Received Earning', :desc, 0, :coins, 'completed')`,
-              { recipientUserId, desc: `Earned ${EARNING_COINS} coins from message in chat #${chatId}`, coins: EARNING_COINS }
-            );
-          }
+        if (isFemaleEarner) {
+          const EARNING_COINS = COIN_COST;
+          await connection.execute('UPDATE users SET coins = coins + :earn, earnings = earnings + :earn WHERE id = :recipientUserId', { earn: EARNING_COINS, recipientUserId });
+          await connection.execute(
+            `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
+             VALUES (:recipientUserId, :earn, :earn, :earn)
+             ON DUPLICATE KEY UPDATE balance = balance + :earn, total_earned = total_earned + :earn, withdrawal_balance = withdrawal_balance + :earn`,
+            { recipientUserId, earn: EARNING_COINS }
+          );
+          await recordOrUpdateDailyWalletTransaction(connection, {
+            userId: recipientUserId,
+            type: 'earning',
+            title: 'Message Received Earning',
+            description: `Earned coins from message in chat #${chatId}`,
+            coins: EARNING_COINS
+          });
         }
       }
+    }
 
     const [msgRes] = await connection.execute(
       'INSERT INTO messages (chat_id, sender_id, body, type, delivery_status) VALUES (:chatId, :senderId, :body, :type, :deliveryStatus)',
@@ -443,22 +494,22 @@ async function chargeChatMinute(sessionId) {
     const earnerTitle = isVideoCall ? 'Video Call (1 min) Earning' : 'Chat Minute Earning';
     const descText = isVideoCall ? `Video Call session #${session.id}` : `Chat session #${session.id}`;
 
-    // Log wallet transactions for both users
-    await connection.execute(
-      `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-       VALUES (:payerUserId, 'chat_charge', :payerTitle, :payerDescription, 0, :payerCoins, 'completed'),
-              (:earnerUserId, 'earning',    :earnerTitle,  :earnerDescription, 0, :earnerCoins, 'completed')`,
-      {
-        payerUserId: session.payer_user_id,
-        earnerUserId: session.earner_user_id,
-        payerTitle,
-        earnerTitle,
-        payerDescription: descText,
-        earnerDescription: descText,
-        payerCoins: -charge,
-        earnerCoins: earnerShare
-      }
-    );
+    // Update daily wallet transactions for both users (1 day = 1 record accumulated)
+    await recordOrUpdateDailyWalletTransaction(connection, {
+      userId: session.payer_user_id,
+      type: 'chat_charge',
+      title: isVideoCall ? 'Video Call Daily Usage' : 'Chat Minute Daily Usage',
+      description: descText,
+      coins: -charge
+    });
+
+    await recordOrUpdateDailyWalletTransaction(connection, {
+      userId: session.earner_user_id,
+      type: 'earning',
+      title: isVideoCall ? 'Video Call Daily Earnings' : 'Chat Minute Daily Earnings',
+      description: descText,
+      coins: earnerShare
+    });
 
     // Log platform commission
     await connection.execute(
