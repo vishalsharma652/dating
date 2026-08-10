@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader } from '@/components/ui/loader';
-import { Check, Clock, AlertCircle } from 'lucide-react';
+import { Check, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { userApi, getStoredUser } from '@/lib/api';
 
 export default function WithdrawalHistoryPage() {
@@ -53,8 +54,20 @@ export default function WithdrawalHistoryPage() {
   return (
     <div className="p-4 md:p-8">
       <Container>
-        <h1 className="text-3xl font-bold mb-2">Withdrawal History</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">Track all your withdrawal requests</p>
+        {/* Header with Back button */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link
+            href="/user/withdraw"
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition shrink-0"
+            title="Back to Withdrawal"
+          >
+            <ArrowLeft size={18} className="text-zinc-300" />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Withdrawal History</h1>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm">Track all your withdrawal requests</p>
+          </div>
+        </div>
 
         <div className="space-y-3">
           {withdrawals.length === 0 && <Card className="p-8 text-center text-zinc-500">No withdrawals found.</Card>}

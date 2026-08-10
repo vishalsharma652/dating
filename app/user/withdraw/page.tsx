@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
-import { BadgeIndianRupee, Building2, CreditCard, History, Phone, Wallet } from 'lucide-react';
+import { BadgeIndianRupee, Building2, CreditCard, History, Phone, Wallet, ArrowLeft } from 'lucide-react';
 import { userApi, getStoredUser } from '@/lib/api';
 
 const inputCls =
@@ -102,8 +102,19 @@ export default function WithdrawPage() {
       <Container>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-1">Withdrawal</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Withdraw your earnings to your bank or UPI account</p>
+          <div className="flex items-center gap-4 mb-3">
+            <Link
+              href="/user/dashboard"
+              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition shrink-0"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={18} className="text-zinc-300" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold">Withdrawal</h1>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm">Withdraw your earnings to your bank or UPI account</p>
+            </div>
+          </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-200 dark:border-pink-900/40 px-4 py-2">
               <Wallet size={18} className="text-pink-500" />
