@@ -42,8 +42,16 @@ async function wallet(userId) {
     };
   }
 
-  // Always synchronize wallet_id in database to match user's unique_id (STK-XXXXXX)
+  // Always synchronize wallet_id and coins in database
   try {
+    const userCoins = Number(rows[0].userCoins || 0);
+    const walletCoins = Number(rows[0].coins || 0);
+    if (userCoins !== walletCoins) {
+      const syncedCoins = Math.min(userCoins, walletCoins);
+      await query('UPDATE users SET coins = :c WHERE id = :userId', { c: syncedCoins, userId });
+      await query('UPDATE wallets SET balance = :c WHERE id = :id', { c: syncedCoins, id: rows[0].walletRowId });
+      rows[0].coins = syncedCoins;
+    }
     await query('UPDATE wallets SET wallet_id = :userUniqueId WHERE id = :id', { userUniqueId, id: rows[0].walletRowId });
   } catch (err) { /* ignore */ }
   rows[0].walletId = userUniqueId;

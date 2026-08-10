@@ -337,11 +337,21 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     // Check sender gender
     const [senders] = await connection.execute('SELECT id, name, gender, coins FROM users WHERE id = :senderId LIMIT 1 FOR UPDATE', { senderId });
     const sender = senders[0];
+    const [wallets] = await connection.execute('SELECT balance FROM wallets WHERE user_id = :senderId LIMIT 1 FOR UPDATE', { senderId });
+
     const isMalePayer = ['male', 'man', 'boy', 'men'].includes(String(sender?.gender || '').toLowerCase());
 
     if (isMalePayer) {
       const COIN_COST = type === 'say_hi' ? 5 : 10;
-      const currentCoins = Number(sender.coins || 0);
+      let currentCoins = Number(sender?.coins || 0);
+      if (wallets[0] && wallets[0].balance !== undefined) {
+        const walletBal = Number(wallets[0].balance || 0);
+        currentCoins = Math.min(currentCoins, walletBal);
+        if (Number(sender?.coins || 0) !== currentCoins || walletBal !== currentCoins) {
+          await connection.execute('UPDATE users SET coins = :c WHERE id = :senderId', { c: currentCoins, senderId });
+          await connection.execute('UPDATE wallets SET balance = :c WHERE user_id = :senderId', { c: currentCoins, senderId });
+        }
+      }
 
       if (currentCoins < COIN_COST) {
         throw new AppError('Recharge khatam ho gaya. Message deliver nahi hua.', 400);
@@ -353,11 +363,11 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
       }
 
       // Deduct COIN_COST from male sender (updates existing today's record or creates 1 record per day)
-      await connection.execute('UPDATE users SET coins = GREATEST(coins - :cost, 0) WHERE id = :senderId', { cost: COIN_COST, senderId });
+      await connection.execute('UPDATE users SET coins = :rem WHERE id = :senderId', { rem: remainingCoins, senderId });
       await connection.execute(
-        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, 0, :cost)
-         ON DUPLICATE KEY UPDATE balance = GREATEST(balance - :cost, 0), total_spent = total_spent + :cost`,
-        { senderId, cost: COIN_COST }
+        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, :rem, :cost)
+         ON DUPLICATE KEY UPDATE balance = :rem, total_spent = total_spent + :cost`,
+        { senderId, rem: remainingCoins, cost: COIN_COST }
       );
       await recordOrUpdateDailyWalletTransaction(connection, {
         userId: senderId,
