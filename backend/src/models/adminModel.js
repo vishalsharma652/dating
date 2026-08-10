@@ -193,7 +193,7 @@ async function walletLogs({ page = 1, limit = 10, search = '', gender = '', date
 
   const whereClause = filters.join(' AND ');
 
-  const [transactions, countRows] = await Promise.all([
+  const [transactions, statsRows] = await Promise.all([
     query(
       `SELECT wt.id, wt.user_id, wt.type, wt.title, wt.description, wt.amount, wt.coins, wt.status, wt.created_at,
               DATE_FORMAT(wt.created_at, '%d %b %Y') AS tx_date,
@@ -206,10 +206,30 @@ async function walletLogs({ page = 1, limit = 10, search = '', gender = '', date
        ORDER BY wt.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
       params
     ),
-    query(`SELECT COUNT(*) AS total FROM wallet_transactions wt LEFT JOIN users u ON u.id = wt.user_id WHERE ${whereClause}`, params)
+    query(
+      `SELECT 
+         COUNT(*) AS total,
+         COALESCE(SUM(CASE WHEN wt.coins > 0 THEN wt.coins ELSE 0 END), 0) AS total_credited,
+         COALESCE(SUM(CASE WHEN wt.coins < 0 THEN ABS(wt.coins) ELSE 0 END), 0) AS total_deducted,
+         COALESCE(SUM(wt.coins), 0) AS net_coins
+       FROM wallet_transactions wt 
+       LEFT JOIN users u ON u.id = wt.user_id 
+       WHERE ${whereClause}`,
+      params
+    )
   ]);
-  const total = countRows[0]?.total || 0;
-  return { transactions, total };
+  const stats = statsRows[0] || { total: 0, total_credited: 0, total_deducted: 0, net_coins: 0 };
+  const total = Number(stats.total) || 0;
+  return { 
+    transactions, 
+    total,
+    stats: {
+      totalCount: total,
+      totalCredited: Number(stats.total_credited) || 0,
+      totalDeducted: Number(stats.total_deducted) || 0,
+      netCoins: Number(stats.net_coins) || 0
+    }
+  };
 }
 
 async function adjustCoins({ userId, coins, reason, mode }) {

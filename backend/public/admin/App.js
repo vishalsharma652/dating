@@ -48,6 +48,7 @@ function App() {
   const [walletGender, setWalletGender] = useState('');
   const [walletSearch, setWalletSearch] = useState('');
   const [walletDate, setWalletDate] = useState('');
+  const [walletStats, setWalletStats] = useState({ totalCount: 0, totalCredited: 0, totalDeducted: 0, netCoins: 0 });
 
   // Modals States
   const [detailModal, setDetailModal] = useState({
@@ -141,6 +142,7 @@ function App() {
       const res = await apiRequest(`/admin/wallet/transactions?page=${walletPage}&limit=10&gender=${walletGender}&search=${encodeURIComponent(walletSearch)}&date=${walletDate}`);
       setWalletTransactions(res.data.transactions || []);
       setWalletTotal(res.data.total || 0);
+      setWalletStats(res.data.stats || { totalCount: 0, totalCredited: 0, totalDeducted: 0, netCoins: 0 });
     } catch (err) {
       showNotice(err.message, 'error');
     }
@@ -559,6 +561,7 @@ function App() {
           <window.Wallet
             transactions={walletTransactions}
             total={walletTotal}
+            stats={walletStats}
             page={walletPage}
             onPageChange={setWalletPage}
             gender={walletGender}

@@ -129,8 +129,8 @@ async function updateKyc(req, res) {
 }
 
 async function walletLogs(req, res) {
-  const { transactions, total } = await adminModel.walletLogs(req.query);
-  return ok(res, { transactions, total });
+  const { transactions, total, stats } = await adminModel.walletLogs(req.query);
+  return ok(res, { transactions, total, stats });
 }
 
 async function adjustCoins(req, res) {
