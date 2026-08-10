@@ -294,6 +294,7 @@ function App() {
           body: JSON.stringify({ status })
         });
         showNotice(`Withdrawal marked as ${status}.`);
+        await loadAllData();
       },
       status === 'rejected'
     );
