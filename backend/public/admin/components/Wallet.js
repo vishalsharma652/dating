@@ -129,7 +129,7 @@ window.Wallet = function Wallet({
               </span>
               <input
                 className="input"
-                placeholder="Search by User Name, Unique ID, Email, or Reason..."
+                placeholder="Search by User Name, Unique ID, or Email..."
                 value={search || ''}
                 onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
                 style={{ paddingLeft: '36px', paddingRight: '36px', height: '40px', width: '100%', borderRadius: '8px', fontSize: '13px' }}
@@ -214,7 +214,6 @@ window.Wallet = function Wallet({
                     <th>Date & Time</th>
                     <th>Coin Amount</th>
                     <th>Transaction Type</th>
-                    <th>Reason / Source</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -267,11 +266,13 @@ window.Wallet = function Wallet({
 
                         {/* Date & Time */}
                         <td style={{ whiteSpace: 'nowrap', minWidth: '135px' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', whiteSpace: 'nowrap' }}>
-                            📅 {formatDate(tx.created_at, tx.tx_date)}
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                            <window.Icon name="calendar" size={13} style={{ color: '#818cf8', flexShrink: 0 }} />
+                            <span>{formatDate(tx.created_at, tx.tx_date)}</span>
                           </div>
-                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '3px', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                            ⏰ {formatTime(tx.created_at, tx.tx_time)}
+                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '3px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                            <window.Icon name="clock" size={12} style={{ color: '#71717a', flexShrink: 0 }} />
+                            <span>{formatTime(tx.created_at, tx.tx_time)}</span>
                           </div>
                         </td>
 
@@ -297,18 +298,6 @@ window.Wallet = function Wallet({
                         {/* Transaction Type */}
                         <td>
                           {getTypeBadge(tx.type, tx.title, tx.coins)}
-                        </td>
-
-                        {/* Reason / Source */}
-                        <td>
-                          <div style={{ fontSize: '13px', color: '#d4d4d8', maxWidth: '280px', wordBreak: 'break-word' }}>
-                            {tx.description || tx.title || '-'}
-                          </div>
-                          {tx.amount > 0 && (
-                            <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>
-                              Amount: ₹{Number(tx.amount).toFixed(2)}
-                            </div>
-                          )}
                         </td>
 
                         {/* Status */}
