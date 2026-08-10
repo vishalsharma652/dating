@@ -75,7 +75,7 @@ router.post('/wallet/bank-accounts', [
   body('ifscCode').optional({ values: 'falsy' }).isString(),
   body('upiId').optional({ values: 'falsy' }).isString()
 ], validate, asyncHandler(user.saveBankAccount));
-router.post('/withdraw', [body('amount').isFloat({ min: 500 }), body('method').isIn(['upi', 'bank_transfer'])], validate, asyncHandler(user.createWithdrawal));
+router.post('/withdraw', [body('amount').isFloat({ min: 50 }), body('method').isIn(['upi', 'bank_transfer'])], validate, asyncHandler(user.createWithdrawal));
 router.get('/withdraw/history', asyncHandler(user.withdrawals));
 
 router.get('/notifications', asyncHandler(user.notifications));
