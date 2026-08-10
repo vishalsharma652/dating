@@ -56,20 +56,23 @@ window.Wallet = function Wallet({
   const getTypeBadge = (type, title, coins) => {
     const rawType = String(type || '').toLowerCase();
     const rawTitle = String(title || '').toLowerCase();
-    const isCredit = coins > 0 || ['purchase', 'earning', 'credit', 'reward'].includes(rawType);
+    const isCredit = Number(coins) > 0 || ['purchase', 'earning', 'credit', 'reward', 'welcome_bonus'].includes(rawType);
 
     let label = type || 'Transaction';
     if (rawType === 'purchase') label = 'Coin Purchase';
     else if (rawType === 'spending') label = 'Spent / Deduct';
     else if (rawType === 'earning') label = 'Earned / Credit';
-    else if (rawType === 'chat') label = 'Chat Message';
-    else if (rawType === 'call') label = 'Voice / Video Call';
-    else if (rawType === 'gift') label = 'Gift Sent';
-    else if (rawType === 'reward') label = 'Daily Reward';
+    else if (rawType === 'chat' || rawType === 'chat_charge') label = 'Chat Message';
+    else if (rawType === 'call' || rawType === 'call_charge') label = 'Call Charge';
+    else if (rawType === 'gift' || rawType === 'gift_charge') label = 'Gift Sent';
+    else if (rawType === 'reward' || rawType === 'welcome_bonus') label = 'Bonus Reward';
     else if (rawTitle.includes('admin') || rawType.includes('admin')) label = isCredit ? 'Admin Credit' : 'Admin Deduct';
+    else {
+      label = String(type).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
 
     return (
-      <span className={`badge ${isCredit ? 'green' : 'red'}`} style={{ fontWeight: 600, fontSize: '11px' }}>
+      <span className={`badge ${isCredit ? 'green' : 'red'}`} style={{ fontWeight: 600, fontSize: '11px', whiteSpace: 'nowrap' }}>
         {label}
       </span>
     );
@@ -263,11 +266,11 @@ window.Wallet = function Wallet({
                         </td>
 
                         {/* Date & Time */}
-                        <td>
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7' }}>
+                        <td style={{ whiteSpace: 'nowrap', minWidth: '135px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', whiteSpace: 'nowrap' }}>
                             📅 {formatDate(tx.created_at, tx.tx_date)}
                           </div>
-                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '2px', fontFamily: 'monospace' }}>
+                          <div className="muted" style={{ fontSize: '11.5px', marginTop: '3px', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                             ⏰ {formatTime(tx.created_at, tx.tx_time)}
                           </div>
                         </td>
