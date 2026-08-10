@@ -40,7 +40,6 @@ function App() {
   const [userGender, setUserGender] = useState('');
   const [userOnline, setUserOnline] = useState('');
   const [userKyc, setUserKyc] = useState('');
-  const [userRole, setUserRole] = useState('');
   const [userSort, setUserSort] = useState('newest');
 
   // Wallet Pagination States
@@ -120,7 +119,7 @@ function App() {
 
   const loadUsersList = async () => {
     try {
-      const res = await apiRequest(`/admin/users?page=${usersPage}&limit=10&search=${encodeURIComponent(userSearch)}&status=${userStatus}&gender=${userGender}&online_status=${userOnline}&kyc_status=${userKyc}&role=${userRole}&sort=${userSort}`);
+      const res = await apiRequest(`/admin/users?page=${usersPage}&limit=10&search=${encodeURIComponent(userSearch)}&status=${userStatus}&gender=${userGender}&online_status=${userOnline}&kyc_status=${userKyc}&sort=${userSort}`);
       setUsersList(res.data.users || []);
       setUsersTotal(res.data.total || 0);
     } catch (err) {
@@ -132,7 +131,7 @@ function App() {
     if (token) {
       loadUsersList();
     }
-  }, [token, usersPage, userSearch, userStatus, userGender, userOnline, userKyc, userRole, userSort]);
+  }, [token, usersPage, userSearch, userStatus, userGender, userOnline, userKyc, userSort]);
 
   const loadWalletTransactions = async () => {
     try {
@@ -527,8 +526,6 @@ function App() {
             onOnlineChange={setUserOnline}
             kyc={userKyc}
             onKycChange={setUserKyc}
-            role={userRole}
-            onRoleChange={setUserRole}
             sort={userSort}
             onSortChange={setUserSort}
             onViewProfile={openUserProfile}

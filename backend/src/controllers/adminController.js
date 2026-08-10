@@ -87,8 +87,9 @@ async function dashboard(req, res) {
 }
 
 async function users(req, res) {
-  const users = await userModel.list(req.query);
-  const total = await userModel.count(req.query);
+  const queryParams = { ...req.query, role: 'user' };
+  const users = await userModel.list(queryParams);
+  const total = await userModel.count(queryParams);
   return ok(res, { users, total });
 }
 

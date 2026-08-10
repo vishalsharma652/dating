@@ -17,8 +17,6 @@ window.Users = function Users({
   onOnlineChange,
   kyc,
   onKycChange,
-  role,
-  onRoleChange,
   sort,
   onSortChange,
   onViewProfile,
@@ -136,14 +134,6 @@ window.Users = function Users({
               <option value="rejected">Rejected KYC</option>
             </select>
 
-            <select className="select" value={role}
-              onChange={(e) => { onRoleChange(e.target.value); onPageChange(1); }}
-              style={{ height: '40px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', fontSize: '13px', border: '1px solid var(--border)' }}>
-              <option value="">All Roles</option>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-
             <select className="select" value={sort}
               onChange={(e) => { onSortChange(e.target.value); onPageChange(1); }}
               style={{ height: '40px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', fontSize: '13px', border: '1px solid var(--border)' }}>
@@ -183,8 +173,6 @@ window.Users = function Users({
                   {users.map((u) => {
                     const avatarLetter = u.name ? u.name.charAt(0).toUpperCase() : '?';
                     const displayId = String(u.unique_id || u.id || '').replace(/^STK-/i, '').padStart(6, '0');
-                    const isFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
-                    const isMale = ['male', 'man', 'boy', 'men'].includes(String(u.gender || '').toLowerCase());
                     return (
                       <tr key={u.id}>
                         <td>
@@ -200,23 +188,8 @@ window.Users = function Users({
                             </div>
                             <div>
                               <strong style={{ color: '#f4f4f5', fontSize: '14px' }}>{u.name}</strong>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                                {(isFemale || isMale) && (
-                                  <span style={{
-                                    fontSize: '9.5px',
-                                    fontWeight: '800',
-                                    padding: '1px 5px',
-                                    borderRadius: '4px',
-                                    background: isFemale ? 'rgba(236,72,153,0.15)' : 'rgba(59,130,246,0.15)',
-                                    color: isFemale ? '#ec4899' : '#60a5fa',
-                                    border: `1px solid ${isFemale ? 'rgba(236,72,153,0.3)' : 'rgba(59,130,246,0.3)'}`
-                                  }}>
-                                    {isFemale ? '♀ Female' : '♂ Male'}
-                                  </span>
-                                )}
-                                <span className="muted" style={{ fontSize: '11px' }}>
-                                  Reg: {dateStr(u.created_at)}
-                                </span>
+                              <div className="muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                                Reg: {dateStr(u.created_at)}
                               </div>
                             </div>
                           </div>
