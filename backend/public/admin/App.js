@@ -449,7 +449,7 @@ function App() {
   };
 
   const openKycVerification = (user) => {
-    let livePhoto = user.kyc_document_url || user.selfieUrl || (user.photos && user.photos[0]) || '/avatar-priya.jpg';
+    let livePhoto = user.kyc_document_url || user.selfieUrl || (user.photos && user.photos[0]) || '/female-logo.svg';
     if (livePhoto && !livePhoto.startsWith('http') && !livePhoto.startsWith('/')) {
       livePhoto = '/' + livePhoto;
     }

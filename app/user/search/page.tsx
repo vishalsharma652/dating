@@ -102,7 +102,7 @@ export default function UserSearchPage() {
             <p className="text-sm font-semibold text-zinc-400">Found {results.length} matching profile{results.length !== 1 ? 's' : ''}:</p>
             <div className="grid gap-6 md:grid-cols-2">
               {results.map((user) => {
-                const defaultAvatar = isBoy ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+                const defaultAvatar = isBoy ? '/female-logo.svg' : '/male-logo.svg';
                 const photoVal = user.photo && user.photo.trim() && user.photo !== '/placeholder.svg'
                   ? (apiAssetUrl(user.photo) || user.photo)
                   : defaultAvatar;

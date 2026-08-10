@@ -147,7 +147,7 @@ export default function ProfilePage() {
   const followerCount = Number((data as any)?.followerCount || 0);
   const followingCount = Number((data as any)?.followingCount || 0);
   const isFemale = user.gender === 'female';
-  const defaultProfileAvatar = isFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+  const defaultProfileAvatar = isFemale ? '/female-logo.svg' : '/male-logo.svg';
   const photos = profile.photos?.length
     ? profile.photos.map((p: string) => apiAssetUrl(p) || p)
     : [];

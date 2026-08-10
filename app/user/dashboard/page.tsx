@@ -90,10 +90,10 @@ export default function DashboardPage() {
   const targetLabel = 'All Users';
   const activeTargetLabel = 'Active Users';
 
-  const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
-  const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
+  const girlFallbacks = ['/female-logo.svg'];
+  const boyFallbacks = ['/male-logo.svg'];
   const fallbacks = isUserFemale ? boyFallbacks : girlFallbacks;
-  const defaultHeaderAvatar = isUserFemale ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+  const defaultHeaderAvatar = isUserFemale ? '/female-logo.svg' : '/male-logo.svg';
 
   const rawMasterUsers = (data?.allUsers && Array.isArray(data.allUsers) && data.allUsers.length > 0)
     ? data.allUsers
@@ -389,6 +389,10 @@ export default function DashboardPage() {
                             src={girl.photo}
                             alt={girl.name}
                             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = isUserMale ? '/female-logo.svg' : '/male-logo.svg';
+                            }}
                           />
 
                           {/* Gradient Overlay */}

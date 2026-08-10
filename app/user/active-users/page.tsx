@@ -71,8 +71,8 @@ function ActiveUsersContent() {
   const targetLabel = isUserFemale ? 'Active Males' : (userGender === 'male' ? 'Active Females' : 'Active Users');
   const allTargetLabel = isUserFemale ? 'All Males' : (isUserMale ? 'All Females' : 'All Users');
 
-  const girlFallbacks = ['/avatar-priya.jpg', '/avatar-ananya.jpg', '/avatar-neha.jpg', '/avatar-riya.jpg'];
-  const boyFallbacks = ['/avatar-boy1.jpg', '/avatar-boy2.jpg', '/avatar-boy3.jpg', '/avatar-boy4.jpg'];
+  const girlFallbacks = ['/female-logo.svg'];
+  const boyFallbacks = ['/male-logo.svg'];
 
   const formattedUsers = allMasterUsers.map((u: any, idx: number) => {
     const isTargetFemale = ['female', 'woman', 'girl', 'women'].includes(String(u.gender || '').toLowerCase());
@@ -227,6 +227,10 @@ function ActiveUsersContent() {
                     src={u.photo}
                     alt={u.name}
                     className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).onerror = null;
+                      (e.currentTarget as HTMLImageElement).src = u.isTargetFemale ? '/female-logo.svg' : '/male-logo.svg';
+                    }}
                   />
 
                   {/* Gradient Overlay */}

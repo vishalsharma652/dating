@@ -144,7 +144,7 @@ export default function NotificationsPage() {
                 <Card key={req.requestId} className="p-4 bg-[#0D1424] border border-pink-500/20 shadow-xl rounded-2xl">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Avatar src={req.photo || '/avatar-boy1.jpg'} alt={req.name} fallback={req.name?.[0] || 'U'} />
+                      <Avatar src={req.photo || '/male-logo.svg'} alt={req.name} fallback={req.name?.[0] || 'U'} />
                       <div className="min-w-0">
                         <h3 className="font-bold text-sm text-white truncate">{req.name}</h3>
                         <p className="text-xs text-zinc-400 truncate">requested to follow you.</p>

@@ -51,7 +51,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           // Gender-based default avatar: boy sees girl photo, girl sees boy photo
           const storedUser = getStoredUser();
           const isBoyUser = String(storedUser?.gender || '').toLowerCase() === 'male';
-          const defaultAvatar = isBoyUser ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+          const defaultAvatar = isBoyUser ? '/female-logo.svg' : '/male-logo.svg';
           const resolvedPhoto = otherUser.photo && otherUser.photo.trim()
             ? (apiAssetUrl(otherUser.photo) || otherUser.photo)
             : defaultAvatar;

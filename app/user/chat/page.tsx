@@ -130,7 +130,7 @@ export default function ChatListPage() {
             </Card>
           )}
           {filteredChats.map((chat) => {
-            const defaultAvatar = isBoy ? '/avatar-priya.jpg' : '/avatar-boy1.jpg';
+            const defaultAvatar = isBoy ? '/female-logo.svg' : '/male-logo.svg';
             const photoVal = chat.photo && chat.photo.trim() && chat.photo !== '/placeholder.svg'
               ? (apiAssetUrl(chat.photo) || chat.photo)
               : defaultAvatar;
