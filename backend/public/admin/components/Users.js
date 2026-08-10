@@ -171,7 +171,7 @@ window.Users = function Users({
                 <tbody>
                   {users.map((u) => {
                     const avatarLetter = u.name ? u.name.charAt(0).toUpperCase() : '?';
-                    const displayId = u.unique_id;
+                    const displayId = String(u.unique_id || u.id || '').replace(/^STK-/i, '').padStart(6, '0');
                     return (
                       <tr key={u.id}>
                         <td>

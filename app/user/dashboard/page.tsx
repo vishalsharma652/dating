@@ -21,6 +21,7 @@ import {
   Gift,
   Copy,
   X,
+  Fingerprint,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [showReferModal, setShowReferModal] = useState(false);
   const [referCopied, setReferCopied] = useState(false);
+  const [idCopied, setIdCopied] = useState(false);
 
   useEffect(() => {
     userApi.dashboard()
@@ -168,13 +170,42 @@ export default function DashboardPage() {
 
         {/* Top Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
+          <div className="space-y-1">
             <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
               Welcome back, {user.name || 'User'}! 👋
             </h1>
-            <p className="text-zinc-400 text-sm font-medium mt-1">
-              Here's what's happening with your dating journey
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-zinc-400 text-sm font-medium">
+                Here's what's happening with your dating journey
+              </p>
+              {/* Logged in User Unique ID Badge */}
+              {(user.unique_id || user.id) && (() => {
+                const rawId = user.unique_id || user.id || '';
+                const displayUniqueId = String(rawId).replace(/^STK-/i, '').padStart(6, '0');
+                return (
+                  <button
+                    type="button"
+                    title="Click to copy your Unique ID"
+                    onClick={() => {
+                      navigator.clipboard.writeText(displayUniqueId);
+                      setIdCopied(true);
+                      setTimeout(() => setIdCopied(false), 2000);
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#10B981]/15 to-[#6366f1]/15 border border-[#10B981]/30 hover:border-[#10B981]/60 transition-all duration-200 cursor-pointer group shadow-sm"
+                  >
+                    <Fingerprint size={13} className="text-[#10B981]" />
+                    <span className="text-[11px] font-black text-[#10B981] tracking-widest uppercase">
+                      ID: {displayUniqueId}
+                    </span>
+                    {idCopied ? (
+                      <span className="text-[10px] text-emerald-400 font-bold">Copied!</span>
+                    ) : (
+                      <Copy size={11} className="text-[#10B981]/60 group-hover:text-[#10B981] transition" />
+                    )}
+                  </button>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Right Header Controls */}

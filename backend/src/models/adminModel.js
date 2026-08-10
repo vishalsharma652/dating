@@ -8,7 +8,7 @@ async function dashboard() {
   const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals FROM withdrawals WHERE status = "pending"');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
-  const recentUsers = await query('SELECT id, name, email, phone, role, status, (online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online_status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
+  const recentUsers = await query('SELECT id, unique_id, name, email, phone, role, status, (online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online_status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
   return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...chats, ...coins, recentUsers };
 }
 
@@ -137,22 +137,8 @@ async function kycRequests({ page = 1, limit = 20, status = 'pending' } = {}) {
 
 
 async function updateKyc(id, { status }) {
-  if (status === 'approved') {
-    try {
-      await query(
-        `UPDATE users
-         SET kyc_status = :status,
-              unique_id = CASE WHEN unique_id IS NULL THEN LPAD(id, 6, '0') ELSE REPLACE(unique_id, 'STK-', '') END
-         WHERE id = :id`,
-        { id, status }
-      );
-    } catch {
-      await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
-    }
-  } else {
-    await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
-  }
-  return query('SELECT id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
+  await query('UPDATE users SET kyc_status = :status WHERE id = :id', { id, status });
+  return query('SELECT id, unique_id, name, email, phone, kyc_status FROM users WHERE id = :id', { id }).then((rows) => rows[0]);
 }
 
 

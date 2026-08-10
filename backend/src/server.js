@@ -12,6 +12,12 @@ async function start() {
     await pool.query('ALTER TABLE users ADD COLUMN kyc_document_url TEXT NULL');
   } catch {}
   try {
+    await pool.query('ALTER TABLE users ADD COLUMN unique_id VARCHAR(20) NULL UNIQUE AFTER id');
+  } catch {}
+  try {
+    await pool.query("UPDATE users SET unique_id = CONCAT('STK-', LPAD(id, 6, '0')) WHERE unique_id IS NULL OR unique_id = ''");
+  } catch {}
+  try {
     await pool.query("UPDATE users SET status = 'active' WHERE status = 'inactive'");
   } catch {}
   try {
