@@ -271,7 +271,7 @@ export const userApi = {
   messages: (userId: number | string) =>
     apiRequest<{ chat: any; messages: any[] }>(`/user/chat/${userId}/messages`),
   sendMessage: (userId: number | string, text: string, type: string = 'text') =>
-    apiRequest<{ message: any }>(`/user/chat/${userId}/messages`, {
+    apiRequest<{ message: any; rechargeExhausted?: boolean; remainingCoins?: number; notice?: string }>(`/user/chat/${userId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ text, type }),
     }),

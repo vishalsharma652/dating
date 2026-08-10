@@ -126,12 +126,24 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
+      if (data.remainingCoins !== undefined && data.remainingCoins !== null) {
+        setWalletBalance(Number(data.remainingCoins));
+      }
+      if (data.rechargeExhausted || (isBoy && data.remainingCoins !== null && Number(data.remainingCoins) < 5)) {
+        setChatBlocked(true);
+        setSendError('Recharge khatam ho gaya');
+      }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('app:wallet-updated', { detail: {} }));
       }
     } catch (err: any) {
       console.error('Send message error:', err);
-      setSendError(err?.message || 'Failed to send message');
+      const errMsg = err?.message || 'Failed to send message';
+      if (errMsg.toLowerCase().includes('recharge') || errMsg.toLowerCase().includes('coin') || errMsg.toLowerCase().includes('deliver')) {
+        setSendError('Recharge khatam ho gaya. Message deliver nahi hua.');
+      } else {
+        setSendError(errMsg);
+      }
     }
   };
 
@@ -183,8 +195,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           <Container>
             {sendError && (
               <div className="my-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg">
-                <p className="flex-1">{sendError}</p>
-                {sendError.toLowerCase().includes('coin') && (
+                <p className="flex-1 font-bold">{sendError}</p>
+                {(sendError.toLowerCase().includes('coin') || sendError.toLowerCase().includes('recharge')) && (
                   <Link
                     href="/user/wallet/coins"
                     className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs whitespace-nowrap shadow-md"
@@ -192,6 +204,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     Buy Coins 🪙
                   </Link>
                 )}
+              </div>
+            )}
+            {isBoy && walletBalance !== null && walletBalance < 5 && !sendError && (
+              <div className="my-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg">
+                <p className="flex-1 font-bold">⚠️ Recharge khatam ho gaya. Send message karne ke liye coins buy karein.</p>
+                <Link
+                  href="/user/wallet/coins"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs whitespace-nowrap shadow-md"
+                >
+                  Buy Coins 🪙
+                </Link>
               </div>
             )}
             {messages.length === 0 && (

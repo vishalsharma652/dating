@@ -453,15 +453,17 @@ function App() {
       livePhoto = '/' + livePhoto;
     }
 
+    const displayUniqueId = String(user.unique_id || user.id || '').replace(/^STK-/i, '').padStart(6, '0');
+
     const html = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{user.name}</h4>
-            <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: #{user.id} &bull; Email: {user.email || 'N/A'} &bull; Phone: {user.phone || 'N/A'}</p>
+            <p className="muted" style={{ fontSize: '12px', marginTop: '4px' }}>User ID: #{user.id} &bull; Email: {user.email || 'N/A'}</p>
           </div>
           {user.unique_id ? (
-            <span className="badge green" style={{ fontSize: '12px', fontWeight: 800 }}>{user.unique_id}</span>
+            <span className="badge green" style={{ fontSize: '12px', fontWeight: 800 }}>{displayUniqueId}</span>
           ) : (
             <span className="badge yellow" style={{ fontSize: '11px' }}>Pending Unique ID Assignment</span>
           )}
@@ -499,7 +501,7 @@ function App() {
         </div>
         <div style={{ backgroundColor: 'rgba(45,226,230,0.08)', borderRadius: '10px', padding: '12px', border: '1px solid rgba(45,226,230,0.2)' }}>
           <p style={{ margin: 0, fontSize: '12px', color: '#2de2e6' }}>
-            <strong>Note:</strong> Approving this KYC request will verify the user profile and automatically assign a Unique ID (e.g. <code>STK-000123</code>).
+            <strong>Note:</strong> Approving this KYC request will verify the user profile and automatically assign a Unique ID (e.g. <code>000123</code>).
           </p>
         </div>
       </div>

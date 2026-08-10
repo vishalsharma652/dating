@@ -330,6 +330,9 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
 
   let messageId;
   let deliveryStatus = 'sent';
+  let rechargeExhausted = false;
+  let remainingCoins = null;
+
   await transaction(async (connection) => {
     // Check sender gender
     const [senders] = await connection.execute('SELECT id, name, gender, coins FROM users WHERE id = :senderId LIMIT 1 FOR UPDATE', { senderId });
@@ -338,22 +341,15 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
 
     if (isMalePayer) {
       const COIN_COST = type === 'say_hi' ? 5 : 10;
-      let currentCoins = Number(sender.coins || 0);
+      const currentCoins = Number(sender.coins || 0);
 
       if (currentCoins < COIN_COST) {
-        // Auto-grant 50 bonus coins if balance is insufficient
-        const bonusCoins = 50;
-        await connection.execute('UPDATE users SET coins = coins + :bonus WHERE id = :senderId', { bonus: bonusCoins, senderId });
-        await connection.execute(
-          `INSERT INTO wallets (user_id, balance) VALUES (:senderId, :bonus)
-           ON DUPLICATE KEY UPDATE balance = balance + :bonus`,
-          { senderId, bonus: bonusCoins }
-        );
-        await connection.execute(
-          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-           VALUES (:senderId, 'bonus', 'Welcome Bonus', 'Free bonus coins added for Say Hi & chat', 0, :bonus, 'completed')`,
-          { senderId, bonus: bonusCoins }
-        );
+        throw new AppError('Recharge khatam ho gaya. Message deliver nahi hua.', 400);
+      }
+
+      remainingCoins = Math.max(0, currentCoins - COIN_COST);
+      if (remainingCoins < 5) {
+        rechargeExhausted = true;
       }
 
       // Deduct COIN_COST from male sender (updates existing today's record or creates 1 record per day)
@@ -405,7 +401,16 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   });
 
-  return { id: messageId, senderId, text: body, type, deliveryStatus };
+  return {
+    id: messageId,
+    senderId,
+    text: body,
+    type,
+    deliveryStatus,
+    rechargeExhausted,
+    remainingCoins,
+    notice: rechargeExhausted ? 'Recharge khatam ho gaya' : undefined
+  };
 }
 
 

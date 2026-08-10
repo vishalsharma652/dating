@@ -341,7 +341,12 @@ async function messages(req, res) {
 async function sendMessage(req, res) {
   const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
-  return created(res, { message }, 'Message sent');
+  return created(res, {
+    message,
+    rechargeExhausted: message.rechargeExhausted,
+    remainingCoins: message.remainingCoins,
+    notice: message.notice
+  }, message.rechargeExhausted ? 'Message sent. Recharge khatam ho gaya.' : 'Message sent');
 }
 
 async function deleteMessage(req, res) {
@@ -364,14 +369,8 @@ async function startChatSession(req, res) {
   const payerUserId = currentGender === 'male' ? req.user.id : otherUser.id;
   const earnerUserId = payerUserId === req.user.id ? otherUser.id : req.user.id;
   let payerWallet = await walletModel.wallet(payerUserId);
-  if (!payerWallet || Number(payerWallet.coins || 0) < 10) {
-    // Auto-grant 50 bonus coins if balance is low
-    await query('UPDATE users SET coins = coins + 50 WHERE id = :payerUserId', { payerUserId });
-    await query(
-      `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-       VALUES (:payerUserId, 'bonus', 'Welcome Bonus', 'Free bonus coins added for chat', 0, 50, 'completed')`,
-      { payerUserId }
-    );
+  if (!payerWallet || Number(payerWallet.coins || 0) < 5) {
+    throw new AppError('Recharge khatam ho gaya. Please buy coins to chat.', 402);
   }
   const session = await socialModel.startChatSession(chat.id, payerUserId, earnerUserId, await settingsModel.chatSettings());
   return created(res, { session }, 'Chat session started');
