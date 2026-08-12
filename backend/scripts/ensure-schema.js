@@ -42,8 +42,25 @@ async function main() {
     console.log('wallet_transactions.payment_reference already exists');
   }
 
-  await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type ENUM('welcome_bonus','purchase','earning','withdrawal','chat_charge','commission') NOT NULL");
+  await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type ENUM('welcome_bonus','purchase','earning','withdrawal','chat_charge','commission','gift_sent','gift_received') NOT NULL");
   await pool.query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_gifts (
+      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      sender_id BIGINT UNSIGNED NOT NULL,
+      recipient_id BIGINT UNSIGNED NOT NULL,
+      gift_name VARCHAR(100) NOT NULL,
+      gift_icon VARCHAR(20) NOT NULL,
+      coins INT UNSIGNED NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user_gifts_recipient (recipient_id),
+      INDEX idx_user_gifts_sender (sender_id),
+      CONSTRAINT fk_user_gifts_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_user_gifts_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  console.log('user_gifts table ready');
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS wallets (

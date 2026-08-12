@@ -195,8 +195,9 @@ export const userApi = {
     activeGirls?: any[];
     assignedGirl?: any | null;
   }>('/user/dashboard'),
-  profile: () => apiRequest<{ user: any; profile: any }>('/user/profile'),
-  getPublicProfile: (id: string | number) => apiRequest<{ user: any; profile: any; status?: 'none' | 'pending' | 'accepted'; following?: boolean; isPending?: boolean; followerCount?: number; followingCount?: number }>(`/user/profile/${id}`),
+  profile: () => apiRequest<{ user: any; profile: any; giftWall?: any[] }>('/user/profile'),
+  getPublicProfile: (id: string | number) => apiRequest<{ user: any; profile: any; giftWall?: any[]; status?: 'none' | 'pending' | 'accepted'; following?: boolean; isPending?: boolean; followerCount?: number; followingCount?: number }>(`/user/profile/${id}`),
+  getGifts: (id?: string | number) => apiRequest<{ giftWall: any[] }>(id ? `/user/gifts/${id}` : '/user/gifts'),
   toggleFollow: (id: string | number) =>
     apiRequest<{ status: 'none' | 'pending' | 'accepted'; following: boolean; isPending: boolean; followerCount: number; followingCount: number }>(`/user/follow/${id}`, {
       method: 'POST',

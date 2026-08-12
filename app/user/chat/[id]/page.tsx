@@ -3,16 +3,11 @@
 import { Container } from '@/components/ui/container';
 import { ChatHeader } from '@/components/user/chat-header';
 import { ChatInput } from '@/components/user/chat-input';
-import { VoiceCallModal } from '@/components/user/voice-call-modal';
-import { VideoCallModal } from '@/components/user/video-call-modal';
 import { authApi, getStoredUser, userApi, apiAssetUrl } from '@/lib/api';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Check, CheckCheck, Clock, Sparkles, Trash2, X } from 'lucide-react';
-
-type ActiveCall = 'voice' | 'video' | null;
+import { Check, CheckCheck, Clock, Sparkles, Trash2 } from 'lucide-react';
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -48,7 +43,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           if (!active) return;
           setMessages(data.messages || []);
           const otherUser = data.chat?.otherUser || { id, name: 'User', photo: '', online: false };
-          // Gender-based default avatar: boy sees girl photo, girl sees boy photo
           const storedUser = getStoredUser();
           const isBoyUser = String(storedUser?.gender || '').toLowerCase() === 'male';
           const defaultAvatar = isBoyUser ? '/female-logo.svg' : '/male-logo.svg';
@@ -174,7 +168,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <>
-      {/* ── Main Chat UI ── Fixed full screen on mobile, static flex on desktop ── */}
+      {/* ── Main Chat UI with ID in URL (/user/chat/[id]) ── */}
       <div className="fixed inset-0 md:static md:h-[calc(100vh-64px)] z-40 bg-[#070B18] flex flex-col">
         <ChatHeader
           user={chatUser}
@@ -223,6 +217,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               </div>
             )}
+
             {messages.map((msg) => {
               if (msg.type === 'system' || msg.text === 'Recharge khatam ho gaya') {
                 return (
@@ -248,7 +243,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               return (
                 <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-1 group/msg relative`}>
                   <div className="flex items-center gap-1.5 max-w-[85%] sm:max-w-md">
-                    {/* Delete Icon — always visible, left side for sent messages */}
                     {isMine && !isDeleted && (
                       <button
                         type="button"
@@ -298,7 +292,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               );
             })}
 
-            {/* Bottom notice for Send Error / Low Coins */}
             {sendError && (
               <div className="my-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg">
                 <p className="flex-1 font-bold">{sendError}</p>
@@ -328,14 +321,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           </Container>
         </div>
 
-
-
-
-        {/* Bottom bar */}
+        {/* Bottom Input Bar */}
         <ChatInput onSend={handleSend} />
       </div>
 
-      {/* ── Delete Message Modal ── */}
+      {/* Delete Message Modal */}
       {deleteModalMsg && (
         <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDeleteModalMsg(null)}>
           <div

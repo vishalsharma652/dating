@@ -333,15 +333,93 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
   let rechargeExhausted = false;
   let remainingCoins = null;
 
+
+
   await transaction(async (connection) => {
-    // Check sender gender
+    // Check sender details
     const [senders] = await connection.execute('SELECT id, name, gender, coins FROM users WHERE id = :senderId LIMIT 1 FOR UPDATE', { senderId });
     const sender = senders[0];
     const [wallets] = await connection.execute('SELECT balance FROM wallets WHERE user_id = :senderId LIMIT 1 FOR UPDATE', { senderId });
 
     const isMalePayer = ['male', 'man', 'boy', 'men'].includes(String(sender?.gender || '').toLowerCase());
 
-    if (isMalePayer) {
+    // GIFT LOGIC FOR BOTH BOYS AND GIRLS
+    if (type === 'gift') {
+      let giftName = 'Virtual Gift';
+      let giftIcon = '🎁';
+      let giftCoins = 10;
+
+      const match = String(body || '').match(/🎁\s*Sent a\s+(.+?)\s+([^\s()]+)\s*\((?:🪙\s*)?(\d+)\s*Coins\)/i);
+      if (match) {
+        giftName = match[1].trim();
+        giftIcon = match[2].trim();
+        giftCoins = parseInt(match[3], 10) || 10;
+      }
+
+      let currentCoins = Number(sender?.coins || 0);
+      if (wallets[0] && wallets[0].balance !== undefined) {
+        const walletBal = Number(wallets[0].balance || 0);
+        currentCoins = Math.min(currentCoins, walletBal);
+      }
+
+      if (currentCoins < giftCoins) {
+        throw new AppError(`Insufficient coins. ${giftName} costs ${giftCoins} coins. Please buy coins.`, 400);
+      }
+
+      remainingCoins = Math.max(0, currentCoins - giftCoins);
+      if (remainingCoins < 5) {
+        rechargeExhausted = true;
+      }
+
+      // Deduct coins from sender (Boy or Girl)
+      await connection.execute('UPDATE users SET coins = :rem WHERE id = :senderId', { rem: remainingCoins, senderId });
+      await connection.execute(
+        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, :rem, :cost)
+         ON DUPLICATE KEY UPDATE balance = :rem, total_spent = total_spent + :cost`,
+        { senderId, rem: remainingCoins, cost: giftCoins }
+      );
+      await connection.execute(
+        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+         VALUES (:senderId, 'gift_sent', :title, :description, 0, :coins, 'completed')`,
+        {
+          senderId,
+          title: `Gift Sent: ${giftName}`,
+          description: `Sent ${giftName} ${giftIcon} (${giftCoins} coins)`,
+          coins: -giftCoins
+        }
+      );
+
+      // Credit coins & record gift for recipient
+      if (recipientUserId) {
+        await connection.execute(
+          'UPDATE users SET coins = coins + :giftCoins, earnings = earnings + :giftCoins WHERE id = :recipientUserId',
+          { giftCoins, recipientUserId }
+        );
+        await connection.execute(
+          `INSERT INTO wallets (user_id, balance, total_earned, withdrawal_balance)
+           VALUES (:recipientUserId, :giftCoins, :giftCoins, :giftCoins)
+           ON DUPLICATE KEY UPDATE balance = balance + :giftCoins, total_earned = total_earned + :giftCoins, withdrawal_balance = withdrawal_balance + :giftCoins`,
+          { recipientUserId, giftCoins }
+        );
+        await connection.execute(
+          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+           VALUES (:recipientUserId, 'gift_received', :title, :description, 0, :coins, 'completed')`,
+          {
+            recipientUserId,
+            title: `Gift Received: ${giftName}`,
+            description: `Received ${giftName} ${giftIcon} (${giftCoins} coins)`,
+            coins: giftCoins
+          }
+        );
+        // Record in user_gifts table
+        await connection.execute(
+          `INSERT INTO user_gifts (sender_id, recipient_id, gift_name, gift_icon, coins)
+           VALUES (:senderId, :recipientUserId, :giftName, :giftIcon, :giftCoins)`,
+          { senderId, recipientUserId, giftName, giftIcon, giftCoins }
+        );
+      }
+    } else if (isMalePayer) {
+      // Regular text / say_hi message for male payers
       const COIN_COST = type === 'say_hi' ? 5 : 10;
       let currentCoins = Number(sender?.coins || 0);
       if (wallets[0] && wallets[0].balance !== undefined) {
@@ -362,7 +440,7 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
         rechargeExhausted = true;
       }
 
-      // Deduct COIN_COST from male sender (updates existing today's record or creates 1 record per day)
+      // Deduct COIN_COST from male sender
       await connection.execute('UPDATE users SET coins = :rem WHERE id = :senderId', { rem: remainingCoins, senderId });
       await connection.execute(
         `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, :rem, :cost)
@@ -794,6 +872,78 @@ async function getFollowersList(userId, viewerId) {
   );
 }
 
+async function getUserGiftWall(userId) {
+  const targetId = Number(userId);
+  if (!targetId) return [];
+
+  // Ensure user_gifts table exists
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS user_gifts (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        sender_id BIGINT UNSIGNED NOT NULL,
+        recipient_id BIGINT UNSIGNED NOT NULL,
+        gift_name VARCHAR(100) NOT NULL,
+        gift_icon VARCHAR(20) NOT NULL,
+        coins INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_gifts_recipient (recipient_id),
+        INDEX idx_user_gifts_sender (sender_id),
+        CONSTRAINT fk_user_gifts_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_user_gifts_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+  } catch (e) {}
+
+  // Auto-backfill from historical gift messages if user_gifts table has no records for targetId
+  try {
+    const [checkCount] = await query('SELECT COUNT(*) AS total FROM user_gifts WHERE recipient_id = :targetId', { targetId });
+    if (!checkCount || Number(checkCount.total) === 0) {
+      const giftMessages = await query(
+        `SELECT m.sender_id, m.body, m.created_at
+         FROM messages m
+         JOIN chats c ON c.id = m.chat_id
+         WHERE (c.user_one_id = :targetId OR c.user_two_id = :targetId)
+           AND m.sender_id != :targetId
+           AND m.type = 'gift'`,
+        { targetId }
+      );
+
+      for (const msg of giftMessages) {
+        const match = String(msg.body || '').match(/🎁\s*Sent a\s+(.+?)\s+([^\s()]+)\s*\((?:🪙\s*)?(\d+)\s*Coins\)/i);
+        if (match) {
+          const giftName = match[1].trim();
+          const giftIcon = match[2].trim();
+          const giftCoins = parseInt(match[3], 10) || 10;
+          await query(
+            `INSERT INTO user_gifts (sender_id, recipient_id, gift_name, gift_icon, coins, created_at)
+             VALUES (:senderId, :recipientId, :giftName, :giftIcon, :giftCoins, :createdAt)`,
+            { senderId: msg.sender_id, recipientId: targetId, giftName, giftIcon, giftCoins, createdAt: msg.created_at }
+          );
+        }
+      }
+    }
+  } catch (e) {}
+
+  const rows = await query(
+    `SELECT gift_name AS giftName, gift_icon AS giftIcon, coins,
+            COUNT(*) AS qty, SUM(coins) AS totalCoins
+     FROM user_gifts
+     WHERE recipient_id = :targetId
+     GROUP BY gift_name, gift_icon, coins
+     ORDER BY qty DESC, coins DESC`,
+    { targetId }
+  );
+
+  return rows.map((r) => ({
+    giftName: r.giftName,
+    giftIcon: r.giftIcon,
+    coins: Number(r.coins || 0),
+    qty: Number(r.qty || 0),
+    totalCoins: Number(r.totalCoins || 0)
+  }));
+}
+
 module.exports = {
   like,
   matches,
@@ -818,5 +968,6 @@ module.exports = {
   getFollowStats,
   getFollowingList,
   getFollowersList,
-  togglePinChat
+  togglePinChat,
+  getUserGiftWall
 };

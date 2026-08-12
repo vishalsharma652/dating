@@ -107,7 +107,8 @@ function normalizeGender(value) {
 async function getProfile(req, res) {
   const profile = await profileModel.getForUser(req.user.id);
   const stats = await socialModel.getFollowStats(req.user.id);
-  return ok(res, { user: req.user, profile, ...stats });
+  const giftWall = await socialModel.getUserGiftWall(req.user.id);
+  return ok(res, { user: req.user, profile, ...stats, giftWall });
 }
 
 async function getPublicProfile(req, res) {
@@ -116,6 +117,7 @@ async function getPublicProfile(req, res) {
   if (!targetUser) throw new AppError('User not found', 404);
   const profile = await profileModel.getForUser(targetId);
   const status = await socialModel.getFollowStatus(req.user.id, targetId);
+  const giftWall = await socialModel.getUserGiftWall(targetId);
   return ok(res, {
     user: {
       id: targetUser.id,
@@ -128,8 +130,15 @@ async function getPublicProfile(req, res) {
       created_at: targetUser.created_at
     },
     profile,
+    giftWall,
     ...status
   });
+}
+
+async function getUserGiftWall(req, res) {
+  const targetId = req.params.id || req.user.id;
+  const giftWall = await socialModel.getUserGiftWall(targetId);
+  return ok(res, { giftWall });
 }
 
 async function toggleFollow(req, res) {
@@ -317,8 +326,9 @@ async function chats(req, res) {
 }
 
 async function requestChat(req, res) {
-  if (Number(req.params.userId) === Number(req.user.id)) throw new AppError('You cannot request a chat with yourself', 422);
-  return created(res, { request: await socialModel.createChatRequest(req.user.id, Number(req.params.userId)) }, 'Chat request sent');
+  const otherUserId = await userModel.resolveUserId(req.params.userId);
+  if (Number(otherUserId) === Number(req.user.id)) throw new AppError('You cannot request a chat with yourself', 422);
+  return created(res, { request: await socialModel.createChatRequest(req.user.id, otherUserId) }, 'Chat request sent');
 }
 
 async function respondToChatRequest(req, res) {
@@ -332,14 +342,15 @@ async function chatRequests(req, res) {
 }
 
 async function messages(req, res) {
-  const otherUserId = Number(req.params.userId);
+  const otherUserId = await userModel.resolveUserId(req.params.userId);
   const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
   const otherUser = await socialModel.chatPartner(req.user.id, otherUserId);
   return ok(res, { chat: { ...chat, otherUser }, messages: await socialModel.messages(chat.id, req.user.id) });
 }
 
 async function sendMessage(req, res) {
-  const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
+  const otherUserId = await userModel.resolveUserId(req.params.userId);
+  const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
   return created(res, {
     message,
@@ -357,8 +368,9 @@ async function deleteMessage(req, res) {
 }
 
 async function startChatSession(req, res) {
-  const chat = await socialModel.getOrCreateChat(req.user.id, Number(req.params.userId));
-  const otherUser = await userModel.findPublicById(Number(req.params.userId));
+  const otherUserId = await userModel.resolveUserId(req.params.userId);
+  const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
+  const otherUser = await userModel.findPublicById(otherUserId);
   if (!otherUser) throw new AppError('Chat partner not found', 404);
 
   const currentGender = normalizeGender(req.user.gender);
@@ -677,6 +689,7 @@ module.exports = {
   dashboard,
   getProfile,
   getPublicProfile,
+  getUserGiftWall,
   toggleFollow,
   getFollowStatus,
   respondFollowRequest,

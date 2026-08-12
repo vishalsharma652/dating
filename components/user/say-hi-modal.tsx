@@ -58,7 +58,8 @@ export function SayHiModal({ isOpen, onClose, targetUser, currentCoins }: SayHiM
       }
 
       onClose();
-      router.push(`/user/chat/${targetUser.id}`);
+      const targetSlug = (targetUser as any)?.uniqueId || (targetUser as any)?.unique_id || String(targetUser.id || '').padStart(6, '0');
+      router.push(`/user/chat/${targetSlug}`);
     } catch (err: any) {
       setError(err.message || 'Failed to send Say Hi message');
     } finally {

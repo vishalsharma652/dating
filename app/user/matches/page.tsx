@@ -69,18 +69,21 @@ export default function MatchesPage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold mb-1">{match.name}</h3>
-                    <div className="flex gap-2 mb-4">
-                      <Button size="sm" className="flex-1" asChild>
-                        <Link href={`/user/chat/${match.profileId || match.userId}`}>
-                          <MessageCircle size={16} />
-                          Chat
-                        </Link>
-                      </Button>
+                      {(() => {
+                        const matchSlug = match.uniqueId || match.unique_id || String(match.userId || match.profileId || '').padStart(6, '0');
+                        return (
+                          <Button size="sm" className="flex-1" asChild>
+                            <Link href={`/user/chat/${matchSlug}`}>
+                              <MessageCircle size={16} />
+                              Chat
+                            </Link>
+                          </Button>
+                        );
+                      })()}
                       <Button size="sm" variant="outline" className="flex-1">
                         View Profile
                       </Button>
                     </div>
-                  </div>
                 </Card>
               ))}
             </div>

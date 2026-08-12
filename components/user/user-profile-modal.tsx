@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock, MessageCircle } from 'lucide-react';
+import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock, MessageCircle, Gift, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, apiAssetUrl } from '@/lib/api';
 import { FollowersModal } from '@/components/user/followers-modal';
 import { SayHiModal } from '@/components/user/say-hi-modal';
+import { GiftWall } from '@/components/user/gift-wall';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -308,7 +309,8 @@ export function UserProfileModal({
               type="button"
               onClick={() => {
                 onClose();
-                router.push(`/user/chat/${userId || initialUser?.id}`);
+                const targetSlug = uniqueId || String(userId || initialUser?.id || '').padStart(6, '0');
+                router.push(`/user/chat/${targetSlug}`);
               }}
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md border-0 cursor-pointer"
             >
@@ -349,6 +351,43 @@ export function UserProfileModal({
             </div>
           </div>
         )}
+
+        {/* Gift Wall Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            const targetId = userId || initialUser?.id;
+            if (targetId) {
+              router.push(`/user/gift-wall/${targetId}`);
+            } else {
+              router.push('/user/gift-wall');
+            }
+          }}
+          className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-pink-500/15 to-purple-500/15 hover:from-amber-500/25 hover:to-purple-500/25 border border-amber-500/30 text-amber-300 hover:text-white text-xs font-black transition flex items-center justify-between shadow-md cursor-pointer group"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <Gift size={16} />
+            </div>
+            <div className="text-left">
+              <span className="block font-bold text-white text-xs flex items-center gap-1.5">
+                <span>Gift Wall 🎁</span>
+                <Sparkles size={11} className="text-amber-400 fill-amber-400" />
+              </span>
+              <span className="text-[10px] text-zinc-400 font-semibold">
+                {profileData?.giftWall?.length
+                  ? `${profileData.giftWall.reduce((acc: number, item: any) => acc + (Number(item.qty) || 0), 0)} Gifts Received`
+                  : 'View Virtual Gifts'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-amber-300 font-extrabold text-[11px] group-hover:translate-x-0.5 transition bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl">
+            <span>View Wall</span>
+            <ExternalLink size={12} />
+          </div>
+        </button>
 
         {/* Call Action Buttons */}
         <div className="flex items-center gap-3 pt-2">

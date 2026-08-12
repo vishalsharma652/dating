@@ -135,9 +135,10 @@ export default function ChatListPage() {
               ? (apiAssetUrl(chat.photo) || chat.photo)
               : defaultAvatar;
             const isPinned = Boolean(chat.isPinned);
+            const chatSlug = chat.uniqueId || String(chat.userId || '').padStart(6, '0');
 
             return (
-              <Link key={chat.id} href={`/user/chat/${chat.userId}`}>
+              <Link key={chat.id} href={`/user/chat/${chatSlug}`}>
                 <Card className={`p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition cursor-pointer relative ${
                   isPinned ? 'border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-500/[0.04]' : ''
                 }`}>

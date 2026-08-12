@@ -47,24 +47,41 @@ async function create({ name, email = null, phone, password, role = 'user', phon
   return findById(result.insertId);
 }
 
+async function resolveUserId(idOrUniqueId) {
+  if (!idOrUniqueId) return null;
+  const str = String(idOrUniqueId).trim();
+  const numericId = parseInt(str, 10);
+
+  const rows = await query(
+    `SELECT id FROM users WHERE id = :numericId OR unique_id = :str OR unique_id = :stkStr LIMIT 1`,
+    { numericId: isNaN(numericId) ? 0 : numericId, str, stkStr: `STK-${str}` }
+  );
+
+  return rows[0] ? Number(rows[0].id) : (isNaN(numericId) ? null : numericId);
+}
+
 async function findById(id) {
+  const resolvedId = await resolveUserId(id);
+  const targetId = resolvedId || id;
   try {
-    const rows = await query(`SELECT ${publicFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    const rows = await query(`SELECT ${publicFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :targetId LIMIT 1`, { targetId });
     return rows[0] || null;
   } catch (err) {
     const fallbackFields = publicFields.replace('u.unique_id,', '');
-    const rows = await query(`SELECT ${fallbackFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    const rows = await query(`SELECT ${fallbackFields}, u.password_hash FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :targetId LIMIT 1`, { targetId });
     return rows[0] || null;
   }
 }
 
 async function findPublicById(id) {
+  const resolvedId = await resolveUserId(id);
+  const targetId = resolvedId || id;
   try {
-    const rows = await query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    const rows = await query(`SELECT ${publicFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :targetId LIMIT 1`, { targetId });
     return rows[0] || null;
   } catch (err) {
     const fallbackFields = publicFields.replace('u.unique_id,', '');
-    const rows = await query(`SELECT ${fallbackFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :id LIMIT 1`, { id });
+    const rows = await query(`SELECT ${fallbackFields} FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = :targetId LIMIT 1`, { targetId });
     return rows[0] || null;
   }
 }
@@ -268,4 +285,4 @@ async function updatePassword(id, newPassword) {
   return true;
 }
 
-module.exports = { create, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword, remove };
+module.exports = { create, resolveUserId, findById, findPublicById, findByEmailOrPhone, list, count, update, updatePassword, markOnline, markOffline, verifyPassword, remove };
