@@ -4,12 +4,13 @@ const settingsModel = require('./settingsModel');
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc, SUM(role = "user" AND online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS onlineUsers FROM users');
   const [revenueRow] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
-  const [paidRow] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
-  const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals FROM withdrawals WHERE status = "pending"');
+  const [paidRow] = await query('SELECT COUNT(*) AS completedWithdrawals, COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
+  const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals, COALESCE(SUM(amount), 0) AS pendingWithdrawalAmount FROM withdrawals WHERE status = "pending"');
+  const [totalWithdrawalsRow] = await query('SELECT COUNT(*) AS totalWithdrawals, COALESCE(SUM(amount), 0) AS totalWithdrawalAmount FROM withdrawals');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
   const recentUsers = await query('SELECT id, unique_id, name, email, phone, role, status, (online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online_status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
-  return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...chats, ...coins, recentUsers };
+  return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...totalWithdrawalsRow, ...chats, ...coins, recentUsers };
 }
 
 async function listTable(table, { page = 1, limit = 20 } = {}) {
@@ -281,7 +282,7 @@ async function chats({ page = 1, limit = 20 } = {}) {
 
 async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
   const pageNumber = Math.max(Number(page) || 1, 1);
-  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 1000);
   const offset = (pageNumber - 1) * limitNumber;
   const filters = ['1=1'];
   const params = {};
@@ -291,7 +292,7 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
   }
   return query(
     `SELECT w.*, COALESCE(NULLIF(w.coins, 0), ROUND(w.amount * 4)) AS coins,
-            u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
+            u.name AS user_name, u.phone AS user_phone, u.email AS user_email, u.gender AS user_gender,
             COALESCE(REPLACE(u.unique_id, 'STK-', ''), REPLACE(wa.wallet_id, 'STK-', ''), LPAD(w.user_id, 6, '0')) AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
@@ -302,24 +303,51 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
   );
 }
 
-async function updateWithdrawal(id, { status }) {
+async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {}) {
   await transaction(async (connection) => {
     const [rows] = await connection.execute('SELECT * FROM withdrawals WHERE id = :id LIMIT 1 FOR UPDATE', { id });
     const withdrawal = rows[0];
     if (!withdrawal) return;
-    if (withdrawal.status === status) return;
+
+    const targetStatus = status || withdrawal.status;
+    const updates = ['status = :status'];
+    const params = { id, status: targetStatus };
+
+    if (targetStatus === 'completed' && (!withdrawal.completed_at || withdrawal.status !== 'completed')) {
+      updates.push('completed_at = CURRENT_TIMESTAMP');
+    } else if (targetStatus !== 'completed' && withdrawal.status === 'completed') {
+      updates.push('completed_at = NULL');
+    }
+
+    if (screenshot_url !== undefined) {
+      updates.push('screenshot_url = :screenshot_url');
+      params.screenshot_url = screenshot_url;
+    }
+    if (admin_note !== undefined) {
+      updates.push('admin_note = :admin_note');
+      params.admin_note = admin_note;
+    }
 
     await connection.execute(
-      'UPDATE withdrawals SET status = :status, completed_at = IF(:status = "completed", CURRENT_TIMESTAMP, completed_at) WHERE id = :id',
-      { id, status }
+      `UPDATE withdrawals SET ${updates.join(', ')} WHERE id = :id`,
+      params
     );
 
-    if (status === 'rejected' && withdrawal.status === 'pending') {
+    if (targetStatus === 'rejected' && withdrawal.status === 'pending') {
       await connection.execute('UPDATE users SET earnings = earnings + :amount WHERE id = :userId', {
         amount: withdrawal.amount,
         userId: withdrawal.user_id
       });
       await connection.execute('UPDATE wallets SET withdrawal_balance = withdrawal_balance + :amount WHERE user_id = :userId', {
+        amount: withdrawal.amount,
+        userId: withdrawal.user_id
+      });
+    } else if (withdrawal.status === 'rejected' && (targetStatus === 'completed' || targetStatus === 'pending')) {
+      await connection.execute('UPDATE users SET earnings = GREATEST(0, earnings - :amount) WHERE id = :userId', {
+        amount: withdrawal.amount,
+        userId: withdrawal.user_id
+      });
+      await connection.execute('UPDATE wallets SET withdrawal_balance = GREATEST(0, withdrawal_balance - :amount) WHERE user_id = :userId', {
         amount: withdrawal.amount,
         userId: withdrawal.user_id
       });
@@ -333,7 +361,7 @@ async function updateWithdrawal(id, { status }) {
          ELSE status
        END
        WHERE user_id = :userId AND type = 'withdrawal' AND description = :description`,
-      { status, userId: withdrawal.user_id, description: `Withdrawal #${id}` }
+      { status: targetStatus, userId: withdrawal.user_id, description: `Withdrawal #${id}` }
     );
   });
   return query('SELECT * FROM withdrawals WHERE id = :id', { id }).then((rows) => rows[0]);

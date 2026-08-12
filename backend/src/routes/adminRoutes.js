@@ -27,7 +27,7 @@ router.post('/wallet/adjust', [
 router.get('/chats', asyncHandler(admin.chats));
 
 router.get('/withdrawals', asyncHandler(admin.withdrawals));
-router.patch('/withdrawals/:id', [param('id').isInt(), body('status').isIn(['pending', 'completed', 'rejected'])], validate, asyncHandler(admin.updateWithdrawal));
+router.patch('/withdrawals/:id', upload.single('screenshot'), [param('id').isInt(), body('status').optional().isIn(['pending', 'completed', 'rejected'])], validate, asyncHandler(admin.updateWithdrawal));
 
 router.get('/reports', asyncHandler(admin.reports));
 

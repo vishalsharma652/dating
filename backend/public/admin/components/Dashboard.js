@@ -132,13 +132,15 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           id: 'paid',
           title: 'Paid to Girls',
           value: rupees(d.totalPaid || 0),
-          badge: 'INR',
+          badge: 'PAID',
           iconName: 'heart',
           color: colors.paid,
-          desc: 'Total amount paid',
+          desc: (d.pendingWithdrawals && d.pendingWithdrawals > 0)
+            ? `⏳ ${d.pendingWithdrawals} pending payout${d.pendingWithdrawals > 1 ? 's' : ''}`
+            : `✓ ${d.completedWithdrawals || 0} approved payout${(d.completedWithdrawals || 0) === 1 ? '' : 's'}`,
           wavePath: 'M 0 24 Q 25 20 50 26 T 100 22',
           areaPath: 'M 0 24 Q 25 20 50 26 T 100 22 L 100 30 L 0 30 Z',
-          onClick: () => onTabChange && onTabChange('withdrawals')
+          onClick: () => onTabChange && onTabChange('paid_to_girls')
         })}
         {renderMetricCard({
           id: 'kyc',
@@ -158,12 +160,12 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
       <div className="metric-row-2">
         {renderMetricCard({
           id: 'withdraw',
-          title: 'Withdrawals',
-          value: d.pendingWithdrawals || 0,
-          badge: 'WD',
-          iconName: 'arrow-down-to-line',
+          title: 'Withdrawals (Paid)',
+          value: d.completedWithdrawals || 0,
+          badge: 'PAID',
+          iconName: 'arrow-up-right',
           color: colors.withdraw,
-          desc: 'Total withdrawal requests',
+          desc: `${rupees(d.totalPaid || 0)} total paid records`,
           wavePath: 'M 0 22 Q 25 18 50 24 T 100 8',
           areaPath: 'M 0 22 Q 25 18 50 24 T 100 8 L 100 30 L 0 30 Z',
           onClick: () => onTabChange && onTabChange('withdrawals')

@@ -88,7 +88,11 @@ function App() {
 
   const apiRequest = async (path, options = {}) => {
     const headers = new Headers(options.headers || {});
-    headers.set('Content-Type', 'application/json');
+    if (!(options.body instanceof FormData)) {
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+    }
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
@@ -161,7 +165,7 @@ function App() {
         apiRequest('/admin/dashboard'),
         apiRequest('/admin/kyc'),
         apiRequest('/admin/chats'),
-        apiRequest('/admin/withdrawals'),
+        apiRequest('/admin/withdrawals?limit=500'),
         apiRequest('/admin/reports'),
         apiRequest('/admin/settings'),
         apiRequest('/admin/users?limit=200')
@@ -283,21 +287,45 @@ function App() {
     );
   };
 
-  const processWithdrawal = (id, status) => {
-    confirmAction(
-      'Process Withdrawal?',
-      `Withdrawal request #${id} will be marked as ${status}.`,
-      'Update Payout',
-      async () => {
-        await apiRequest(`/admin/withdrawals/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status })
-        });
-        showNotice(`Withdrawal marked as ${status}.`);
-        await loadAllData();
-      },
-      status === 'rejected'
-    );
+  const processWithdrawal = async (id, payload) => {
+    try {
+      let bodyData;
+      let targetStatus = 'completed';
+
+      if (typeof payload === 'string') {
+        targetStatus = payload;
+        bodyData = JSON.stringify({ status: payload });
+      } else if (payload instanceof FormData) {
+        bodyData = payload;
+        targetStatus = payload.get('status') || 'completed';
+      } else if (typeof payload === 'object' && payload !== null) {
+        targetStatus = payload.status || 'completed';
+        if (payload.screenshotFile instanceof File) {
+          const fd = new FormData();
+          if (payload.status) fd.append('status', payload.status);
+          if (payload.screenshotFile) fd.append('screenshot', payload.screenshotFile);
+          if (payload.adminNote) fd.append('admin_note', payload.adminNote);
+          bodyData = fd;
+        } else {
+          bodyData = JSON.stringify({
+            status: payload.status,
+            screenshot_url: payload.screenshotUrl,
+            admin_note: payload.adminNote
+          });
+        }
+      }
+
+      const res = await apiRequest(`/admin/withdrawals/${id}`, {
+        method: 'PATCH',
+        body: bodyData
+      });
+      showNotice(`Withdrawal #${id} status updated to ${targetStatus}.`);
+      await loadAllData();
+      return res;
+    } catch (err) {
+      showNotice(err.message || 'Failed to update withdrawal', 'error');
+      throw err;
+    }
   };
 
   const handleAdjustWallet = async (e) => {
@@ -583,6 +611,21 @@ function App() {
           <window.Withdrawals
             withdrawals={withdrawalsList}
             onProcess={processWithdrawal}
+            onRefresh={loadAllData}
+            onTabChange={setActiveTab}
+            showNotice={showNotice}
+            rupees={rupees}
+            dateStr={dateStr}
+          />
+        );
+      case 'paid_to_girls':
+        return (
+          <window.PaidToGirls
+            withdrawals={withdrawalsList}
+            onProcess={processWithdrawal}
+            onRefresh={loadAllData}
+            onTabChange={setActiveTab}
+            showNotice={showNotice}
             rupees={rupees}
             dateStr={dateStr}
           />
@@ -642,7 +685,7 @@ function App() {
     { id: 'settings', label: 'Settings', group: 'System', icon: 'settings' }
   ];
 
-  const currentTabDetails = menuItems.find((item) => item.id === activeTab);
+  const currentTabDetails = menuItems.find((item) => item.id === activeTab) || (activeTab === 'paid_to_girls' ? { id: 'paid_to_girls', label: 'Paid to Girls 💖', group: 'Operations', icon: 'heart' } : undefined);
 
   return (
     <section className="app">

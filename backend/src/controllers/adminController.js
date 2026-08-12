@@ -146,7 +146,20 @@ async function withdrawals(req, res) {
 }
 
 async function updateWithdrawal(req, res) {
-  return ok(res, { withdrawal: await adminModel.updateWithdrawal(Number(req.params.id), req.body) }, 'Withdrawal updated');
+  const id = Number(req.params.id);
+  let screenshot_url = req.body.screenshot_url;
+  if (req.file) {
+    screenshot_url = `/uploads/${req.file.filename}`;
+  }
+  const admin_note = req.body.admin_note !== undefined ? req.body.admin_note : (req.body.note || req.body.utr || undefined);
+  const status = req.body.status;
+
+  const withdrawal = await adminModel.updateWithdrawal(id, {
+    status,
+    screenshot_url,
+    admin_note
+  });
+  return ok(res, { withdrawal }, 'Withdrawal updated');
 }
 
 async function reports(req, res) {

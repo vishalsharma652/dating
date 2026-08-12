@@ -1,16 +1,13 @@
 const { useState, useMemo, useRef } = React;
 
-window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefresh, rupees, dateStr }) {
+window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefresh, onTabChange, showNotice, rupees, dateStr }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [copiedId, setCopiedId] = useState(null);
 
-  // Detail modal state
-  const [selectedRecord, setSelectedRecord] = useState(null);
-
-  // Process / Approve popup modal state
+  // Modal states
   const [modalItem, setModalItem] = useState(null);
   const [modalStatus, setModalStatus] = useState('completed');
   const [modalNote, setModalNote] = useState('');
@@ -98,7 +95,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
   const formatAmount = (amt) => (rupees ? rupees(amt) : `₹${amt}`);
   const getCoinsCount = (w) => Number(w.coins || 0) > 0 ? Number(w.coins) : Math.round(Number(w.amount || 0) * 4);
 
-  // Open Process/Approval Modal
+  // Open Modal Handler
   const openProcessModal = (item, defaultStatus = 'completed') => {
     setModalItem(item);
     setModalStatus(defaultStatus || item.status || 'completed');
@@ -147,6 +144,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
   const handleSubmitModal = async (e) => {
     e?.preventDefault();
     if (!modalItem) return;
+    const submittedStatus = modalStatus;
     setIsSubmitting(true);
     try {
       if (onProcess) {
@@ -159,6 +157,9 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
       }
       closeModal();
       if (onRefresh) await onRefresh();
+      if (submittedStatus === 'completed' && onTabChange) {
+        onTabChange('withdrawals');
+      }
     } catch (err) {
       console.error('Failed to update payout:', err);
     } finally {
@@ -169,7 +170,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
       {/* ── Top Back Button Toolbar ─────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         <button
           type="button"
           onClick={() => onTabChange && onTabChange('dashboard')}
@@ -192,9 +193,366 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
           <span style={{ fontSize: '16px' }}>←</span>
           <span>Back to Dashboard</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => onTabChange && onTabChange('withdrawals')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#94a3b8',
+            padding: '8px 14px',
+            borderRadius: '10px',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          <span>View All Withdrawals &rarr;</span>
+        </button>
       </div>
 
-      {/* ── Filter Bar & Search ─────────────────────────────────────────── */}
+      {/* ── Page Header Banner ────────────────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(124, 58, 237, 0.1) 100%)',
+        border: '1px solid rgba(236, 72, 153, 0.3)',
+        borderRadius: '20px',
+        padding: '24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px',
+        boxShadow: '0 10px 30px rgba(236, 72, 153, 0.1)'
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '26px' }}>💖</span>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' }}>
+              Paid to Girls (Female User Payouts)
+            </h2>
+          </div>
+          <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#cbd5e1', maxWidth: '650px' }}>
+            Dedicated management page for female users' earnings payout requests. Verify UPI IDs, Bank Account details, upload payment proof screenshots, and approve payouts.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div
+            onClick={() => { setStatusFilter('completed'); setPage(1); }}
+            style={{
+              background: statusFilter === 'completed' ? 'rgba(236, 72, 153, 0.35)' : 'rgba(236, 72, 153, 0.2)',
+              border: `1px solid ${statusFilter === 'completed' ? '#ec4899' : 'rgba(236, 72, 153, 0.4)'}`,
+              borderRadius: '12px',
+              padding: '8px 16px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span style={{ fontSize: '11px', color: '#f472b6', fontWeight: 700, display: 'block' }}>✓ TOTAL PAID</span>
+            <span style={{ fontSize: '18px', color: '#fff', fontWeight: 900 }}>{formatAmount(stats.completedAmount)}</span>
+          </div>
+          <div
+            onClick={() => { setStatusFilter('pending'); setPage(1); }}
+            style={{
+              background: statusFilter === 'pending' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(245, 158, 11, 0.2)',
+              border: `1px solid ${statusFilter === 'pending' ? '#fbbf24' : 'rgba(245, 158, 11, 0.4)'}`,
+              borderRadius: '12px',
+              padding: '8px 16px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 700, display: 'block' }}>⏳ PENDING PAYOUTS</span>
+            <span style={{ fontSize: '18px', color: '#fff', fontWeight: 900 }}>{formatAmount(stats.pendingAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stats Overview Cards (CLICKABLE) ───────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+        gap: '16px',
+        width: '100%'
+      }}>
+        {/* Total Requested */}
+        <div
+          onClick={() => { setStatusFilter('all'); setPage(1); }}
+          style={{
+            background: statusFilter === 'all' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+            border: `1px solid ${statusFilter === 'all' ? '#ec4899' : 'rgba(255, 255, 255, 0.08)'}`,
+            borderRadius: '16px',
+            padding: '16px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              TOTAL REQUESTED
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: '#f8fafc', marginTop: '4px' }}>
+              {formatAmount(stats.totalAmount)}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+              {stats.totalCount} total requests ({stats.totalCoins} 🪙)
+            </div>
+          </div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: 'rgba(99, 102, 241, 0.15)',
+            color: '#818cf8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px'
+          }}>
+            📊
+          </div>
+        </div>
+
+        {/* Completed Payouts */}
+        <div
+          onClick={() => { setStatusFilter('completed'); setPage(1); }}
+          style={{
+            background: statusFilter === 'completed' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.04)',
+            border: `2px solid ${statusFilter === 'completed' ? '#10b981' : 'rgba(16, 185, 129, 0.2)'}`,
+            borderRadius: '16px',
+            padding: '16px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            boxShadow: statusFilter === 'completed' ? '0 0 15px rgba(16, 185, 129, 0.2)' : 'none'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ✓ COMPLETED (PAID)
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: '#34d399', marginTop: '4px' }}>
+              {formatAmount(stats.completedAmount)}
+            </div>
+            <div style={{ fontSize: '11px', color: '#6ee7b7', marginTop: '2px' }}>
+              {stats.completedCount} approved ({stats.completedCoins} 🪙)
+            </div>
+          </div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: 'rgba(16, 185, 129, 0.2)',
+            color: '#34d399',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px'
+          }}>
+            ✓
+          </div>
+        </div>
+
+        {/* Pending Requests */}
+        <div
+          onClick={() => { setStatusFilter('pending'); setPage(1); }}
+          style={{
+            background: statusFilter === 'pending' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.04)',
+            border: `2px solid ${statusFilter === 'pending' ? '#fbbf24' : 'rgba(245, 158, 11, 0.2)'}`,
+            borderRadius: '16px',
+            padding: '16px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            boxShadow: statusFilter === 'pending' ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ⏳ PENDING APPROVAL
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: '#fbbf24', marginTop: '4px' }}>
+              {formatAmount(stats.pendingAmount)}
+            </div>
+            <div style={{ fontSize: '11px', color: '#fde68a', marginTop: '2px' }}>
+              {stats.pendingCount} waiting ({stats.pendingCoins} 🪙)
+            </div>
+          </div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: 'rgba(245, 158, 11, 0.2)',
+            color: '#fbbf24',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px'
+          }}>
+            ⏳
+          </div>
+        </div>
+
+        {/* Rejected Requests */}
+        <div
+          onClick={() => { setStatusFilter('rejected'); setPage(1); }}
+          style={{
+            background: statusFilter === 'rejected' ? 'rgba(244, 63, 94, 0.12)' : 'rgba(244, 63, 94, 0.04)',
+            border: `2px solid ${statusFilter === 'rejected' ? '#f87171' : 'rgba(244, 63, 94, 0.2)'}`,
+            borderRadius: '16px',
+            padding: '16px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '11px', color: '#f87171', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ✕ REJECTED PAYOUTS
+            </span>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: '#f87171', marginTop: '4px' }}>
+              {stats.rejectedCount}
+            </div>
+            <div style={{ fontSize: '11px', color: '#fca5a5', marginTop: '2px' }}>
+              Coins refunded to girl
+            </div>
+          </div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: 'rgba(244, 63, 94, 0.2)',
+            color: '#f87171',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px'
+          }}>
+            ✕
+          </div>
+        </div>
+      </div>
+
+      {/* ── Quick Status Filter Tabs ─────────────────────────────────── */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('all'); setPage(1); }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: `1px solid ${statusFilter === 'all' ? '#ec4899' : 'rgba(255, 255, 255, 0.1)'}`,
+            background: statusFilter === 'all' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+            color: statusFilter === 'all' ? '#fff' : '#94a3b8',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>🔘 All Requests</span>
+          <span style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '2px 6px', borderRadius: '6px', fontSize: '11px' }}>
+            {stats.totalCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('completed'); setPage(1); }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: `1px solid ${statusFilter === 'completed' ? '#10b981' : 'rgba(16, 185, 129, 0.3)'}`,
+            background: statusFilter === 'completed' ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.3))' : 'rgba(16, 185, 129, 0.08)',
+            color: statusFilter === 'completed' ? '#fff' : '#34d399',
+            fontSize: '12px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: statusFilter === 'completed' ? '0 0 12px rgba(16, 185, 129, 0.3)' : 'none'
+          }}
+        >
+          <span>✓ Completed / Paid Record</span>
+          <span style={{ background: 'rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '6px', fontSize: '11px', color: '#fff' }}>
+            {stats.completedCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('pending'); setPage(1); }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: `1px solid ${statusFilter === 'pending' ? '#fbbf24' : 'rgba(245, 158, 11, 0.3)'}`,
+            background: statusFilter === 'pending' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.08)',
+            color: statusFilter === 'pending' ? '#fff' : '#fbbf24',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>⏳ Pending Requests</span>
+          <span style={{ background: 'rgba(245, 158, 11, 0.3)', padding: '2px 6px', borderRadius: '6px', fontSize: '11px', color: '#fff' }}>
+            {stats.pendingCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('rejected'); setPage(1); }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: `1px solid ${statusFilter === 'rejected' ? '#ef4444' : 'rgba(239, 68, 68, 0.3)'}`,
+            background: statusFilter === 'rejected' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.08)',
+            color: statusFilter === 'rejected' ? '#fff' : '#f87171',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>✕ Rejected</span>
+          <span style={{ background: 'rgba(239, 68, 68, 0.3)', padding: '2px 6px', borderRadius: '6px', fontSize: '11px', color: '#fff' }}>
+            {stats.rejectedCount}
+          </span>
+        </button>
+      </div>
+
+      {/* ── Filters & Search Toolbar ───────────────────────────────── */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.02)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -210,7 +568,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
         <div style={{ flex: '1 1 280px', maxWidth: '400px', position: 'relative' }}>
           <input
             type="text"
-            placeholder="Search by User Name, Email, Wallet ID, UPI..."
+            placeholder="Search by Girl Name, Email, Wallet ID, UPI..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -233,32 +591,9 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
           </span>
         </div>
 
-        {/* Status & Method Filter */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              background: '#131326',
-              color: '#f8fafc',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="all">All Status ({stats.totalCount})</option>
-            <option value="pending">⏳ Pending Requests ({stats.pendingCount})</option>
-            <option value="completed">✓ Completed / Paid ({stats.completedCount})</option>
-            <option value="rejected">✕ Rejected ({stats.rejectedCount})</option>
-          </select>
-
+        {/* Method Filter */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Payment Method:</span>
           <select
             value={methodFilter}
             onChange={(e) => {
@@ -284,241 +619,317 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
         </div>
       </div>
 
-      {/* ── Table Card ─────────────────────────────────────────────────── */}
-      <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto', width: '100%' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', minWidth: '850px' }}>
+      {/* ── Main Data Table ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'rgba(18, 18, 33, 0.65)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '16px',
+        overflow: 'hidden'
+      }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>WALLET ID</th>
-                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>USER INFO</th>
-                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>AMOUNT & COINS</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>GIRL DETAILS</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>AMOUNT (₹)</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>COINS</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>METHOD</th>
-                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>BANK / UPI DETAILS</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>PAYOUT ACCOUNT / UPI</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>PAYMENT PROOF</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>STATUS</th>
-                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>REQUESTED DATE</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right', whiteSpace: 'nowrap' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {filteredWithdrawals.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '8px' }}>💳</div>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#f8fafc' }}>No Withdrawal Records Found</div>
-                    <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                      {search || statusFilter !== 'all' || methodFilter !== 'all'
-                        ? 'No withdrawal requests match your search or filter criteria.'
-                        : 'No withdrawal requests have been submitted yet.'}
+                  <td colSpan="9" style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                      {statusFilter === 'completed' ? '✓' : '💖'}
                     </div>
+                    <div style={{ fontWeight: 700, fontSize: '16px', color: '#f8fafc' }}>
+                      {statusFilter === 'completed' ? 'No Completed Payouts Found' : 'No Female Payout Requests Found'}
+                    </div>
+                    <div style={{ fontSize: '12px', marginTop: '6px', color: '#94a3b8' }}>
+                      {statusFilter === 'completed'
+                        ? 'Approve pending withdrawals and upload payment proof to view completed records here.'
+                        : search || methodFilter !== 'all'
+                        ? 'No withdrawal requests match your search or filter criteria.'
+                        : 'No female payout requests have been submitted yet.'}
+                    </div>
+                    {statusFilter === 'completed' && stats.pendingCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter('pending')}
+                        style={{
+                          marginTop: '16px',
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        View {stats.pendingCount} Pending Requests &rarr;
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
                 paginatedWithdrawals.map((w) => {
-                  const isCompleted = w.status === 'completed';
-                  const isPending = w.status === 'pending';
+                  const isUpi = String(w.method || '').toLowerCase() === 'upi';
+                  const upiValue = w.account_number || w.upi_id || w.bank_name || '';
                   const coinsCount = getCoinsCount(w);
-                  const formattedWalletId = '#' + String(w.wallet_id || w.user_id || '').replace(/^STK-/i, '').padStart(6, '0');
-                  const detailsStr = w.account_number || w.ifsc_code || w.bank_name || '';
+                  const proofUrl = w.screenshot_url || w.screenshotUrl || null;
 
                   return (
-                    <tr key={w.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)', transition: 'background 0.2s' }}>
+                    <tr
+                      key={w.id}
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        transition: 'background 0.2s',
+                        background: w.status === 'completed' ? 'rgba(16, 185, 129, 0.02)' : 'transparent'
+                      }}
+                    >
                       {/* Wallet ID */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <span style={{
-                          fontFamily: 'monospace',
-                          fontWeight: 800,
-                          fontSize: '12px',
-                          color: '#a78bfa',
-                          background: 'rgba(139, 92, 246, 0.1)',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          border: '1px solid rgba(139, 92, 246, 0.25)',
-                          display: 'inline-block'
-                        }}>
-                          {formattedWalletId}
+                      <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 800, color: '#ec4899', fontSize: '13px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        #{w.wallet_id || String(w.user_id).padStart(6, '0')}
+                      </td>
+
+                      {/* Girl Details */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '50%',
+                            background: w.status === 'completed'
+                              ? 'linear-gradient(135deg, #10b981, #ec4899)'
+                              : 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            color: '#fff',
+                            fontSize: '14px',
+                            flexShrink: 0
+                          }}>
+                            {(w.user_name || 'G')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#f8fafc', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{w.user_name || 'Female User'}</span>
+                              {w.status === 'completed' && <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{w.user_phone || w.user_email || `ID: ${w.user_id}`}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Amount in ₹ */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <span style={{ fontWeight: 900, color: '#10b981', fontSize: '16px', letterSpacing: '-0.01em' }}>
+                          {formatAmount(w.amount)}
                         </span>
                       </td>
 
-                      {/* User Info */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 800, fontSize: '14px', color: '#f8fafc', whiteSpace: 'nowrap' }}>
-                            {w.user_name || `User #${w.user_id}`}
+                      {/* Coins */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          color: '#fbbf24',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          whiteSpace: 'nowrap'
+                        }}>
+                          🪙 {coinsCount} Coins
+                        </span>
+                      </td>
+
+                      {/* Payout Method */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          whiteSpace: 'nowrap',
+                          background: isUpi ? 'rgba(59, 130, 246, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                          color: isUpi ? '#60a5fa' : '#c084fc',
+                          border: `1px solid ${isUpi ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`
+                        }}>
+                          {isUpi ? '⚡ UPI ID' : '🏦 BANK TRANSFER'}
+                        </span>
+                      </td>
+
+                      {/* Payout Account / Details */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        {isUpi ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#f8fafc', background: 'rgba(255, 255, 255, 0.06)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                              {upiValue}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(upiValue, `upi-${w.id}`)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: copiedId === `upi-${w.id}` ? '#10b981' : '#94a3b8',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {copiedId === `upi-${w.id}` ? '✓ Copied' : '📋 Copy'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
+                            <div><strong>A/C Name:</strong> {w.account_holder_name || w.accountHolderName || w.user_name || 'N/A'}</div>
+                            <div><strong>Bank:</strong> {w.bank_name || 'N/A'}</div>
+                            <div><strong>A/C No:</strong> <span style={{ fontFamily: 'monospace' }}>{w.account_number || 'N/A'}</span></div>
+                            <div><strong>IFSC:</strong> <span style={{ fontFamily: 'monospace' }}>{w.ifsc_code || w.ifscCode || 'N/A'}</span></div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Payment Proof Column */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        {proofUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setLightboxImage({ url: proofUrl, title: `Payout Proof #${w.id} • ${w.user_name || 'User'} (₹${w.amount})` })}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              color: '#34d399',
+                              fontWeight: 700,
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title="Click to view payment proof screenshot"
+                          >
+                            <img
+                              src={proofUrl}
+                              alt="Proof"
+                              style={{ width: '20px', height: '20px', borderRadius: '4px', objectFit: 'cover' }}
+                            />
+                            <span>View Proof 📷</span>
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>No Screenshot</span>
+                        )}
+                      </td>
+
+                      {/* Status & Date */}
+                      <td style={{ padding: '16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '6px 14px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            whiteSpace: 'nowrap',
+                            width: 'fit-content',
+                            background: w.status === 'completed'
+                              ? 'rgba(16, 185, 129, 0.15)'
+                              : w.status === 'pending'
+                              ? 'rgba(245, 158, 11, 0.15)'
+                              : 'rgba(244, 63, 94, 0.15)',
+                            color: w.status === 'completed'
+                              ? '#34d399'
+                              : w.status === 'pending'
+                              ? '#fbbf24'
+                              : '#f87171',
+                            border: `1px solid ${
+                              w.status === 'completed'
+                                ? 'rgba(16, 185, 129, 0.3)'
+                                : w.status === 'pending'
+                                ? 'rgba(245, 158, 11, 0.3)'
+                                : 'rgba(244, 63, 94, 0.3)'
+                            }`
+                          }}>
+                            {w.status === 'completed' ? '✓ Completed / Paid' : (w.status || 'pending')}
                           </span>
-                          {w.user_email && (
-                            <span style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                              ✉ {w.user_email}
+                          {w.completed_at && (
+                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+                              Paid: {String(w.completed_at).slice(0, 16).replace('T', ' ')}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Amount & Coins */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: 800, color: '#38bdf8' }}>
-                            {formatAmount(w.amount || 0)}
-                          </span>
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            color: '#fbbf24',
-                            background: 'rgba(251, 191, 36, 0.12)',
-                            border: '1px solid rgba(251, 191, 36, 0.25)',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            width: 'fit-content'
-                          }}>
-                            🪙 {coinsCount.toLocaleString()} Coins
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Method */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <span style={{
-                          textTransform: 'uppercase',
-                          fontWeight: 800,
-                          fontSize: '10px',
-                          letterSpacing: '0.5px',
-                          padding: '3px 8px',
-                          borderRadius: '8px',
-                          background: (w.method || '').toLowerCase() === 'upi' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(168, 85, 247, 0.12)',
-                          color: (w.method || '').toLowerCase() === 'upi' ? '#38bdf8' : '#c084fc',
-                          border: `1px solid ${(w.method || '').toLowerCase() === 'upi' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`
-                        }}>
-                          {w.method === 'upi' ? 'UPI' : 'Bank'}
-                        </span>
-                      </td>
-
-                      {/* Bank / UPI Details */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <div style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                            <span style={{ fontWeight: 700, color: '#e2e8f0' }}>{w.bank_name || (w.method === 'upi' ? 'UPI' : 'Bank Transfer')}</span>
-                            {w.account_number && (
-                              <div style={{ fontSize: '12px', color: '#34d399', fontFamily: 'monospace', fontWeight: 700 }}>
-                                {w.account_number}
-                              </div>
-                            )}
-                            {w.ifsc_code && (
-                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                                IFSC: {w.ifsc_code}
-                              </div>
-                            )}
-                          </div>
-                          {detailsStr && (
-                            <button
-                              type="button"
-                              title="Copy account details"
-                              onClick={() => copyToClipboard(w.account_number || detailsStr, w.id)}
-                              style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                color: copiedId === w.id ? '#10b981' : '#94a3b8',
-                                borderRadius: '6px',
-                                padding: '3px 7px',
-                                fontSize: '10px',
-                                cursor: 'pointer',
-                                flexShrink: 0
-                              }}
-                            >
-                              {copiedId === w.id ? '✓ Copied' : '📋 Copy'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span className={`badge ${isCompleted ? 'green' : isPending ? 'yellow' : 'red'}`} style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '4px 10px',
-                            borderRadius: '12px',
-                            textTransform: 'uppercase',
-                            width: 'fit-content'
-                          }}>
-                            {w.status || 'pending'}
-                          </span>
-                          {w.screenshot_url && (
-                            <button
-                              type="button"
-                              onClick={() => setLightboxImage({ url: w.screenshot_url, title: `Proof - ${w.user_name || 'User'} (₹${w.amount})` })}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#34d399',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                padding: 0,
-                                textAlign: 'left',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              📷 Proof Attached
-                            </button>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Requested Date */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                        {dateStr ? dateStr(w.created_at) : new Date(w.created_at).toLocaleDateString()}
-                      </td>
-
                       {/* Actions */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        {isPending ? (
-                          <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                      <td style={{ padding: '16px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                        {w.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center', whiteSpace: 'nowrap' }}>
                             <button
                               type="button"
-                              className="btn-action btn-primary"
+                              onClick={() => openProcessModal(w, 'completed')}
                               style={{
-                                backgroundColor: '#10b981',
-                                color: '#07120b',
-                                fontWeight: 800,
-                                fontSize: '12px',
-                                padding: '6px 14px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '4px',
-                                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: '#fff',
+                                fontWeight: 800,
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                               }}
-                              onClick={() => openProcessModal(w, 'completed')}
                             >
                               ✓ Paid / Approve
                             </button>
                             <button
                               type="button"
-                              className="btn-action btn-danger-outline"
+                              onClick={() => openProcessModal(w, 'rejected')}
                               style={{
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                color: '#ef4444',
-                                fontWeight: 700,
-                                fontSize: '12px',
-                                padding: '6px 12px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px'
+                                gap: '4px',
+                                padding: '8px 14px',
+                                borderRadius: '10px',
+                                background: 'rgba(244, 63, 94, 0.15)',
+                                color: '#f87171',
+                                border: '1px solid rgba(244, 63, 94, 0.3)',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                whiteSpace: 'nowrap'
                               }}
-                              onClick={() => openProcessModal(w, 'rejected')}
                             >
                               ✕ Reject
                             </button>
@@ -526,19 +937,23 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setSelectedRecord(w)}
+                            onClick={() => openProcessModal(w, w.status)}
                             style={{
-                              background: 'rgba(255, 255, 255, 0.04)',
-                              border: '1px solid rgba(255, 255, 255, 0.08)',
-                              color: '#94a3b8',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '6px 14px',
                               borderRadius: '8px',
-                              padding: '5px 12px',
-                              fontSize: '11px',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              color: '#cbd5e1',
                               fontWeight: 700,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              fontSize: '11px',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            Details 🔍
+                            Details / Update ⚙️
                           </button>
                         )}
                       </td>
@@ -550,47 +965,47 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
           </table>
         </div>
 
-        {/* ── Pagination Footer ─────────────────────────────────── */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div style={{
+            padding: '14px 20px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '14px 20px',
-            borderTop: '1px solid rgba(255,255,255,0.06)'
+            alignItems: 'center'
           }}>
             <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-              Page {page} of {totalPages} ({filteredWithdrawals.length} records)
+              Page {page} of {totalPages} ({filteredWithdrawals.length} female payout records)
             </span>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
-                disabled={page === 1}
+                disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: page === 1 ? '#64748b' : '#f1f5f9',
-                  borderRadius: '6px',
-                  padding: '5px 12px',
-                  fontSize: '12px',
-                  cursor: page === 1 ? 'not-allowed' : 'pointer'
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  color: '#fff',
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: page <= 1 ? 0.5 : 1
                 }}
               >
                 Previous
               </button>
               <button
                 type="button"
-                disabled={page === totalPages}
+                disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: page === totalPages ? '#64748b' : '#f1f5f9',
-                  borderRadius: '6px',
-                  padding: '5px 12px',
-                  fontSize: '12px',
-                  cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  color: '#fff',
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  opacity: page >= totalPages ? 0.5 : 1
                 }}
               >
                 Next
@@ -598,9 +1013,9 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
             </div>
           </div>
         )}
-      </section>
+      </div>
 
-      {/* ── Process / Approve Payout Modal (with Screenshot Upload) ── */}
+      {/* ── Process Payout Modal (Popup with Screenshot Upload & Status Picker) ────────── */}
       {modalItem && (
         <div
           style={{
@@ -622,13 +1037,13 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
           <div
             style={{
               background: '#121324',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
+              border: '1px solid rgba(236, 72, 153, 0.3)',
               borderRadius: '24px',
               maxWidth: '560px',
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.15)',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(236, 72, 153, 0.15)',
               position: 'relative'
             }}
           >
@@ -643,10 +1058,10 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
               <div>
                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>💸</span>
-                  <span>Process Withdrawal & Upload Proof</span>
+                  <span>Process Payout & Upload Proof</span>
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8' }}>
-                  Request #{modalItem.id} • {modalItem.user_name || 'User'}
+                  Request #{modalItem.id} • {modalItem.user_name || 'Female User'}
                 </p>
               </div>
               <button
@@ -846,7 +1261,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                   >
                     <input
                       type="radio"
-                      name="wd_payout_status"
+                      name="payout_status"
                       value="completed"
                       checked={modalStatus === 'completed'}
                       onChange={() => setModalStatus('completed')}
@@ -876,7 +1291,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                   >
                     <input
                       type="radio"
-                      name="wd_payout_status"
+                      name="payout_status"
                       value="pending"
                       checked={modalStatus === 'pending'}
                       onChange={() => setModalStatus('pending')}
@@ -906,7 +1321,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                   >
                     <input
                       type="radio"
-                      name="wd_payout_status"
+                      name="payout_status"
                       value="rejected"
                       checked={modalStatus === 'rejected'}
                       onChange={() => setModalStatus('rejected')}
@@ -1129,196 +1544,6 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
               </div>
 
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── Detail View Popup Modal ───────────────────────────────── */}
-      {selectedRecord && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}
-          onClick={() => setSelectedRecord(null)}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '540px',
-              background: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '20px',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '18px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#f8fafc' }}>
-                  Withdrawal #{selectedRecord.id} Details
-                </h3>
-                <p className="muted" style={{ margin: '4px 0 0', fontSize: '12px' }}>
-                  Requested on {dateStr ? dateStr(selectedRecord.created_at) : new Date(selectedRecord.created_at).toLocaleString()}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedRecord(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Content Details */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Info</span>
-                <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 800, color: '#f8fafc' }}>{selectedRecord.user_name || `User #${selectedRecord.user_id}`}</p>
-                {selectedRecord.user_email && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#cbd5e1' }}>✉ {selectedRecord.user_email}</p>}
-                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#a78bfa', fontFamily: 'monospace', fontWeight: 700 }}>
-                  Wallet ID: #{String(selectedRecord.wallet_id || selectedRecord.user_id || '').replace(/^STK-/i, '').padStart(6, '0')}
-                </p>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Amount</span>
-                  <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: 800, color: '#38bdf8' }}>
-                    {formatAmount(selectedRecord.amount || 0)}
-                  </p>
-                  <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 700 }}>
-                    🪙 {getCoinsCount(selectedRecord)} Coins
-                  </span>
-                </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Status</span>
-                  <p style={{ margin: '4px 0 0' }}>
-                    <span className={`badge ${selectedRecord.status === 'completed' ? 'green' : selectedRecord.status === 'pending' ? 'yellow' : 'red'}`}>
-                      {selectedRecord.status || 'pending'}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Payout Account / UPI Details</span>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
-                  Method: {selectedRecord.method === 'upi' ? 'UPI Transfer' : 'Bank Account Transfer'}
-                </p>
-                <div style={{ margin: '8px 0 0', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '10px', fontFamily: 'monospace', fontSize: '13px', color: '#34d399', wordBreak: 'break-all' }}>
-                  {selectedRecord.account_number || selectedRecord.ifsc_code || selectedRecord.bank_name || 'No details provided'}
-                </div>
-              </div>
-
-              {selectedRecord.screenshot_url && (
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: '11px', color: '#34d399', textTransform: 'uppercase', fontWeight: 700 }}>Payment Proof Screenshot 📷</span>
-                  <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                    <img
-                      src={selectedRecord.screenshot_url}
-                      alt="Payment Proof"
-                      onClick={() => setLightboxImage({ url: selectedRecord.screenshot_url, title: `Proof - ${selectedRecord.user_name || 'User'} (₹${selectedRecord.amount})` })}
-                      style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'contain', cursor: 'pointer' }}
-                    />
-                    <div style={{ marginTop: '6px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setLightboxImage({ url: selectedRecord.screenshot_url, title: `Proof - ${selectedRecord.user_name || 'User'} (₹${selectedRecord.amount})` })}
-                        style={{ background: 'none', border: 'none', fontSize: '11px', color: '#60a5fa', cursor: 'pointer', fontWeight: 600 }}
-                      >
-                        🔍 View Full Screen Lightbox
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedRecord.admin_note && (
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Transaction / UTR Reference</span>
-                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#f8fafc', fontFamily: 'monospace' }}>
-                    💬 {selectedRecord.admin_note}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px' }}>
-              {selectedRecord.status === 'pending' ? (
-                <>
-                  <button
-                    type="button"
-                    style={{
-                      background: '#10b981',
-                      color: '#07120b',
-                      fontWeight: 800,
-                      borderRadius: '10px',
-                      padding: '8px 16px',
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      const rec = selectedRecord;
-                      setSelectedRecord(null);
-                      openProcessModal(rec, 'completed');
-                    }}
-                  >
-                    ✓ Paid / Approve
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      color: '#ef4444',
-                      fontWeight: 700,
-                      borderRadius: '10px',
-                      padding: '8px 16px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      const rec = selectedRecord;
-                      setSelectedRecord(null);
-                      openProcessModal(rec, 'rejected');
-                    }}
-                  >
-                    Reject
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    color: '#e2e8f0',
-                    borderRadius: '10px',
-                    padding: '8px 16px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setSelectedRecord(null)}
-                >
-                  Close
-                </button>
-              )}
-            </div>
           </div>
         </div>
       )}

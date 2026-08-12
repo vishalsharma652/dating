@@ -18,9 +18,12 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
-      scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'", "'unsafe-eval'"],
+      defaultSrc: ["'self'", "https://unpkg.com", "https://cdn.tailwindcss.com"],
+      scriptSrc: ["'self'", "https://unpkg.com", "https://cdn.tailwindcss.com", "'unsafe-inline'", "'unsafe-eval'"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "https:", "'unsafe-inline'"]
+      styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+      connectSrc: ["'self'", "https://unpkg.com", "https://cdn.tailwindcss.com", "wss:", "ws:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"]
     }
   }
 }));

@@ -236,8 +236,9 @@ async function findWithdrawal(id) {
 
 async function withdrawals(userId) {
   return query(
-    `SELECT id, amount, status, method, bank_name AS bankName, account_number AS accountNumber,
-      DATE_FORMAT(created_at, "%Y-%m-%d") AS requestDate, DATE_FORMAT(completed_at, "%Y-%m-%d") AS completedDate
+    `SELECT id, amount, coins, status, method, bank_name AS bankName, account_number AS accountNumber,
+      screenshot_url AS screenshotUrl, admin_note AS adminNote,
+      DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") AS requestDate, DATE_FORMAT(completed_at, "%Y-%m-%d %H:%i") AS completedDate
      FROM withdrawals WHERE user_id = :userId ORDER BY created_at DESC`,
     { userId }
   );

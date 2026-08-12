@@ -36,6 +36,12 @@ async function start() {
     await pool.query("ALTER TABLE withdrawals ADD COLUMN coins INT UNSIGNED NOT NULL DEFAULT 0 AFTER amount");
   } catch {}
   try {
+    await pool.query("ALTER TABLE withdrawals ADD COLUMN screenshot_url TEXT NULL");
+  } catch {}
+  try {
+    await pool.query("ALTER TABLE withdrawals ADD COLUMN admin_note TEXT NULL");
+  } catch {}
+  try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_gifts (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
