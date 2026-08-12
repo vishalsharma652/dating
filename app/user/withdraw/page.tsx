@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
-import { BadgeIndianRupee, Building2, CreditCard, History, Phone, Wallet, ArrowLeft } from 'lucide-react';
+import { BadgeIndianRupee, Building2, CreditCard, History, Phone, Wallet, ArrowLeft, ShieldAlert, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { userApi, getStoredUser } from '@/lib/api';
 
 const inputCls =
@@ -27,6 +27,7 @@ export default function WithdrawPage() {
     ifscCode: '',
   });
   const [wallet, setWallet] = useState<{ coins?: number; earnings?: number; withdrawalBalance?: number }>({});
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -49,9 +50,12 @@ export default function WithdrawPage() {
 
     userApi.profile()
       .then((res) => {
-        if (checkBoyUser(res?.user)) {
-          setIsRedirecting(true);
-          router.replace('/user/wallet');
+        if (res?.user) {
+          setUser(res.user);
+          if (checkBoyUser(res.user)) {
+            setIsRedirecting(true);
+            router.replace('/user/wallet');
+          }
         }
       })
       .catch(() => undefined);
@@ -202,18 +206,45 @@ export default function WithdrawPage() {
             </div>
 
             {/* UPI Fields */}
-            {method === 'upi' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">UPI ID <span className="text-red-500">*</span></label>
-                <input
-                  placeholder="yourname@upi"
-                  value={formData.upiId}
-                  onChange={(e) => set('upiId', e.target.value)}
-                  className={inputCls}
-                />
-                <p className="text-xs text-zinc-400 mt-1">e.g. 9876543210@paytm, name@okaxis</p>
-              </div>
-            )}
+            {(() => {
+              const kycStatus = String(user?.kyc_status || user?.kycStatus || '').toLowerCase();
+              const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified' || user?.kyc_approved === true || user?.is_verified === true;
+
+              if (method === 'upi') {
+                if (!isKycApproved) {
+                  return (
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-sm text-amber-400">
+                        <ShieldAlert size={18} />
+                        <span>KYC Verification Required for UPI Withdrawals</span>
+                      </div>
+                      <p className="text-xs text-amber-200/80 leading-relaxed">
+                        UPI ID se withdrawal request submit karne ke liye aapka KYC Verified (Approved) hona compulsory hai. Pehle Profile me jaakar KYC complete karein.
+                      </p>
+                      <Link
+                        href="/user/profile"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs transition shadow cursor-pointer mt-1"
+                      >
+                        Complete KYC Verification <ArrowUpRight size={14} />
+                      </Link>
+                    </div>
+                  );
+                }
+                return (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">UPI ID <span className="text-red-500">*</span></label>
+                    <input
+                      placeholder="yourname@upi"
+                      value={formData.upiId}
+                      onChange={(e) => set('upiId', e.target.value)}
+                      className={inputCls}
+                    />
+                    <p className="text-xs text-zinc-400 mt-1">e.g. 9876543210@paytm, name@okaxis</p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Bank Transfer Fields */}
             {method === 'bank_transfer' && (
@@ -274,14 +305,30 @@ export default function WithdrawPage() {
               </p>
             )}
 
-            <Button
-              className="w-full h-12 text-base"
-              onClick={submit}
-              disabled={loading || !formData.amount || !formData.mobileNumber || (method === 'upi' ? !formData.upiId : !formData.accountNumber || !formData.ifscCode || !formData.bankName)}
-            >
-              <BadgeIndianRupee size={18} />
-              {loading ? 'Submitting...' : 'Request Withdrawal'}
-            </Button>
+            {(() => {
+              const kycStatus = String(user?.kyc_status || user?.kycStatus || '').toLowerCase();
+              const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified' || user?.kyc_approved === true || user?.is_verified === true;
+              if (method === 'upi' && !isKycApproved) {
+                return null;
+              }
+              return (
+                <Button
+                  className="w-full h-12 text-base"
+                  onClick={submit}
+                  disabled={
+                    loading ||
+                    !formData.amount ||
+                    !formData.mobileNumber ||
+                    (method === 'upi'
+                      ? !formData.upiId
+                      : (!formData.accountNumber || !formData.ifscCode || !formData.bankName))
+                  }
+                >
+                  <BadgeIndianRupee size={18} />
+                  {loading ? 'Submitting...' : 'Request Withdrawal'}
+                </Button>
+              );
+            })()}
           </div>
         </Card>
 

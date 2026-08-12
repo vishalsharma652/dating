@@ -180,6 +180,14 @@ async function createWithdrawal(userId, data) {
   }
   const requiredCoins = amountRupees * 4; // Rate: 200 Coins = ₹50 (1 Coin = ₹0.25)
 
+  if (data.method === 'upi') {
+    const userRows = await query('SELECT kyc_status FROM users WHERE id = :userId LIMIT 1', { userId });
+    const kycStat = String(userRows?.[0]?.kyc_status || '').toLowerCase();
+    if (kycStat !== 'approved' && kycStat !== 'verified') {
+      throw new AppError('UPI ID withdrawal requires an approved KYC verification. Please complete your KYC first.', 403);
+    }
+  }
+
   const result = await transaction(async (connection) => {
     const [users] = await connection.execute(
       'SELECT coins, earnings FROM users WHERE id = :userId LIMIT 1 FOR UPDATE',
