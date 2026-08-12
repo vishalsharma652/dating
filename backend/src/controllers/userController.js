@@ -182,6 +182,12 @@ async function getFollowers(req, res) {
   return ok(res, { users });
 }
 
+async function getFriends(req, res) {
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFriendsList(targetId, req.user.id);
+  return ok(res, { users });
+}
+
 async function togglePinChat(req, res) {
   const chatId = req.params.chatId;
   const result = await socialModel.togglePinChat(req.user.id, chatId);
@@ -731,10 +737,14 @@ module.exports = {
   notifications,
   notificationCount,
   markNotificationRead,
-  markNotificationsRead,
-  settings,
-  deleteAccount,
   changePassword,
   uploadChatMedia,
-  uploadAvatar
+  uploadAvatar,
+  toggleFollow,
+  getFollowStatus,
+  respondFollowRequest,
+  getFollowRequests,
+  getFollowing,
+  getFollowers,
+  getFriends
 };

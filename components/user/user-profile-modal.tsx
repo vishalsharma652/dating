@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, MapPin, Calendar, ShieldCheck, Heart, Sparkles, CheckCircle2, User, Phone, Video, UserPlus, UserCheck, Users, Clock, MessageCircle, Gift, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { userApi, apiAssetUrl } from '@/lib/api';
+import { userApi, authApi, apiAssetUrl } from '@/lib/api';
 import { FollowersModal } from '@/components/user/followers-modal';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 import { GiftWall } from '@/components/user/gift-wall';
@@ -37,6 +37,11 @@ export function UserProfileModal({
   const [hasExistingChat, setHasExistingChat] = useState<boolean>(false);
   const [sayHiTarget, setSayHiTarget] = useState<any>(null);
   const [userCoins, setUserCoins] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    authApi.me().then((res: any) => setCurrentUser(res?.user)).catch(() => null);
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !(userId || initialUser?.id)) return;
@@ -96,9 +101,14 @@ export function UserProfileModal({
     };
   }, [isOpen]);
 
+  const isSelf = Boolean(
+    currentUser?.id &&
+    (Number(userId || initialUser?.id) === Number(currentUser.id) || String(userId || initialUser?.id) === String(currentUser.unique_id))
+  );
+
   const handleFollowToggle = async () => {
     const targetId = userId || initialUser?.id;
-    if (!targetId || followLoading) return;
+    if (!targetId || followLoading || isSelf) return;
     setFollowLoading(true);
 
     const prevStatus = followStatus;

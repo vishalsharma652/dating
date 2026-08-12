@@ -29,6 +29,7 @@ router.get('/follow/requests', asyncHandler(user.getFollowRequests));
 router.post('/follow/requests/:requestId/respond', [param('requestId').isInt(), body('action').isIn(['accept', 'decline'])], validate, asyncHandler(user.respondFollowRequest));
 router.get('/following', asyncHandler(user.getFollowing));
 router.get('/followers', asyncHandler(user.getFollowers));
+router.get('/friends', asyncHandler(user.getFriends));
 router.post('/discover/:id/action', [param('id').notEmpty(), body('action').isIn(['like', 'pass', 'super_like'])], validate, asyncHandler(user.reactToProfile));
 router.get('/matches', asyncHandler(user.matches));
 router.get('/chat', asyncHandler(user.chats));

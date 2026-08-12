@@ -146,6 +146,7 @@ export default function ProfilePage() {
   const profile = data?.profile || {};
   const followerCount = Number((data as any)?.followerCount || 0);
   const followingCount = Number((data as any)?.followingCount || 0);
+  const friendsCount = Number((data as any)?.friendsCount || 0);
   const isFemale = user.gender === 'female';
   const defaultProfileAvatar = isFemale ? '/female-logo.svg' : '/male-logo.svg';
   const photos = profile.photos?.length
@@ -570,10 +571,12 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <span className="text-xs font-black text-white block tracking-tight group-hover:text-[#EC4899] transition">Follow Status</span>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold">
+                      <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold flex-wrap">
+                        <span className="text-purple-400">{followingCount} Following</span>
+                        <span className="text-zinc-500 font-normal">•</span>
                         <span className="text-pink-400">{followerCount} Followers</span>
                         <span className="text-zinc-500 font-normal">•</span>
-                        <span className="text-purple-400">{followingCount} Following</span>
+                        <span className="text-emerald-400">{friendsCount} Friends 🤝</span>
                       </div>
                     </div>
                   </div>

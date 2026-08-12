@@ -219,12 +219,21 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             )}
 
             {messages.map((msg) => {
-              if (msg.type === 'system' || msg.text === 'Recharge khatam ho gaya') {
+              if (msg.type === 'system' || String(msg.text || msg.body || '').includes('Recharge khatam ho gaya')) {
+                const messageText = msg.text || msg.body || '';
+                const isRecharge = messageText.includes('Recharge khatam ho gaya');
+                const isMutualFriend = messageText.includes('Friends') || messageText.includes('FREE');
                 return (
                   <div key={msg.id} className="flex justify-center my-3">
-                    <div className="px-4 py-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2 shadow-lg">
-                      <span>⚠️ Recharge khatam ho gaya</span>
-                      {isBoy && (
+                    <div className={`px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-lg max-w-md text-center ${
+                      isMutualFriend
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'
+                        : isRecharge
+                        ? 'bg-amber-500/15 border border-amber-500/30 text-amber-300'
+                        : 'bg-pink-500/15 border border-pink-500/30 text-pink-300'
+                    }`}>
+                      <span>{messageText || (isRecharge ? '⚠️ Recharge khatam ho gaya' : '')}</span>
+                      {isRecharge && isBoy && (
                         <Link
                           href="/user/wallet/coins"
                           className="ml-2 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs transition shadow-md whitespace-nowrap"

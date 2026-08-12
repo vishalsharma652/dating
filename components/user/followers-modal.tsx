@@ -4,39 +4,47 @@ import { useEffect, useState } from 'react';
 import { X, Users, Search, MessageCircle, Check, Clock, UserCheck, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { userApi, apiAssetUrl } from '@/lib/api';
+import { userApi, authApi, apiAssetUrl } from '@/lib/api';
 import Link from 'next/link';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 interface FollowersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'followers' | 'following';
+  initialTab?: 'following' | 'followers' | 'friends';
   userId?: string | number;
 }
 
 export function FollowersModal({
   isOpen,
   onClose,
-  initialTab = 'followers',
+  initialTab = 'following',
   userId,
 }: FollowersModalProps) {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
-  const [followers, setFollowers] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'following' | 'followers' | 'friends'>(initialTab);
   const [following, setFollowing] = useState<any[]>([]);
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [friends, setFriends] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    authApi.me().then((res: any) => setCurrentUser(res?.user)).catch(() => null);
+  }, []);
 
   const loadData = () => {
     setLoading(true);
     Promise.all([
+      userApi.getFollowing(userId).catch(() => ({ users: [] })),
       userApi.getFollowers(userId).catch(() => ({ users: [] })),
-      userApi.getFollowing(userId).catch(() => ({ users: [] }))
+      userApi.getFriends(userId).catch(() => ({ users: [] }))
     ])
-      .then(([fRes, gRes]) => {
-        setFollowers(fRes.users || []);
+      .then(([gRes, fRes, frRes]) => {
         setFollowing(gRes.users || []);
+        setFollowers(fRes.users || []);
+        setFriends(frRes.users || []);
       })
       .finally(() => setLoading(false));
   };
@@ -49,6 +57,9 @@ export function FollowersModal({
   }, [isOpen, initialTab, userId]);
 
   const handleToggleFollowUser = async (targetUserId: number | string) => {
+    if (currentUser && (Number(targetUserId) === Number(currentUser.id) || String(targetUserId) === String(currentUser.unique_id))) {
+      return;
+    }
     try {
       const res = await userApi.toggleFollow(targetUserId);
       if (typeof window !== 'undefined') {
@@ -74,7 +85,7 @@ export function FollowersModal({
 
   if (!isOpen) return null;
 
-  const currentList = activeTab === 'followers' ? followers : following;
+  const currentList = activeTab === 'following' ? following : activeTab === 'followers' ? followers : friends;
   const filteredList = currentList.filter((u) =>
     String(u.name || '').toLowerCase().includes(search.toLowerCase()) ||
     String(u.uniqueId || u.unique_id || '').toLowerCase().includes(search.toLowerCase())
@@ -100,12 +111,23 @@ export function FollowersModal({
               <span>Social Network</span>
             </h2>
 
-            {/* Tab buttons */}
-            <div className="grid grid-cols-2 p-1 bg-white/5 border border-white/5 rounded-2xl">
+            {/* 3 Tab buttons: Following, Followers, Friends */}
+            <div className="grid grid-cols-3 p-1 bg-white/5 border border-white/5 rounded-2xl gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('following')}
+                className={`py-2 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${
+                  activeTab === 'following'
+                    ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white shadow-md'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Following ({following.length})
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('followers')}
-                className={`py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
+                className={`py-2 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${
                   activeTab === 'followers'
                     ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white shadow-md'
                     : 'text-zinc-400 hover:text-white'
@@ -115,14 +137,14 @@ export function FollowersModal({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('following')}
-                className={`py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
-                  activeTab === 'following'
-                    ? 'bg-gradient-to-r from-[#EC4899] to-[#7C3AED] text-white shadow-md'
+                onClick={() => setActiveTab('friends')}
+                className={`py-2 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${
+                  activeTab === 'friends'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                Following ({following.length})
+                Friends ({friends.length}) 🤝
               </button>
             </div>
           </div>
@@ -170,13 +192,24 @@ export function FollowersModal({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-bold text-xs text-white truncate hover:text-[#EC4899] transition">{u.name}</h4>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-bold text-xs text-white truncate hover:text-[#EC4899] transition">{u.name}</h4>
+                          {(u.isFriend || activeTab === 'friends') && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                              🤝 Friends (Free Chat)
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] font-semibold text-zinc-400 truncate">ID: {uniqueId}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {activeTab === 'followers' && u.status === 'pending' ? (
+                      {currentUser && (Number(u.id) === Number(currentUser.id) || String(u.uniqueId || u.unique_id || '') === String(currentUser.unique_id || '')) ? (
+                        <span className="px-3 py-1 rounded-xl bg-white/10 text-zinc-400 font-extrabold text-[10px] border border-white/10">
+                          You
+                        </span>
+                      ) : activeTab === 'followers' && u.status === 'pending' ? (
                         <>
                           <Button
                             type="button"
@@ -196,8 +229,9 @@ export function FollowersModal({
                           </Button>
                         </>
                       ) : (() => {
-                        const currentStatus = u.myFollowStatus || (activeTab === 'following' ? 'accepted' : u.status);
-                        if (currentStatus === 'pending') {
+                        const isFollowing = activeTab === 'following' || activeTab === 'friends' || Boolean(u.isFriend) || u.myFollowStatus === 'accepted';
+                        const isPending = !isFollowing && (u.myFollowStatus === 'pending' || (activeTab === 'followers' && u.status === 'pending'));
+                        if (isPending) {
                           return (
                             <Button
                               type="button"
@@ -209,7 +243,6 @@ export function FollowersModal({
                             </Button>
                           );
                         }
-                        const isFollowing = currentStatus === 'accepted';
                         return (
                           <Button
                             type="button"

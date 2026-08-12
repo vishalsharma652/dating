@@ -455,7 +455,21 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
       }
     } else if (isMalePayer) {
       // Regular text / say_hi message for male payers
-      const COIN_COST = type === 'say_hi' ? 5 : 10;
+      let COIN_COST = type === 'say_hi' ? 5 : 10;
+
+      // Check if users are mutual friends (Follow each other) -> FREE CHAT (0 Coin deduction)
+      if (recipientUserId) {
+        const [mutualFollows] = await connection.execute(
+          `SELECT COUNT(*) AS cnt FROM user_follows uf1
+           JOIN user_follows uf2 ON uf2.follower_id = uf1.following_id AND uf2.following_id = uf1.follower_id
+           WHERE uf1.follower_id = :senderId AND uf1.following_id = :recipientUserId`,
+          { senderId, recipientUserId }
+        );
+        if (Number(mutualFollows?.[0]?.cnt || 0) > 0) {
+          COIN_COST = 0; // FREE CHAT FOR FRIENDS!
+        }
+      }
+
       let currentCoins = Number(sender?.coins || 0);
       if (wallets[0] && wallets[0].balance !== undefined) {
         const walletBal = Number(wallets[0].balance || 0);
@@ -466,29 +480,31 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
         }
       }
 
-      if (currentCoins < COIN_COST) {
+      if (COIN_COST > 0 && currentCoins < COIN_COST) {
         throw new AppError('Recharge khatam ho gaya. Message deliver nahi hua.', 400);
       }
 
       remainingCoins = Math.max(0, currentCoins - COIN_COST);
-      if (remainingCoins < 5) {
+      if (remainingCoins < 5 && COIN_COST > 0) {
         rechargeExhausted = true;
       }
 
-      // Deduct COIN_COST from male sender
-      await connection.execute('UPDATE users SET coins = :rem WHERE id = :senderId', { rem: remainingCoins, senderId });
-      await connection.execute(
-        `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, :rem, :cost)
-         ON DUPLICATE KEY UPDATE balance = :rem, total_spent = total_spent + :cost`,
-        { senderId, rem: remainingCoins, cost: COIN_COST }
-      );
-      await recordOrUpdateDailyWalletTransaction(connection, {
-        userId: senderId,
-        type: 'chat_charge',
-        title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
-        description: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
-        coins: -COIN_COST
-      });
+      if (COIN_COST > 0) {
+        // Deduct COIN_COST from male sender
+        await connection.execute('UPDATE users SET coins = :rem WHERE id = :senderId', { rem: remainingCoins, senderId });
+        await connection.execute(
+          `INSERT INTO wallets (user_id, balance, total_spent) VALUES (:senderId, :rem, :cost)
+           ON DUPLICATE KEY UPDATE balance = :rem, total_spent = total_spent + :cost`,
+          { senderId, rem: remainingCoins, cost: COIN_COST }
+        );
+        await recordOrUpdateDailyWalletTransaction(connection, {
+          userId: senderId,
+          type: 'chat_charge',
+          title: type === 'say_hi' ? 'Say Hi Sent' : 'Message Sent',
+          description: type === 'say_hi' ? `Say Hi in chat #${chatId}` : `Message in chat #${chatId}`,
+          coins: -COIN_COST
+        });
+      }
 
       // Credit COIN_COST to female recipient if applicable
       if (recipientUserId) {
@@ -734,6 +750,48 @@ async function ensureFollowsTable() {
   } catch (e) {}
 }
 
+async function sendFollowChatNotification(followerId, targetUserId) {
+  try {
+    const fId = Number(followerId);
+    const tId = Number(targetUserId);
+    const chat = await getOrCreateChat(fId, tId);
+    const [followerUser] = await query('SELECT name FROM users WHERE id = :fId LIMIT 1', { fId });
+    const followerName = followerUser?.name || 'Someone';
+
+    // Check if they are mutual friends (both follow each other)
+    const [mutualRows] = await query(
+      `SELECT COUNT(*) AS cnt FROM user_follows uf1
+       JOIN user_follows uf2 ON uf2.follower_id = uf1.following_id AND uf2.following_id = uf1.follower_id
+       WHERE uf1.follower_id = :fId AND uf1.following_id = :tId`,
+      { fId, tId }
+    );
+    const isMutual = Number(mutualRows?.[0]?.cnt || 0) > 0;
+
+    let bodyText = `💖 ${followerName} started following you! If you follow each other, NO coin deduction (FREE Chat)!`;
+    if (isMutual) {
+      bodyText = `👥 You both follow each other! You are now Friends 🎉 Chat is FREE (0 Coin deduction)!`;
+    }
+
+    const msgRes = await query(
+      'INSERT INTO messages (chat_id, sender_id, body, type, delivery_status) VALUES (:chatId, :fId, :bodyText, "system", "delivered")',
+      { chatId: chat.id, fId, bodyText }
+    );
+
+    if (global.io) {
+      global.io.to(`chat_${chat.id}`).emit('message:new', {
+        id: msgRes.insertId,
+        chatId: chat.id,
+        senderId: fId,
+        text: bodyText,
+        type: 'system',
+        createdAt: new Date().toISOString()
+      });
+    }
+  } catch (err) {
+    console.error('sendFollowChatNotification error:', err?.message);
+  }
+}
+
 async function toggleFollow(followerId, targetUserId) {
   await ensureFollowsTable();
   const fId = Number(followerId);
@@ -754,8 +812,8 @@ async function toggleFollow(followerId, targetUserId) {
     await query('DELETE FROM user_follows WHERE follower_id = :fId AND following_id = :tId', { fId, tId });
     status = 'none';
   } else {
-    await query('INSERT INTO user_follows (follower_id, following_id, status) VALUES (:fId, :tId, "pending")', { fId, tId });
-    status = 'pending';
+    await query('INSERT INTO user_follows (follower_id, following_id, status) VALUES (:fId, :tId, "accepted")', { fId, tId });
+    status = 'accepted';
 
     try {
       const followerRows = await query('SELECT name FROM users WHERE id = :fId LIMIT 1', { fId });
@@ -764,11 +822,14 @@ async function toggleFollow(followerId, targetUserId) {
         tId,
         fId,
         'follow_request',
-        'Follow Request 💖',
-        `${followerName} requested to follow you.`,
-        `/user/notifications`
+        'New Follower 💖',
+        `${followerName} started following you.`,
+        `/user/chat/${fId}`
       );
     } catch (e) {}
+
+    // Send automated Follow Notification to Chat
+    await sendFollowChatNotification(fId, tId);
   }
 
   const stats = await getFollowStats(tId);
@@ -777,7 +838,8 @@ async function toggleFollow(followerId, targetUserId) {
     following: status === 'accepted',
     isPending: status === 'pending',
     followerCount: stats.followerCount,
-    followingCount: stats.followingCount
+    followingCount: stats.followingCount,
+    friendsCount: stats.friendsCount
   };
 }
 
@@ -796,7 +858,8 @@ async function getFollowStatus(followerId, targetUserId) {
     following: status === 'accepted',
     isPending: status === 'pending',
     followerCount: stats.followerCount,
-    followingCount: stats.followingCount
+    followingCount: stats.followingCount,
+    friendsCount: stats.friendsCount
   };
 }
 
@@ -833,6 +896,9 @@ async function respondFollowRequest(targetUserId, requestId, action) {
       );
     } catch (e) {}
 
+    // Send automated Follow Notification to Chat
+    await sendFollowChatNotification(tId, followerId);
+
     return { success: true, status: 'accepted' };
   } else {
     await query('DELETE FROM user_follows WHERE id = :reqId', { reqId });
@@ -859,11 +925,18 @@ async function getFollowRequests(targetUserId) {
 async function getFollowStats(userId) {
   await ensureFollowsTable();
   const uId = Number(userId);
-  const followers = await query("SELECT COUNT(*) AS count FROM user_follows WHERE following_id = :uId AND status = 'accepted'", { uId });
-  const following = await query("SELECT COUNT(*) AS count FROM user_follows WHERE follower_id = :uId AND status = 'accepted'", { uId });
+  const followers = await query("SELECT COUNT(*) AS count FROM user_follows WHERE following_id = :uId", { uId });
+  const following = await query("SELECT COUNT(*) AS count FROM user_follows WHERE follower_id = :uId", { uId });
+  const friends = await query(
+    `SELECT COUNT(*) AS count FROM user_follows uf1
+     JOIN user_follows uf2 ON uf2.follower_id = uf1.following_id AND uf2.following_id = uf1.follower_id
+     WHERE uf1.follower_id = :uId`,
+    { uId }
+  );
   return {
     followerCount: Number(followers?.[0]?.count || 0),
-    followingCount: Number(following?.[0]?.count || 0)
+    followingCount: Number(following?.[0]?.count || 0),
+    friendsCount: Number(friends?.[0]?.count || 0)
   };
 }
 
@@ -875,13 +948,15 @@ async function getFollowingList(userId, viewerId) {
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
             (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
-            COALESCE(my_f.status, 'none') AS myFollowStatus
+            COALESCE(my_f.status, uf.status, 'accepted') AS myFollowStatus,
+            (uf2.id IS NOT NULL) AS isFriend
      FROM user_follows uf
      JOIN users u ON u.id = uf.following_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
      LEFT JOIN user_follows my_f ON my_f.follower_id = :vId AND my_f.following_id = u.id
-     WHERE uf.follower_id = :uId AND uf.status = 'accepted'
+     LEFT JOIN user_follows uf2 ON uf2.follower_id = u.id AND uf2.following_id = :uId
+     WHERE uf.follower_id = :uId
      ORDER BY uf.created_at DESC`,
     { uId, vId }
   );
@@ -895,15 +970,38 @@ async function getFollowersList(userId, viewerId) {
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
             (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
-            COALESCE(my_f.status, 'none') AS myFollowStatus
+            COALESCE(my_f.status, 'none') AS myFollowStatus,
+            (uf2.id IS NOT NULL) AS isFriend
      FROM user_follows uf
      JOIN users u ON u.id = uf.follower_id
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
      LEFT JOIN user_follows my_f ON my_f.follower_id = :vId AND my_f.following_id = u.id
-     WHERE uf.following_id = :uId AND uf.status = 'accepted'
+     LEFT JOIN user_follows uf2 ON uf2.follower_id = :uId AND uf2.following_id = u.id
+     WHERE uf.following_id = :uId
      ORDER BY uf.created_at DESC`,
     { uId, vId }
+  );
+}
+
+async function getFriendsList(userId, viewerId) {
+  await ensureFollowsTable();
+  const uId = Number(userId);
+  const vId = viewerId ? Number(viewerId) : uId;
+  return query(
+    `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
+            uf.id AS requestId, uf.status, uf.created_at AS createdAt,
+            (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            'accepted' AS myFollowStatus,
+            true AS isFriend
+     FROM user_follows uf
+     JOIN user_follows uf2 ON uf2.follower_id = uf.following_id AND uf2.following_id = uf.follower_id
+     JOIN users u ON u.id = uf.following_id
+     LEFT JOIN profiles p ON p.user_id = u.id
+     LEFT JOIN profile_photos pp ON pp.profile_id = p.id AND pp.sort_order = 0
+     WHERE uf.follower_id = :uId
+     ORDER BY uf.created_at DESC`,
+    { uId }
   );
 }
 
@@ -1003,6 +1101,7 @@ module.exports = {
   getFollowStats,
   getFollowingList,
   getFollowersList,
+  getFriendsList,
   togglePinChat,
   getUserGiftWall
 };

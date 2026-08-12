@@ -214,6 +214,8 @@ export const userApi = {
     apiRequest<{ users: any[] }>(`/user/following${userId ? `?userId=${userId}` : ''}`),
   getFollowers: (userId?: string | number) =>
     apiRequest<{ users: any[] }>(`/user/followers${userId ? `?userId=${userId}` : ''}`),
+  getFriends: (userId?: string | number) =>
+    apiRequest<{ users: any[] }>(`/user/friends${userId ? `?userId=${userId}` : ''}`),
   togglePinChat: (chatId: string | number) =>
     apiRequest<{ pinned: boolean }>(`/user/chat/${chatId}/pin`, { method: 'POST' }),
   updateProfile: (body: Record<string, unknown>) =>
