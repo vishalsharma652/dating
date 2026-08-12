@@ -28,6 +28,7 @@ async function start() {
       ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
     `);
     await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Starter', 'Basic', 'Popular', 'Pro', 'VIP')");
+  } catch {}
   try {
     await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type VARCHAR(50) NOT NULL DEFAULT 'chat_charge'");
   } catch {}
@@ -47,7 +48,6 @@ async function start() {
     `);
   } catch {}
 
-
   // Create HTTP server so Socket.IO can share the same port as Express
   const httpServer = http.createServer(app);
 
@@ -57,7 +57,6 @@ async function start() {
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    // Prefer WebSocket, fall back to polling
     transports: ['websocket', 'polling'],
   });
 
