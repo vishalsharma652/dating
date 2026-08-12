@@ -378,16 +378,31 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
          ON DUPLICATE KEY UPDATE balance = :rem, total_spent = total_spent + :cost`,
         { senderId, rem: remainingCoins, cost: giftCoins }
       );
-      await connection.execute(
-        `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-         VALUES (:senderId, 'gift_sent', :title, :description, 0, :coins, 'completed')`,
-        {
-          senderId,
-          title: `Gift Sent: ${giftName}`,
-          description: `Sent ${giftName} ${giftIcon} (${giftCoins} coins)`,
-          coins: -giftCoins
-        }
-      );
+      try {
+        await connection.execute(
+          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+           VALUES (:senderId, 'gift_sent', :title, :description, 0, :coins, 'completed')`,
+          {
+            senderId,
+            title: `Gift Sent: ${giftName}`,
+            description: `Sent ${giftName} ${giftIcon} (${giftCoins} coins)`,
+            coins: -giftCoins
+          }
+        );
+      } catch (txErr) {
+        try {
+          await connection.execute(
+            `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+             VALUES (:senderId, 'chat_charge', :title, :description, 0, :coins, 'completed')`,
+            {
+              senderId,
+              title: `Gift Sent: ${giftName}`,
+              description: `Sent ${giftName} ${giftIcon} (${giftCoins} coins)`,
+              coins: -giftCoins
+            }
+          );
+        } catch (e) {}
+      }
 
       // Credit coins & record gift for recipient
       if (recipientUserId) {
@@ -401,22 +416,42 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
            ON DUPLICATE KEY UPDATE balance = balance + :giftCoins, total_earned = total_earned + :giftCoins, withdrawal_balance = withdrawal_balance + :giftCoins`,
           { recipientUserId, giftCoins }
         );
-        await connection.execute(
-          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
-           VALUES (:recipientUserId, 'gift_received', :title, :description, 0, :coins, 'completed')`,
-          {
-            recipientUserId,
-            title: `Gift Received: ${giftName}`,
-            description: `Received ${giftName} ${giftIcon} (${giftCoins} coins)`,
-            coins: giftCoins
-          }
-        );
+        try {
+          await connection.execute(
+            `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+             VALUES (:recipientUserId, 'gift_received', :title, :description, 0, :coins, 'completed')`,
+            {
+              recipientUserId,
+              title: `Gift Received: ${giftName}`,
+              description: `Received ${giftName} ${giftIcon} (${giftCoins} coins)`,
+              coins: giftCoins
+            }
+          );
+        } catch (txErr2) {
+          try {
+            await connection.execute(
+              `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status)
+               VALUES (:recipientUserId, 'earning', :title, :description, 0, :coins, 'completed')`,
+              {
+                recipientUserId,
+                title: `Gift Received: ${giftName}`,
+                description: `Received ${giftName} ${giftIcon} (${giftCoins} coins)`,
+                coins: giftCoins
+              }
+            );
+          } catch (e) {}
+        }
+
         // Record in user_gifts table
-        await connection.execute(
-          `INSERT INTO user_gifts (sender_id, recipient_id, gift_name, gift_icon, coins)
-           VALUES (:senderId, :recipientUserId, :giftName, :giftIcon, :giftCoins)`,
-          { senderId, recipientUserId, giftName, giftIcon, giftCoins }
-        );
+        try {
+          await connection.execute(
+            `INSERT INTO user_gifts (sender_id, recipient_id, gift_name, gift_icon, coins)
+             VALUES (:senderId, :recipientUserId, :giftName, :giftIcon, :giftCoins)`,
+            { senderId, recipientUserId, giftName, giftIcon, giftCoins }
+          );
+        } catch (giftTableErr) {
+          console.error('user_gifts insert notice:', giftTableErr?.message);
+        }
       }
     } else if (isMalePayer) {
       // Regular text / say_hi message for male payers

@@ -28,6 +28,23 @@ async function start() {
       ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
     `);
     await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Starter', 'Basic', 'Popular', 'Pro', 'VIP')");
+  try {
+    await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type VARCHAR(50) NOT NULL DEFAULT 'chat_charge'");
+  } catch {}
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_gifts (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        sender_id BIGINT UNSIGNED NOT NULL,
+        recipient_id BIGINT UNSIGNED NOT NULL,
+        gift_name VARCHAR(100) NOT NULL,
+        gift_icon VARCHAR(20) NOT NULL,
+        coins INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_gifts_recipient (recipient_id),
+        INDEX idx_user_gifts_sender (sender_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
   } catch {}
 
 

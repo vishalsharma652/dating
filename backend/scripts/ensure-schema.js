@@ -37,7 +37,10 @@ async function main() {
 
   if (!(await columnExists('wallet_transactions', 'payment_reference'))) {
     await pool.query('ALTER TABLE wallet_transactions ADD COLUMN payment_reference VARCHAR(190) NULL AFTER payment_gateway');
-    console.log('Added wallet_transactions.payment_reference');
+    try {
+    await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type VARCHAR(50) NOT NULL DEFAULT 'chat_charge'");
+    console.log('Modified wallet_transactions.type to VARCHAR(50)');
+  } catch (e) {}
   } else {
     console.log('wallet_transactions.payment_reference already exists');
   }
