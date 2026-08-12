@@ -556,14 +556,11 @@ export default function ProfilePage() {
                   </Badge>
                 </div>
 
-                {/* 2. Follow Status (Interactive Clickable Social Card) */}
-                <div 
-                  onClick={() => {
-                    setFollowersModalTab('followers');
-                    setShowFollowersModal(true);
-                  }}
-                  className="flex items-center p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm"
-                  title="Click to view Followers & Following list"
+                {/* 2. Follow Status (Interactive Social Card linking to Chat > Friends) */}
+                <Link
+                  href="/user/chat?tab=friends"
+                  className="flex items-center p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm block"
+                  title="Click to view Follow Status & Friends in Chat"
                 >
                   <div className="flex items-center gap-3 w-full">
                     <div className="w-9 h-9 rounded-xl bg-[#EC4899]/15 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] group-hover:scale-105 transition shrink-0">
@@ -580,7 +577,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
 
               {/* Unique ID display — shown after KYC approval */}
