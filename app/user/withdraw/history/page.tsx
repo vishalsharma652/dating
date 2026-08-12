@@ -117,7 +117,10 @@ export default function WithdrawalHistoryPage() {
                         <span>Payment Proof</span>
                       </button>
                     )}
-                    <Badge variant={withdrawal.status === 'completed' ? 'default' : withdrawal.status === 'pending' ? 'outline' : 'pink'}>
+                    <Badge
+                      variant={withdrawal.status === 'completed' ? 'default' : withdrawal.status === 'pending' ? 'purple' : 'pink'}
+                      className={withdrawal.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30' : ''}
+                    >
                       {withdrawal.status === 'completed' ? 'Paid / Completed' : withdrawal.status}
                     </Badge>
                   </div>
