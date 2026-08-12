@@ -12,22 +12,32 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, rupees,
 
   // ── Statistics Overview ──────────────────────────────────────────
   const stats = useMemo(() => {
+    const getCoins = (w) => Number(w.coins || 0) > 0 ? Number(w.coins) : Math.round(Number(w.amount || 0) * 4);
+
     const totalCount = withdrawals.length;
     const totalAmount = withdrawals.reduce((acc, w) => acc + Number(w.amount || 0), 0);
+    const totalCoins = withdrawals.reduce((acc, w) => acc + getCoins(w), 0);
+
     const pendingList = withdrawals.filter((w) => w.status === 'pending');
     const completedList = withdrawals.filter((w) => w.status === 'completed');
     const rejectedList = withdrawals.filter((w) => w.status === 'rejected');
 
     const pendingAmount = pendingList.reduce((acc, w) => acc + Number(w.amount || 0), 0);
+    const pendingCoins = pendingList.reduce((acc, w) => acc + getCoins(w), 0);
+
     const completedAmount = completedList.reduce((acc, w) => acc + Number(w.amount || 0), 0);
+    const completedCoins = completedList.reduce((acc, w) => acc + getCoins(w), 0);
 
     return {
       totalCount,
       totalAmount,
+      totalCoins,
       pendingCount: pendingList.length,
       pendingAmount,
+      pendingCoins,
       completedCount: completedList.length,
       completedAmount,
+      completedCoins,
       rejectedCount: rejectedList.length,
     };
   }, [withdrawals]);
@@ -390,9 +400,26 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, rupees,
 
                         {/* Amount */}
                         <td style={{ padding: '14px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '15px', fontWeight: 800, color: '#38bdf8' }}>
-                            {rupees ? rupees(w.amount || 0) : `₹${w.amount || 0}`}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 800, color: '#38bdf8' }}>
+                              {rupees ? rupees(w.amount || 0) : `₹${w.amount || 0}`}
+                            </span>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              color: '#fbbf24',
+                              background: 'rgba(251, 191, 36, 0.12)',
+                              border: '1px solid rgba(251, 191, 36, 0.25)',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              width: 'fit-content'
+                            }}>
+                              🪙 {(Number(w.coins || 0) > 0 ? Number(w.coins) : Math.round(Number(w.amount || 0) * 4)).toLocaleString()} Coins
+                            </span>
+                          </div>
                         </td>
 
                         {/* Method */}

@@ -37,12 +37,21 @@ async function main() {
 
   if (!(await columnExists('wallet_transactions', 'payment_reference'))) {
     await pool.query('ALTER TABLE wallet_transactions ADD COLUMN payment_reference VARCHAR(190) NULL AFTER payment_gateway');
-    try {
+    console.log('Added wallet_transactions.payment_reference');
+  } else {
+    console.log('wallet_transactions.payment_reference already exists');
+  }
+
+  try {
     await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type VARCHAR(50) NOT NULL DEFAULT 'chat_charge'");
     console.log('Modified wallet_transactions.type to VARCHAR(50)');
   } catch (e) {}
+
+  if (!(await columnExists('withdrawals', 'coins'))) {
+    await pool.query('ALTER TABLE withdrawals ADD COLUMN coins INT UNSIGNED NOT NULL DEFAULT 0 AFTER amount');
+    console.log('Added withdrawals.coins column');
   } else {
-    console.log('wallet_transactions.payment_reference already exists');
+    console.log('withdrawals.coins column already exists');
   }
 
   await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type ENUM('welcome_bonus','purchase','earning','withdrawal','chat_charge','commission','gift_sent','gift_received') NOT NULL");

@@ -204,9 +204,9 @@ async function createWithdrawal(userId, data) {
 
     // Record withdrawal request in rupees
     const [withdrawalResult] = await connection.execute(
-      `INSERT INTO withdrawals (user_id, amount, method, bank_name, account_number, status)
-       VALUES (:userId, :amountRupees, :method, :bankName, :accountNumber, 'pending')`,
-      { userId, amountRupees, method: data.method, bankName: data.bankName || null, accountNumber: data.accountNumber || null }
+      `INSERT INTO withdrawals (user_id, amount, coins, method, bank_name, account_number, status)
+       VALUES (:userId, :amountRupees, :requiredCoins, :method, :bankName, :accountNumber, 'pending')`,
+      { userId, amountRupees, requiredCoins, method: data.method, bankName: data.bankName || null, accountNumber: data.accountNumber || null }
     );
 
     await connection.execute(

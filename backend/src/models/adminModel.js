@@ -290,7 +290,8 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
     params.status = status;
   }
   return query(
-    `SELECT w.*, u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
+    `SELECT w.*, COALESCE(NULLIF(w.coins, 0), ROUND(w.amount * 4)) AS coins,
+            u.name AS user_name, u.phone AS user_phone, u.email AS user_email,
             COALESCE(REPLACE(u.unique_id, 'STK-', ''), REPLACE(wa.wallet_id, 'STK-', ''), LPAD(w.user_id, 6, '0')) AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
