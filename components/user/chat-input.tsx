@@ -220,31 +220,35 @@ export function ChatInput({ onSend }: ChatInputProps) {
             </button>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-1">
             {[
               { name: 'Red Rose', icon: '🌹', coins: 10 },
               { name: 'Love Heart', icon: '💖', coins: 25 },
               { name: 'Chocolate', icon: '🍫', coins: 50 },
               { name: 'Teddy Bear', icon: '🧸', coins: 100 },
+              { name: 'Lucky Shark', icon: '🦈', coins: 150 },
               { name: 'Golden Crown', icon: '👑', coins: 200 },
+              { name: 'Magic Crystal', icon: '🔮', coins: 300 },
               { name: 'Diamond Ring', icon: '💍', coins: 500 },
+              { name: 'Treasure Pot', icon: '💰', coins: 750 },
               { name: 'Sports Car', icon: '🚗', coins: 1000 },
+              { name: 'Dream Plane', icon: '✈️', coins: 1500 },
               { name: 'Super Diamond', icon: '💎', coins: 2000 },
             ].map((g) => (
               <button
                 key={g.name}
                 type="button"
                 onClick={() => sendGift(g.name, g.icon, g.coins)}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 transition group cursor-pointer space-y-1"
+                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 transition group cursor-pointer space-y-1"
               >
                 <span className="text-2xl group-hover:scale-125 transition duration-200">
                   {g.icon}
                 </span>
-                <span className="text-[10px] font-bold text-zinc-300 truncate">
+                <span className="text-[10px] font-bold text-zinc-300 truncate w-full text-center px-0.5">
                   {g.name}
                 </span>
-                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
-                  🪙 {g.coins} coins
+                <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm whitespace-nowrap">
+                  🪙 {g.coins}
                 </span>
               </button>
             ))}

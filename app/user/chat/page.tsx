@@ -410,41 +410,6 @@ function ChatListContent() {
         {mainTab === 'friends' && (
           <div className="space-y-6 animate-fade-in">
 
-            {/* 1. FOLLOW STATUS OVERVIEW CARD (Matches User Screenshot Design) */}
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0D1424] to-[#121B30] border border-white/10 shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#EC4899]/20 to-[#7C3AED]/20 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] shrink-0 shadow-inner">
-                    <Users size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-white tracking-tight flex items-center gap-2">
-                      <span className="text-[#EC4899]">Follow Status</span>
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs font-bold flex-wrap">
-                      <span className="text-purple-400">{following.length} Following</span>
-                      <span className="text-zinc-600">•</span>
-                      <span className="text-pink-400">{followers.length} Followers</span>
-                      <span className="text-zinc-600">•</span>
-                      <span className="text-emerald-400">{friends.length} Friends 💛</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* COPY ID Button */}
-                {userUniqueIdDisplay && (
-                  <button
-                    type="button"
-                    onClick={handleCopyId}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs tracking-wider transition-all cursor-pointer shrink-0 group shadow-sm"
-                    title="Click to copy your unique user ID"
-                  >
-                    <Copy size={13} className="group-hover:scale-110 transition" />
-                    <span>{copySuccess ? 'COPIED!' : `COPY ID: ${userUniqueIdDisplay}`}</span>
-                  </button>
-                )}
-              </div>
-            </div>
 
             {/* 2. SUB-TABS: FOLLOWING | FOLLOWERS | FRIENDS */}
             <div className="space-y-4">

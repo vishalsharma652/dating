@@ -12,6 +12,8 @@ export interface GiftItem {
   totalCoins?: number;
 }
 
+export { BadgesWallCard, GiftsHonorWallCard, HonorWall } from '@/components/user/honor-wall';
+
 interface GiftWallProps {
   userId?: string | number;
   gifts?: GiftItem[];

@@ -36,6 +36,7 @@ import { useRef } from 'react';
 import { userApi, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
 import { FollowersModal } from '@/components/user/followers-modal';
+import { BadgesWallCard, GiftsHonorWallCard } from '@/components/user/honor-wall';
 
 
 export default function ProfilePage() {
@@ -147,6 +148,9 @@ export default function ProfilePage() {
   const followerCount = Number((data as any)?.followerCount || 0);
   const followingCount = Number((data as any)?.followingCount || 0);
   const friendsCount = Number((data as any)?.friendsCount || 0);
+  const giftsList: any[] = Array.isArray((data as any)?.giftWall) ? (data as any).giftWall : [];
+  const totalGiftsCount = giftsList.reduce((acc, g) => acc + (Number(g.qty) || 0), 0);
+  const totalGiftsCoins = giftsList.reduce((acc, g) => acc + ((Number(g.coins) || 0) * (Number(g.qty) || 0)), 0);
   const isFemale = user.gender === 'female';
   const defaultProfileAvatar = isFemale ? '/female-logo.svg' : '/male-logo.svg';
   const photos = profile.photos?.length
@@ -407,6 +411,43 @@ export default function ProfilePage() {
               </div>
             </Card>
 
+            {/* Reward Box & Honor Wall Showcase */}
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎁</span>
+                  <div>
+                    <h3 className="font-extrabold text-white tracking-tight text-xs uppercase tracking-wider">
+                      Reward Box & Honor Wall
+                    </h3>
+                    <p className="text-[10px] text-zinc-400 font-semibold">
+                      {totalGiftsCount > 0
+                        ? `${totalGiftsCount} Gifts Received (${totalGiftsCoins} Coins earned)`
+                        : 'Badges & Virtual Gifts Received'}
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href="/user/gift-wall"
+                  className="text-xs font-black text-amber-300 hover:text-amber-200 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1 shadow-sm"
+                >
+                  <span>Full Wall</span>
+                  <ArrowUpRight size={13} />
+                </Link>
+              </div>
+
+              {/* Badges Wall Card */}
+              <BadgesWallCard user={user} profile={profile} isVerified={Boolean(user.kyc_status === 'approved')} />
+
+              {/* Gifts Honor Wall Card */}
+              <GiftsHonorWallCard
+                gifts={giftsList}
+                maxDisplay={4}
+                onOpenWall={() => router.push('/user/gift-wall')}
+              />
+            </div>
+
             {/* Photos Card - Perfectly Symmetrical 3x2 Photo Grid */}
             <Card className="bg-[#101827]/45 backdrop-blur-2xl border border-white/10 rounded-[24px] p-6 shadow-[0_20px_45px_rgba(0,0,0,0.4)] relative overflow-hidden group transition-all duration-300">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-[#EC4899]" />
@@ -535,8 +576,8 @@ export default function ProfilePage() {
                 <span>Verification Checklist</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 1. Profile Security */}
+              <div>
+                {/* Profile Security */}
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-emerald-500/30 transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
@@ -555,29 +596,6 @@ export default function ProfilePage() {
                     {user.status || 'pending'}
                   </Badge>
                 </div>
-
-                {/* 2. Follow Status (Interactive Social Card linking to Chat > Friends) */}
-                <Link
-                  href="/user/chat?tab=friends"
-                  className="flex items-center p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-[#EC4899]/40 hover:bg-[#EC4899]/5 transition-all duration-300 cursor-pointer group shadow-sm block"
-                  title="Click to view Follow Status & Friends in Chat"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-9 h-9 rounded-xl bg-[#EC4899]/15 border border-[#EC4899]/30 flex items-center justify-center text-[#EC4899] group-hover:scale-105 transition shrink-0">
-                      <Users size={18} />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-white block tracking-tight group-hover:text-[#EC4899] transition">Follow Status</span>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold flex-wrap">
-                        <span className="text-purple-400">{followingCount} Following</span>
-                        <span className="text-zinc-500 font-normal">•</span>
-                        <span className="text-pink-400">{followerCount} Followers</span>
-                        <span className="text-zinc-500 font-normal">•</span>
-                        <span className="text-emerald-400">{friendsCount} Friends 🤝</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
               </div>
 
               {/* Unique ID display — shown after KYC approval */}
