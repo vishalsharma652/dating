@@ -58,6 +58,10 @@ router.post('/wallet/coins/razorpay-order', [
 router.post('/wallet/coins/verify-upi', [
   body('upiId').trim().notEmpty()
 ], validate, asyncHandler(user.verifyUpiId));
+router.post('/wallet/coins/submit-proof', upload.single('screenshot'), [
+  body('packageId').isInt()
+], validate, asyncHandler(user.submitPaymentProof));
+router.get('/wallet/coins/payment-requests', asyncHandler(user.paymentRequests));
 router.post('/wallet/coins/purchase', [
   body('packageId').isInt(),
   body('gateway').optional({ values: 'falsy' }).isIn(['razorpay', 'cashfree', 'phonepe', 'netbanking', 'wallet', 'upi_qr', 'stripe']),

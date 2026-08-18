@@ -223,6 +223,27 @@ CREATE TABLE IF NOT EXISTS withdrawals (
   CONSTRAINT fk_withdrawals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS payment_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  package_id BIGINT UNSIGNED NOT NULL,
+  package_name VARCHAR(120) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  coins INT NOT NULL,
+  bonus_coins INT NOT NULL DEFAULT 0,
+  screenshot_url TEXT NOT NULL,
+  transaction_ref VARCHAR(190) NULL,
+  upi_id VARCHAR(120) NULL,
+  admin_note TEXT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  verified_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_payment_requests_user (user_id),
+  INDEX idx_payment_requests_status (status),
+  CONSTRAINT fk_payment_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS categories (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,

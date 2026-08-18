@@ -332,6 +332,201 @@ async function chats(req, res) {
 }
 
 async function requestChat(req, res) {
+const giftWall = await socialModel.getUserGiftWall(targetId);
+  return ok(res, { giftWall });
+}
+
+async function toggleFollow(req, res) {
+  const targetId = req.params.id;
+  const result = await socialModel.toggleFollow(req.user.id, targetId);
+  const msg = result.status === 'pending'
+    ? 'Follow request sent'
+    : result.status === 'accepted'
+    ? 'User followed'
+    : 'Unfollowed / Request cancelled';
+  return ok(res, result, msg);
+}
+
+async function getFollowStatus(req, res) {
+  const targetId = req.params.id;
+  const status = await socialModel.getFollowStatus(req.user.id, targetId);
+  return ok(res, status);
+}
+
+async function respondFollowRequest(req, res) {
+  const requestId = req.params.requestId;
+  const action = req.body.action; // 'accept' | 'decline'
+  const result = await socialModel.respondFollowRequest(req.user.id, requestId, action);
+  return ok(res, result, action === 'accept' ? 'Follow request accepted' : 'Follow request declined');
+}
+
+async function getFollowRequests(req, res) {
+  const requests = await socialModel.getFollowRequests(req.user.id);
+  return ok(res, { requests });
+}
+
+async function getFollowing(req, res) {
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFollowingList(targetId, req.user.id);
+  return ok(res, { users });
+}
+
+async function getFollowers(req, res) {
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFollowersList(targetId, req.user.id);
+  return ok(res, { users });
+}
+
+async function getFriends(req, res) {
+  const targetId = req.query.userId || req.user.id;
+  const users = await socialModel.getFriendsList(targetId, req.user.id);
+  return ok(res, { users });
+}
+
+async function togglePinChat(req, res) {
+  const chatId = req.params.chatId;
+  const result = await socialModel.togglePinChat(req.user.id, chatId);
+  return ok(res, result, result.pinned ? 'Chat pinned' : 'Chat unpinned');
+}
+
+async function updateProfile(req, res) {
+  const currentProfile = await profileModel.getForUser(req.user.id);
+  const nextName = req.body.name || req.user.name;
+  const nextGender = req.body.gender || req.user.gender || currentProfile?.gender;
+  if (hasNameGenderMismatch(nextName, nextGender)) {
+    throw new AppError('Validation failed', 422, [{
+      field: 'gender',
+      message: 'Name and gender mismatch.'
+    }]);
+  }
+
+  const userFields = {};
+  if (req.body.name) userFields.name = req.body.name;
+  if (req.body.gender) userFields.gender = normalizeNameGender(req.body.gender) || req.body.gender;
+  const user = Object.keys(userFields).length ? await userModel.update(req.user.id, userFields) : req.user;
+  const profile = await profileModel.upsert(req.user.id, req.body);
+  return ok(res, { user, profile }, 'Profile updated');
+}
+
+async function uploadPhoto(req, res) {
+  if (!req.file) throw new AppError('No photo uploaded', 400);
+  const photoUrl = `/uploads/${req.file.filename}`;
+  const profile = await profileModel.getForUser(req.user.id);
+  const photos = profile?.photos || [];
+  const slotIndex = req.body.slotIndex !== undefined && req.body.slotIndex !== '' ? Number(req.body.slotIndex) : null;
+
+  let newPhotos = [...photos];
+  if (slotIndex !== null && slotIndex >= 0 && slotIndex < 6) {
+    newPhotos[slotIndex] = photoUrl;
+    newPhotos = newPhotos.filter(Boolean);
+  } else {
+    if (!newPhotos.includes(photoUrl)) {
+      if (newPhotos.length >= 6) {
+        newPhotos[5] = photoUrl;
+      } else {
+        newPhotos.push(photoUrl);
+      }
+    }
+  }
+  await profileModel.upsert(req.user.id, { photos: newPhotos });
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { url: photoUrl, photos: updatedProfile?.photos || [] }, 'Photo uploaded successfully');
+}
+
+async function uploadChatMedia(req, res) {
+  if (!req.file) throw new AppError('No media file uploaded', 400);
+  const mediaUrl = `/uploads/${req.file.filename}`;
+  return ok(res, { url: mediaUrl }, 'Chat media uploaded successfully');
+}
+
+async function uploadAvatar(req, res) {
+  if (!req.file) throw new AppError('No photo uploaded', 400);
+  const photoUrl = `/uploads/${req.file.filename}`;
+  await profileModel.updateAvatar(req.user.id, photoUrl);
+  return ok(res, { url: photoUrl }, 'Profile picture updated successfully');
+}
+
+async function deletePhoto(req, res) {
+  const index = Number(req.params.index);
+  const profile = await profileModel.getForUser(req.user.id);
+  let photos = profile?.photos || [];
+  if (index >= 0 && index < photos.length) {
+    photos.splice(index, 1);
+    await profileModel.upsert(req.user.id, { photos });
+  }
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { photos: updatedProfile?.photos || [] }, 'Photo deleted successfully');
+}
+
+async function setPrimaryPhoto(req, res) {
+  const index = Number(req.body.index);
+  const profile = await profileModel.getForUser(req.user.id);
+  let photos = profile?.photos || [];
+  if (index > 0 && index < photos.length) {
+    const selected = photos.splice(index, 1)[0];
+    photos.unshift(selected);
+    await profileModel.upsert(req.user.id, { photos });
+  }
+  const updatedProfile = await profileModel.getForUser(req.user.id);
+  return ok(res, { photos: updatedProfile?.photos || [] }, 'Primary cover photo updated');
+}
+
+async function ageVerify(req, res) {
+  const dob = new Date(req.body.dob);
+  const age = Math.floor((Date.now() - dob.getTime()) / 1000 / 60 / 60 / 24 / 365.25);
+  if (!req.body.dob || Number.isNaN(age) || age < 18) throw new AppError('You must be 18 years or older to join Ember', 422);
+  const user = await userModel.update(req.user.id, { dob: req.body.dob, age_verified: true });
+  return ok(res, { user, age }, 'Age verified');
+}
+
+async function submitKyc(req, res) {
+  let photoUrl = null;
+  if (req.files && req.files.length > 0) {
+    photoUrl = `/uploads/${req.files[0].filename}`;
+  } else if (req.file) {
+    photoUrl = `/uploads/${req.file.filename}`;
+  }
+
+  // Save live selfie purely for KYC verification (DO NOT update profile avatar)
+  const updateData = { kyc_status: 'pending' };
+  if (photoUrl) {
+    updateData.kyc_document_url = photoUrl;
+  }
+
+  const user = await userModel.update(req.user.id, updateData);
+  return created(res, { user, files: req.files || [], photoUrl }, 'KYC submitted for review');
+}
+
+
+
+async function discover(req, res) {
+  const profiles = await profileModel.discover(req.user.id, req.query);
+  return ok(res, { profiles });
+}
+
+async function searchUsers(req, res) {
+  const queryStr = String(req.query.q || req.query.search || '').trim();
+  if (!queryStr) return ok(res, { users: [] });
+
+  const users = await userModel.list({ search: queryStr, limit: 10 });
+  const filtered = users.filter((u) => Number(u.id) !== Number(req.user.id));
+  return ok(res, { users: filtered });
+}
+
+async function reactToProfile(req, res) {
+  await socialModel.like(req.user.id, Number(req.params.id), req.body.action || 'like');
+  return ok(res, null, 'Profile action saved');
+}
+
+async function matches(req, res) {
+  return ok(res, { matches: await socialModel.matches(req.user.id) });
+}
+
+async function chats(req, res) {
+  return ok(res, { chats: await socialModel.chats(req.user.id) });
+}
+
+async function requestChat(req, res) {
   const otherUserId = await userModel.resolveUserId(req.params.userId);
   if (Number(otherUserId) === Number(req.user.id)) throw new AppError('You cannot request a chat with yourself', 422);
   return created(res, { request: await socialModel.createChatRequest(req.user.id, otherUserId) }, 'Chat request sent');
@@ -420,65 +615,41 @@ async function coinPackages(req, res) {
 }
 
 async function purchaseCoins(req, res) {
-  const { gateway, upiId, cardNumber, expiry, cvv, cardName, bankCode, walletProvider } = req.body;
-
-  if (gateway === 'phonepe') {
-    const upiRegex = /^[a-zA-Z0-9.\-_]{3,64}@[a-zA-Z]{3,32}$/;
-    if (!upiId || typeof upiId !== 'string' || !upiId.trim() || !upiRegex.test(upiId.trim())) {
-      const err = new AppError('UPI validation failed', 422);
-      err.details = { upiId: 'Please enter a valid UPI ID (e.g., 9876543210@ybl or username@okaxis)' };
-      throw err;
-    }
-  } else if (gateway === 'razorpay') {
-    const errors = {};
-    const cleanCard = (cardNumber || '').replace(/\s/g, '');
-    if (!cardNumber || typeof cardNumber !== 'string' || cleanCard.length < 16 || !/^\d+$/.test(cleanCard)) {
-      errors.cardNumber = 'Please enter a valid 16-digit card number';
-    }
-    if (!expiry || typeof expiry !== 'string' || !expiry.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/)) {
-      errors.expiry = 'Please enter a valid expiry (MM/YY)';
-    } else {
-      const [expMonth, expYear] = expiry.split('/').map(Number);
-      const now = new Date();
-      const currentYear = now.getFullYear() % 100;
-      const currentMonth = now.getMonth() + 1;
-      if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-        errors.expiry = 'Card has expired';
-      }
-    }
-    const cleanCvv = (cvv || '').trim();
-    if (!cvv || typeof cvv !== 'string' || cleanCvv.length < 3 || cleanCvv.length > 4 || !/^\d+$/.test(cleanCvv)) {
-      errors.cvv = 'Please enter a valid CVV (3 or 4 digits)';
-    }
-    if (!cardName || typeof cardName !== 'string' || !cardName.trim()) {
-      errors.cardName = 'Please enter cardholder name';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      const err = new AppError('Card validation failed', 422);
-      err.details = errors;
-      throw err;
-    }
-  } else if (gateway === 'netbanking') {
-    if (!bankCode || typeof bankCode !== 'string' || !bankCode.trim()) {
-      const err = new AppError('Netbanking validation failed', 422);
-      err.details = { bankCode: 'Please select a bank' };
-      throw err;
-    }
-  } else if (gateway === 'wallet') {
-    if (!walletProvider || typeof walletProvider !== 'string' || !walletProvider.trim()) {
-      const err = new AppError('Wallet validation failed', 422);
-      err.details = { walletProvider: 'Please select a wallet' };
-      throw err;
-    }
-  }
-
   const purchase = await walletModel.purchase(req.user.id, Number(req.body.packageId), {
-    gateway: req.body.gateway || 'stripe',
+    gateway: req.body.gateway || 'upi_qr',
     reference: req.body.paymentReference
   });
   if (!purchase) throw new AppError('Coin package not found', 404);
   return created(res, purchase, 'Coin purchase completed');
+}
+
+async function submitPaymentProof(req, res) {
+  if (!req.file) {
+    throw new AppError('Payment screenshot proof image is required', 400);
+  }
+
+  const packageId = Number(req.body.packageId);
+  if (!packageId || isNaN(packageId)) {
+    throw new AppError('Valid coin package ID is required', 422);
+  }
+
+  const screenshotUrl = `/uploads/${req.file.filename}`;
+  const transactionRef = (req.body.transactionRef || req.body.transaction_ref || '').trim();
+  const upiId = (req.body.upiId || req.body.upi_id || '9352692626@kotakbank').trim();
+
+  const request = await walletModel.createPaymentRequest(req.user.id, {
+    packageId,
+    screenshotUrl,
+    transactionRef,
+    upiId
+  });
+
+  return created(res, { request }, 'Payment proof submitted successfully. Under admin verification.');
+}
+
+async function paymentRequests(req, res) {
+  const requests = await walletModel.userPaymentRequests(req.user.id);
+  return ok(res, { requests });
 }
 
 async function createStripeIntent(req, res) {
@@ -513,7 +684,6 @@ async function createStripeIntent(req, res) {
     console.warn('Stripe API Warning, falling back to sandbox intent:', err.message);
   }
 
-  // Fallback for simulation / test key mode
   const mockIntentId = `pi_stripe_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
   return ok(res, {
     clientSecret: `${mockIntentId}_secret_test`,
@@ -667,7 +837,8 @@ async function settings(req, res) {
     }
   });
 }
-async function deleteAccount(req, res) {
+
+async function deleteAccount(req, res) {
   await userModel.remove(req.user.id);
   return ok(res, null, 'Account deleted permanently');
 }

@@ -3,12 +3,58 @@ const { useState, useEffect } = React;
 const API_BASE_URL = '/api';
 
 window.Icon = function Icon({ name, size = 18, className = '' }) {
+  const ref = React.useRef(null);
+
   React.useEffect(() => {
-    if (window.lucide) {
-      window.lucide.createIcons();
+    if (!ref.current) return;
+    const iconName = name || '';
+
+    if (window.lucide && window.lucide.icons) {
+      const pascalName = iconName
+        .split('-')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+      const iconDef = window.lucide.icons[pascalName] || window.lucide.icons[iconName];
+      if (iconDef && typeof iconDef.toSvg === 'function') {
+        ref.current.innerHTML = iconDef.toSvg({
+          width: size,
+          height: size,
+          class: className
+        });
+        return;
+      }
     }
-  }, [name]);
-  return <i data-lucide={name} style={{ width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} className={className}></i>;
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      ref.current.innerHTML = `<i data-lucide="${iconName}" style="width: ${size}px; height: ${size}px; display: inline-flex;"></i>`;
+      try {
+        window.lucide.createIcons({
+          root: ref.current,
+          attrs: {
+            width: size,
+            height: size,
+            class: className
+          }
+        });
+      } catch (e) {}
+    }
+  }, [name, size, className]);
+
+  return (
+    <span
+      ref={ref}
+      style={{
+        width: size,
+        height: size,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        verticalAlign: 'middle',
+        flexShrink: 0
+      }}
+      className={className}
+    />
+  );
 };
 
 function App() {
@@ -630,6 +676,16 @@ function App() {
             dateStr={dateStr}
           />
         );
+      case 'payment_verify':
+        return (
+          <window.PaymentVerify
+            rupees={rupees}
+            dateStr={dateStr}
+            showNotice={showNotice}
+            onTabChange={setActiveTab}
+            apiRequest={apiRequest}
+          />
+        );
       case 'reports':
         return <window.Reports data={reportsData} rupees={rupees} />;
       case 'settings':
@@ -677,6 +733,7 @@ function App() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', group: 'Overview', icon: 'layout-dashboard' },
     { id: 'users', label: 'Users', group: 'Operations', icon: 'users' },
+    { id: 'payment_verify', label: 'Payment Verify', group: 'Operations', icon: 'check-check' },
     { id: 'kyc', label: 'KYC Verification', group: 'Operations', icon: 'shield-check' },
     { id: 'wallet', label: 'Wallets', group: 'Operations', icon: 'wallet' },
     { id: 'chats', label: 'Chat Monitor', group: 'Operations', icon: 'message-square' },

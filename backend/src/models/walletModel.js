@@ -244,4 +244,69 @@ async function withdrawals(userId) {
   );
 }
 
-module.exports = { wallet, transactions, coinPackages, purchase, saveBankAccount, bankAccounts, createWithdrawal, withdrawals };
+async function createPaymentRequest(userId, data) {
+  const packages = await query('SELECT * FROM coin_packages WHERE id = :packageId AND active = true LIMIT 1', { packageId: data.packageId });
+  const pkg = packages[0];
+  if (!pkg) throw new AppError('Coin package not found', 404);
+
+  const totalCoins = Number(pkg.coins);
+  const bonusCoins = Number(pkg.bonus || 0);
+
+  const result = await query(
+    `INSERT INTO payment_requests (user_id, package_id, package_name, amount, coins, bonus_coins, screenshot_url, transaction_ref, upi_id, status)
+     VALUES (:userId, :packageId, :packageName, :amount, :coins, :bonusCoins, :screenshotUrl, :transactionRef, :upiId, 'pending')`,
+    {
+      userId,
+      packageId: pkg.id,
+      packageName: pkg.name,
+      amount: pkg.price,
+      coins: totalCoins,
+      bonusCoins: bonusCoins,
+      screenshotUrl: data.screenshotUrl,
+      transactionRef: data.transactionRef || null,
+      upiId: data.upiId || '9352692626@kotakbank'
+    }
+  );
+
+  return findPaymentRequest(result.insertId);
+}
+
+async function findPaymentRequest(id) {
+  const rows = await query(
+    `SELECT id, user_id AS userId, package_id AS packageId, package_name AS packageName,
+      amount, coins, bonus_coins AS bonusCoins, screenshot_url AS screenshotUrl,
+      transaction_ref AS transactionRef, upi_id AS upiId, status, admin_note AS adminNote,
+      DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") AS createdAt,
+      DATE_FORMAT(verified_at, "%Y-%m-%d %H:%i") AS verifiedAt
+     FROM payment_requests WHERE id = :id LIMIT 1`,
+    { id }
+  );
+  return rows[0] || null;
+}
+
+async function userPaymentRequests(userId) {
+  return query(
+    `SELECT id, package_id AS packageId, package_name AS packageName,
+      amount, coins, bonus_coins AS bonusCoins, screenshot_url AS screenshotUrl,
+      transaction_ref AS transactionRef, upi_id AS upiId, status, admin_note AS adminNote,
+      DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") AS createdAt,
+      DATE_FORMAT(verified_at, "%Y-%m-%d %H:%i") AS verifiedAt
+     FROM payment_requests WHERE user_id = :userId ORDER BY created_at DESC`,
+    { userId }
+  );
+}
+
+module.exports = {
+  wallet,
+  transactions,
+  coinPackages,
+  purchase,
+  saveBankAccount,
+  bankAccounts,
+  createWithdrawal,
+  withdrawals,
+  createPaymentRequest,
+  findPaymentRequest,
+  userPaymentRequests
+};
+

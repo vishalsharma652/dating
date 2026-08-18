@@ -239,6 +239,17 @@ async function updateBrandLogo(req, res) {
   return ok(res, { brand: await settingsModel.brand() }, 'Brand logo saved');
 }
 
+async function paymentRequests(req, res) {
+  const result = await adminModel.paymentRequests(req.query);
+  return ok(res, result);
+}
+
+async function updatePaymentRequest(req, res) {
+  const id = Number(req.params.id);
+  const updated = await adminModel.updatePaymentRequest(id, req.body);
+  return ok(res, { request: updated }, `Payment request #${id} updated to ${req.body.status}`);
+}
+
 async function upsertSetting(req, res) {
   return ok(res, { setting: await adminModel.upsertSetting(req.body.key, req.body.value) }, 'Setting saved');
 }
@@ -257,6 +268,8 @@ module.exports = {
   chats,
   withdrawals,
   updateWithdrawal,
+  paymentRequests,
+  updatePaymentRequest,
   reports,
   categories,
   createCategory,
@@ -275,3 +288,4 @@ module.exports = {
   updateBrandLogo,
   upsertSetting
 };
+

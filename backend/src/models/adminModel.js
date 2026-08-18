@@ -408,6 +408,171 @@ async function upsertSetting(key, value) {
   return settingsModel.upsert(key, value);
 }
 
+async function paymentRequests({ page = 1, limit = 20, status = null, search = '', date = '' } = {}) {
+  const pageNumber = Math.max(Number(page) || 1, 1);
+  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 1000);
+  const offset = (pageNumber - 1) * limitNumber;
+  const filters = ['1=1'];
+  const params = {};
+
+  if (status && status !== 'all') {
+    filters.push('pr.status = :status');
+    params.status = status;
+  }
+
+  if (search && String(search).trim() !== '') {
+    const rawSearch = String(search).trim();
+    params.search = `%${rawSearch}%`;
+    const extractedNum = rawSearch.replace(/^(id|#|stk-?|req-?)[:\s]*/i, '');
+    if (/^\d+$/.test(extractedNum)) {
+      params.exactId = Number(extractedNum);
+      filters.push('(pr.id = :exactId OR u.id = :exactId OR u.unique_id LIKE :search OR u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR pr.transaction_ref LIKE :search OR pr.package_name LIKE :search)');
+    } else {
+      filters.push('(u.unique_id LIKE :search OR u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR pr.transaction_ref LIKE :search OR pr.package_name LIKE :search)');
+    }
+  }
+
+  if (date && String(date).trim() !== '') {
+    filters.push('DATE(pr.created_at) = :date');
+    params.date = String(date).trim();
+  }
+
+  const whereClause = filters.join(' AND ');
+
+  const [requests, countRows, statsRows] = await Promise.all([
+    query(
+      `SELECT pr.id, pr.user_id, pr.package_id, pr.package_name, pr.amount, pr.coins, pr.bonus_coins,
+              pr.screenshot_url, pr.transaction_ref, pr.upi_id, pr.admin_note, pr.status,
+              pr.verified_at, pr.created_at, pr.updated_at,
+              u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.gender AS user_gender,
+              COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id,
+              (SELECT ph.url FROM profile_photos ph JOIN profiles p ON p.id = ph.profile_id WHERE p.user_id = u.id ORDER BY ph.sort_order ASC LIMIT 1) AS profilePhotoUrl
+       FROM payment_requests pr
+       LEFT JOIN users u ON u.id = pr.user_id
+       WHERE ${whereClause}
+       ORDER BY pr.created_at DESC
+       LIMIT ${limitNumber} OFFSET ${offset}`,
+      params
+    ),
+    query(
+      `SELECT COUNT(*) AS total
+       FROM payment_requests pr
+       LEFT JOIN users u ON u.id = pr.user_id
+       WHERE ${whereClause}`,
+      params
+    ),
+    query(
+      `SELECT 
+        COUNT(*) AS totalCount,
+        SUM(status = 'pending') AS pendingCount,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) AS pendingAmount,
+        SUM(status = 'approved') AS approvedCount,
+        COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0) AS approvedAmount,
+        SUM(status = 'rejected') AS rejectedCount
+       FROM payment_requests`
+    )
+  ]);
+
+  const total = Number(countRows[0]?.total) || 0;
+  const stats = statsRows[0] || { totalCount: 0, pendingCount: 0, pendingAmount: 0, approvedCount: 0, approvedAmount: 0, rejectedCount: 0 };
+
+  return { requests, total, stats };
+}
+
+async function updatePaymentRequest(id, { status, admin_note }) {
+  const targetStatus = String(status || '').toLowerCase();
+  if (!['approved', 'rejected', 'pending'].includes(targetStatus)) {
+    throw new Error('Invalid payment status');
+  }
+
+  const updatedRequest = await transaction(async (connection) => {
+    const [rows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1 FOR UPDATE', { id });
+    const request = rows[0];
+    if (!request) throw new Error('Payment request not found');
+
+    const previousStatus = request.status;
+
+    if (targetStatus === 'approved' && previousStatus !== 'approved') {
+      const totalCoins = Number(request.coins || 0) + Number(request.bonus_coins || 0);
+      const userId = request.user_id;
+
+      const [users] = await connection.execute('SELECT id, unique_id, name FROM users WHERE id = :userId LIMIT 1', { userId });
+      if (users[0]) {
+        const userUniqueId = String(users[0].unique_id || userId).replace(/^STK-/i, '').padStart(6, '0');
+        const [existingWallet] = await connection.execute('SELECT id FROM wallets WHERE user_id = :userId LIMIT 1', { userId });
+        if (!existingWallet[0]) {
+          await connection.execute(
+            'INSERT INTO wallets (user_id, wallet_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance) VALUES (:userId, :userUniqueId, :totalCoins, :totalCoins, 0, 0, 0)',
+            { userId, userUniqueId, totalCoins }
+          );
+        } else {
+          await connection.execute(
+            'UPDATE wallets SET balance = balance + :totalCoins, total_purchased = total_purchased + :totalCoins, wallet_id = :userUniqueId WHERE user_id = :userId',
+            { totalCoins, userUniqueId, userId }
+          );
+        }
+
+        await connection.execute('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
+
+        const ref = request.transaction_ref || `QR-VERIFY-${request.id}`;
+        await connection.execute(
+          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
+           VALUES (:userId, 'purchase', 'Coin Purchase (QR Verified)', :description, :amount, :coins, 'completed', 'upi_qr', :reference)`,
+          {
+            userId,
+            description: request.package_name || 'Coin Package',
+            amount: request.amount,
+            coins: totalCoins,
+            reference: ref
+          }
+        );
+
+        try {
+          await connection.execute(
+            `INSERT INTO notifications (user_id, type, title, message, link_url)
+             VALUES (:userId, 'payment_verified', 'Payment Verified 🎉', :message, '/user/wallet')`,
+            {
+              userId,
+              message: `Your payment of ₹${request.amount} for ${request.package_name} has been verified. ${totalCoins} coins have been added to your wallet!`
+            }
+          );
+        } catch (nErr) { /* ignore */ }
+      }
+
+      await connection.execute(
+        `UPDATE payment_requests SET status = 'approved', verified_at = CURRENT_TIMESTAMP, admin_note = :adminNote WHERE id = :id`,
+        { id, adminNote: admin_note || request.admin_note || 'Approved by Admin' }
+      );
+    } else if (targetStatus === 'rejected') {
+      await connection.execute(
+        `UPDATE payment_requests SET status = 'rejected', admin_note = :adminNote WHERE id = :id`,
+        { id, adminNote: admin_note || request.admin_note || 'Rejected by Admin' }
+      );
+
+      try {
+        await connection.execute(
+          `INSERT INTO notifications (user_id, type, title, message, link_url)
+           VALUES (:userId, 'payment_rejected', 'Payment Verification Failed', :message, '/user/wallet/coins')`,
+          {
+            userId: request.user_id,
+            message: `Your payment verification for ₹${request.amount} was rejected.${admin_note ? ' Reason: ' + admin_note : ''}`
+          }
+        );
+      } catch (nErr) { /* ignore */ }
+    } else if (targetStatus === 'pending') {
+      await connection.execute(
+        `UPDATE payment_requests SET status = 'pending', admin_note = :adminNote WHERE id = :id`,
+        { id, adminNote: admin_note || null }
+      );
+    }
+
+    const [updatedRows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1', { id });
+    return updatedRows[0];
+  });
+
+  return updatedRequest;
+}
+
 module.exports = {
   dashboard,
   listTable,
@@ -423,8 +588,11 @@ module.exports = {
   chats,
   withdrawals,
   updateWithdrawal,
+  paymentRequests,
+  updatePaymentRequest,
   reports,
   updateOrder,
   settings,
   upsertSetting
 };
+

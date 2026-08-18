@@ -320,6 +320,13 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify({ packageId: Number(packageId), ...payment }),
     }),
+  submitPaymentProof: (formData: FormData) =>
+    apiRequest<{ request: any; message: string }>('/user/wallet/coins/submit-proof', {
+      method: 'POST',
+      body: formData,
+    }),
+  paymentRequests: () =>
+    apiRequest<{ requests: any[] }>('/user/wallet/coins/payment-requests'),
   chatRequests: () => apiRequest<{ requests: any[] }>('/user/chat/requests'),
   requestChat: (userId: number | string) =>
     apiRequest<{ request: any }>(`/user/chat/${userId}/request`, { method: 'POST' }),

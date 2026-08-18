@@ -29,6 +29,9 @@ router.get('/chats', asyncHandler(admin.chats));
 router.get('/withdrawals', asyncHandler(admin.withdrawals));
 router.patch('/withdrawals/:id', upload.single('screenshot'), [param('id').isInt(), body('status').optional().isIn(['pending', 'completed', 'rejected'])], validate, asyncHandler(admin.updateWithdrawal));
 
+router.get('/payments', asyncHandler(admin.paymentRequests));
+router.patch('/payments/:id', [param('id').isInt(), body('status').isIn(['pending', 'approved', 'rejected'])], validate, asyncHandler(admin.updatePaymentRequest));
+
 router.get('/reports', asyncHandler(admin.reports));
 
 // Catalog and Commerce modules have been removed. Related routes are disabled.

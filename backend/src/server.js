@@ -55,9 +55,36 @@ async function start() {
         INDEX idx_user_gifts_sender (sender_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-  } catch {}
+  } catch (err) {
+    console.warn('user_gifts table create warning:', err.message);
+  }
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS payment_requests (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        package_id BIGINT UNSIGNED NOT NULL,
+        package_name VARCHAR(120) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        coins INT NOT NULL,
+        bonus_coins INT NOT NULL DEFAULT 0,
+        screenshot_url TEXT NOT NULL,
+        transaction_ref VARCHAR(190) NULL,
+        upi_id VARCHAR(120) NULL,
+        admin_note TEXT NULL,
+        status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        verified_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_payment_requests_user (user_id),
+        INDEX idx_payment_requests_status (status),
+        CONSTRAINT fk_payment_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } catch (err) {
+    console.warn('payment_requests table create warning:', err.message);
+  }
 
-  // Create HTTP server so Socket.IO can share the same port as Express
   const httpServer = http.createServer(app);
 
   const io = new SocketIOServer(httpServer, {
