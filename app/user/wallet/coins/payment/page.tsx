@@ -193,8 +193,11 @@ function PaymentContent() {
               Payment Screenshot Submitted!
             </h2>
             <p className="text-zinc-600 dark:text-zinc-300 text-sm leading-relaxed max-w-sm mx-auto">
-              Your payment proof has been successfully sent to the admin. Once verified, <span className="font-bold text-pink-500">{totalCoins} coins</span> will be credited to your wallet balance.
+              Your payment proof has been successfully submitted to admin. <span className="font-bold text-pink-500">{totalCoins} coins</span> will be updated in your wallet within <span className="font-bold text-emerald-500">5 to 10 minutes</span>.
             </p>
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs px-3.5 py-1.5 rounded-xl border border-amber-500/20 font-bold">
+              ⚡ Coins will be credited to your wallet in 5–10 minutes
+            </div>
           </div>
 
           {/* Payment Request Summary */}
@@ -469,10 +472,10 @@ function PaymentContent() {
         {/* Security & Verification Notice */}
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-xs font-semibold text-zinc-400 flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-            <ShieldCheck size={16} className="text-emerald-400" /> Admin Fast-Track Verification Active
+            <ShieldCheck size={16} className="text-emerald-400" /> Admin Fast-Track Verification Active (5–10 mins)
           </p>
           <p className="text-[11px] text-zinc-500 max-w-sm leading-relaxed">
-            Your payment is secure. Coins will be credited to your account as soon as the screenshot is verified by the admin team.
+            Your payment is 100% secure. Coins will be credited and updated in your wallet within 5 to 10 minutes after verification.
           </p>
         </div>
       </Container>
