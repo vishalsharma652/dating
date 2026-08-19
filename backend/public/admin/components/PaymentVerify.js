@@ -599,120 +599,127 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         )}
       </div>
 
-      {/* Record Detail Modal */}
+      {/* Record Detail Modal (Fully Responsive) */}
       {selectedRecord && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="max-w-2xl w-full bg-[#121024] border border-purple-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+          <div className="max-w-2xl w-full max-h-[92vh] flex flex-col bg-[#121024] border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-[#16132e]">
               <div>
-                <span className="text-xs font-mono font-bold text-[#c084fc] bg-[#241a4a] px-3 py-1 rounded-full border border-purple-400/30 whitespace-nowrap">
+                <span className="text-[11px] font-mono font-bold text-[#c084fc] bg-[#241a4a] px-2.5 py-0.5 rounded-full border border-purple-400/30">
                   #REQ {selectedRecord.id}
                 </span>
-                <h3 className="text-xl sm:text-2xl font-black text-white mt-2">Payment Verification</h3>
+                <h3 className="text-base sm:text-lg font-black text-white mt-1">Payment Verification Details</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedRecord(null)}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition cursor-pointer text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            {/* User & Package Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-5 rounded-2xl bg-[#080914] border border-white/5 space-y-2.5">
-                <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">User Profile</p>
-                <div className="font-black text-white text-base">{selectedRecord.user_name}</div>
-                <div className="text-slate-400">
-                  Unique ID: <span className="font-mono text-[#c084fc] font-bold">{selectedRecord.user_unique_id || selectedRecord.user_id}</span>
-                </div>
-                {selectedRecord.user_gender && (
+            {/* Scrollable Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+              {/* User & Package Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2">
+                  <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">User Profile</p>
+                  <div className="font-black text-white text-sm sm:text-base">{selectedRecord.user_name}</div>
                   <div className="text-slate-400">
-                    Gender: <span className="text-slate-200 capitalize font-semibold">{selectedRecord.user_gender}</span>
+                    Unique ID: <span className="font-mono text-[#c084fc] font-bold">{selectedRecord.user_unique_id || selectedRecord.user_id}</span>
                   </div>
-                )}
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[#080914] border border-white/5 space-y-2.5">
-                <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">Package &amp; Amount</p>
-                <div className="font-black text-white text-base">{selectedRecord.package_name}</div>
-                <div className="text-slate-400">Amount: <span className="text-[#ec4899] font-black text-base">₹{selectedRecord.amount}</span></div>
-                <div className="text-slate-400">Coins to Credit: <span className="text-emerald-400 font-black">🪙 {Number(selectedRecord.coins || 0) + Number(selectedRecord.bonus_coins || 0)} Coins</span></div>
-              </div>
-            </div>
-
-            {/* Screenshot preview */}
-            <div>
-              <p className="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
-                <span>Uploaded Payment Screenshot</span>
-                {selectedRecord.screenshot_url && (
-                  <a
-                    href={selectedRecord.screenshot_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[#c084fc] hover:underline flex items-center gap-1 font-bold text-xs"
-                  >
-                    <window.Icon name="external-link" size={12} /> Open Full Size
-                  </a>
-                )}
-              </p>
-              {selectedRecord.screenshot_url ? (
-                <div
-                  onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
-                  className="w-full max-h-80 rounded-2xl border border-white/10 bg-[#080914] p-3 flex items-center justify-center overflow-hidden cursor-pointer group shadow-inner"
-                >
-                  <img
-                    src={selectedRecord.screenshot_url}
-                    alt="Payment proof"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                    }}
-                    className="max-h-72 w-auto object-contain rounded-xl group-hover:scale-[1.02] transition"
-                  />
-                  <div className="hidden flex-col items-center justify-center text-slate-400 p-8">
-                    <window.Icon name="image" size={32} className="text-pink-400 mb-2" />
-                    <p className="font-bold text-xs text-slate-300">Screenshot Attached</p>
-                    <p className="text-[11px] text-slate-500 mt-1">Click to view in lightbox</p>
-                  </div>
+                  {selectedRecord.user_gender && (
+                    <div className="text-slate-400">
+                      Gender: <span className="text-slate-200 capitalize font-semibold">{selectedRecord.user_gender}</span>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="p-8 text-center text-slate-500 bg-[#080914] rounded-2xl font-medium">No screenshot uploaded</div>
+
+                <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2">
+                  <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">Package &amp; Amount</p>
+                  <div className="font-black text-white text-sm sm:text-base">{selectedRecord.package_name}</div>
+                  <div className="text-slate-400">Amount: <span className="text-[#ec4899] font-black text-sm sm:text-base">₹{selectedRecord.amount}</span></div>
+                  <div className="text-slate-400">Coins to Credit: <span className="text-emerald-400 font-black">🪙 {Number(selectedRecord.coins || 0) + Number(selectedRecord.bonus_coins || 0)} Coins</span></div>
+                </div>
+              </div>
+
+              {/* Screenshot Preview */}
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <window.Icon name="image" size={13} className="text-pink-400" />
+                    Uploaded Payment Screenshot
+                  </span>
+                  {selectedRecord.screenshot_url && (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
+                      className="text-[#c084fc] hover:underline flex items-center gap-1 font-bold text-xs cursor-pointer"
+                    >
+                      <window.Icon name="external-link" size={12} /> Full Screen
+                    </button>
+                  )}
+                </div>
+                {selectedRecord.screenshot_url ? (
+                  <div
+                    onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
+                    className="w-full max-h-72 rounded-2xl border border-white/10 bg-[#080914] p-3 flex items-center justify-center overflow-hidden cursor-pointer group shadow-inner relative"
+                  >
+                    <img
+                      src={selectedRecord.screenshot_url}
+                      alt="Payment proof"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                      }}
+                      className="max-h-64 w-auto object-contain rounded-xl group-hover:scale-[1.02] transition"
+                    />
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
+                      🔍 Click to Zoom
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500 bg-[#080914] rounded-2xl font-medium text-xs">No screenshot uploaded</div>
+                )}
+              </div>
+
+              {/* Reference UTR */}
+              {selectedRecord.transaction_ref && (
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
+                  <span className="text-slate-400 font-semibold">Transaction UTR / Reference:</span>
+                  <span className="font-mono font-black text-white text-xs sm:text-sm bg-black/40 px-3 py-1 rounded-xl border border-white/10 select-all break-all">
+                    {selectedRecord.transaction_ref}
+                  </span>
+                </div>
+              )}
+
+              {/* Admin Note */}
+              {selectedRecord.admin_note && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+                  <strong className="font-black">Admin Note:</strong> {selectedRecord.admin_note}
+                </div>
               )}
             </div>
 
-            {/* Reference info */}
-            {selectedRecord.transaction_ref && (
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-semibold">Transaction UTR / Reference:</span>
-                <span className="font-mono font-black text-white text-sm bg-black/40 px-3 py-1 rounded-xl border border-white/10 select-all">
-                  {selectedRecord.transaction_ref}
-                </span>
-              </div>
-            )}
-
-            {/* Admin Note if any */}
-            {selectedRecord.admin_note && (
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-                <strong className="font-black">Admin Note:</strong> {selectedRecord.admin_note}
-              </div>
-            )}
-
-            {/* Action buttons inside detail modal */}
+            {/* Footer Action Buttons */}
             {selectedRecord.status === 'pending' && (
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-white/10 bg-[#0e0c1f] flex items-center gap-3 flex-shrink-0">
                 <button
+                  type="button"
                   onClick={() => openApproveModal(selectedRecord)}
-                  className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer whitespace-nowrap"
+                  className="flex-1 h-11 sm:h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer whitespace-nowrap"
                 >
-                  <window.Icon name="check" size={16} />
+                  <window.Icon name="check" size={15} />
                   Approve &amp; Credit Coins
                 </button>
                 <button
+                  type="button"
                   onClick={() => openRejectModal(selectedRecord)}
-                  className="flex-1 h-12 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold text-xs transition flex items-center justify-center gap-2 border border-rose-500/30 cursor-pointer whitespace-nowrap"
+                  className="flex-1 h-11 sm:h-12 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-rose-500/30 cursor-pointer whitespace-nowrap"
                 >
-                  <window.Icon name="x" size={16} />
+                  <window.Icon name="x" size={15} />
                   Reject Submission
                 </button>
               </div>
@@ -721,138 +728,150 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         </div>
       )}
 
-      {/* Approve / Reject Action Modal */}
+      {/* Approve / Reject Action Modal (Fully Responsive) */}
       {actionModal.show && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="max-w-lg w-full bg-[#121024] border border-purple-500/20 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 my-8">
-            {/* Header */}
-            <div className="flex items-center gap-3.5">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0 ${
-                actionModal.type === 'approve' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-              }`}>
-                <window.Icon name={actionModal.type === 'approve' ? 'shield-check' : 'alert-triangle'} size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white whitespace-nowrap">
-                  {actionModal.type === 'approve' ? 'Verify & Approve Payment' : 'Reject Payment Request'}
-                </h3>
-                <p className="text-xs text-slate-400">Request #REQ {actionModal.item?.id} · User: {actionModal.item?.user_name}</p>
-              </div>
-            </div>
-
-            {/* User & Payment Summary */}
-            <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">User Profile:</span>
-                <span className="font-bold text-white">{actionModal.item?.user_name} (ID: {actionModal.item?.user_unique_id || actionModal.item?.user_id})</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">Package &amp; Amount:</span>
-                <span className="font-black text-[#ec4899]">{actionModal.item?.package_name} — ₹{actionModal.item?.amount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">Coins to Credit:</span>
-                <span className="font-black text-emerald-400">🪙 {Number(actionModal.item?.coins || 0) + Number(actionModal.item?.bonus_coins || 0)} Coins</span>
-              </div>
-            </div>
-
-            {/* Screenshot Proof Preview (Check UTR here) */}
-            {actionModal.type === 'approve' && actionModal.item?.screenshot_url && (
-              <div className="p-3 rounded-2xl bg-[#080914] border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
-                    <window.Icon name="image" size={13} className="text-pink-400" />
-                    Screenshot Proof (Verify UTR)
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
-                    className="text-[#c084fc] hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
-                  >
-                    <window.Icon name="external-link" size={12} /> Full Size
-                  </button>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+          <div className="max-w-lg w-full max-h-[92vh] flex flex-col bg-[#121024] border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
+            {/* Modal Header (Sticky) */}
+            <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-[#16132e]">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner flex-shrink-0 ${
+                  actionModal.type === 'approve' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  <window.Icon name={actionModal.type === 'approve' ? 'shield-check' : 'alert-triangle'} size={20} />
                 </div>
-                <div
-                  onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
-                  className="w-full max-h-48 rounded-xl bg-black/60 flex items-center justify-center overflow-hidden cursor-pointer border border-white/5 group relative"
-                >
-                  <img
-                    src={actionModal.item.screenshot_url}
-                    alt="Payment proof screenshot"
-                    className="max-h-44 w-auto object-contain rounded-lg group-hover:scale-105 transition duration-200"
-                  />
-                  <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
-                    🔍 Click to Zoom
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Approve Form: UTR Number Input */}
-            {actionModal.type === 'approve' ? (
-              <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-amber-300 mb-1.5 flex items-center justify-between">
-                    <span>Transaction UTR / Reference <span className="text-rose-400">*</span></span>
-                    <span className="text-[10px] text-slate-400 lowercase font-normal">(must be unique)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter 12-digit UTR from screenshot (e.g. 423987123456)"
-                    value={actionModal.utr}
-                    onChange={(e) => setActionModal((m) => ({ ...m, utr: e.target.value, error: '' }))}
-                    className="w-full h-12 px-3.5 text-xs rounded-xl bg-[#080914] border-2 border-purple-500/40 text-white font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition tracking-wider"
-                    autoFocus
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    ⚠️ Screenshot me dekh kar sahi UTR number daalein. Agar ye UTR pehle kisi aur payment me use ho chuka hai toh system error dega.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Admin Note <span className="text-slate-500 text-[10px] lowercase">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Verified in Kotak 811 statement"
-                    value={actionModal.note}
-                    onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value }))}
-                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition"
-                  />
+                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                    {actionModal.type === 'approve' ? 'Verify & Approve Payment' : 'Reject Payment Request'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Request #REQ {actionModal.item?.id} · {actionModal.item?.user_name}</p>
                 </div>
               </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Rejection Reason <span className="text-rose-400">*</span>
-                </label>
-                <textarea
-                  rows="3"
-                  placeholder="e.g. Invalid screenshot, fake UTR, amount not received in account..."
-                  value={actionModal.note}
-                  onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value, error: '' }))}
-                  className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition resize-none font-medium"
-                />
-              </div>
-            )}
-
-            {/* Error Message Display in Modal */}
-            {actionModal.error && (
-              <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in slide-in-from-top-1">
-                <window.Icon name="alert-triangle" size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
-                <div className="font-semibold leading-relaxed">
-                  {actionModal.error}
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setActionModal({ show: false, item: null, type: 'approve', utr: '', note: '', error: '' })}
-                className="flex-1 h-12 rounded-xl bg-[#1b1738] hover:bg-[#25204d] text-slate-300 font-bold text-xs transition cursor-pointer border border-white/5"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition cursor-pointer text-sm font-bold flex-shrink-0 ml-2"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
+              {/* User & Payment Summary Card */}
+              <div className="p-3.5 rounded-2xl bg-[#080914] border border-white/5 space-y-1.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">User:</span>
+                  <span className="font-bold text-white truncate max-w-[200px]">{actionModal.item?.user_name} ({actionModal.item?.user_unique_id || actionModal.item?.user_id})</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Amount:</span>
+                  <span className="font-black text-[#ec4899]">₹{actionModal.item?.amount} ({actionModal.item?.package_name})</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Coins:</span>
+                  <span className="font-black text-emerald-400">🪙 {Number(actionModal.item?.coins || 0) + Number(actionModal.item?.bonus_coins || 0)} Coins</span>
+                </div>
+              </div>
+
+              {/* Screenshot Proof Preview (Check UTR) */}
+              {actionModal.type === 'approve' && actionModal.item?.screenshot_url && (
+                <div className="p-3 rounded-2xl bg-[#080914] border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                      <window.Icon name="image" size={13} className="text-pink-400" />
+                      Screenshot Proof (Verify UTR)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
+                      className="text-[#c084fc] hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <window.Icon name="maximize-2" size={11} /> Zoom
+                    </button>
+                  </div>
+                  <div
+                    onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
+                    className="w-full max-h-48 sm:max-h-56 rounded-xl bg-black/70 flex items-center justify-center overflow-hidden cursor-pointer border border-white/5 group relative"
+                  >
+                    <img
+                      src={actionModal.item.screenshot_url}
+                      alt="Payment proof screenshot"
+                      className="max-h-44 sm:max-h-52 w-auto object-contain rounded-lg group-hover:scale-105 transition duration-200"
+                    />
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
+                      🔍 Click to Zoom
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Approve Form: UTR Number Input */}
+              {actionModal.type === 'approve' ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-amber-300 mb-1.5 flex items-center justify-between">
+                      <span>Transaction UTR / Reference <span className="text-rose-400">*</span></span>
+                      <span className="text-[10px] text-slate-400 lowercase font-normal">(must be unique)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter 12-digit UTR from screenshot (e.g. 423987123456)"
+                      value={actionModal.utr}
+                      onChange={(e) => setActionModal((m) => ({ ...m, utr: e.target.value, error: '' }))}
+                      className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm rounded-xl bg-[#080914] border-2 border-purple-500/40 text-white font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition tracking-wider"
+                      autoFocus
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1 leading-normal">
+                      ⚠️ Screenshot me se UTR number daalein. Duplicate UTR aane par system error dega.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Admin Note <span className="text-slate-500 text-[10px] lowercase">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Verified in Kotak 811 statement"
+                      value={actionModal.note}
+                      onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value }))}
+                      className="w-full h-10 px-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Rejection Reason <span className="text-rose-400">*</span>
+                  </label>
+                  <textarea
+                    rows="3"
+                    placeholder="e.g. Invalid screenshot, fake UTR, amount not received in account..."
+                    value={actionModal.note}
+                    onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value, error: '' }))}
+                    className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition resize-none font-medium"
+                  />
+                </div>
+              )}
+
+              {/* Error Message Display in Modal */}
+              {actionModal.error && (
+                <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in slide-in-from-top-1">
+                  <window.Icon name="alert-triangle" size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
+                  <div className="font-semibold leading-relaxed break-words">
+                    {actionModal.error}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer (Sticky) */}
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-white/10 bg-[#0e0c1f] flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setActionModal({ show: false, item: null, type: 'approve', utr: '', note: '', error: '' })}
+                className="flex-1 h-11 sm:h-12 rounded-xl bg-[#1b1738] hover:bg-[#25204d] text-slate-300 font-bold text-xs sm:text-sm transition cursor-pointer border border-white/5"
               >
                 Cancel
               </button>
@@ -860,7 +879,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleActionSubmit}
-                className={`flex-1 h-12 rounded-xl font-bold text-xs text-white transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer ${
+                className={`flex-1 h-11 sm:h-12 rounded-xl font-bold text-xs sm:text-sm text-white transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer ${
                   actionModal.type === 'approve'
                     ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 shadow-emerald-600/20'
                     : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
