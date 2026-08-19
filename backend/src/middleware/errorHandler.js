@@ -7,10 +7,27 @@ function notFound(req, res, next) {
 }
 
 function errorHandler(error, req, res, next) {
-  const statusCode = error.statusCode || 500;
+  let statusCode = error.statusCode || 500;
+  let message = error.message || 'Internal server error';
+
+  if (error.name === 'MulterError') {
+    statusCode = 400;
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      message = `File too large. Maximum allowed size is ${env.maxFileSizeMb}MB.`;
+    } else {
+      message = error.message;
+    }
+  } else if (error.message === 'Only image uploads are allowed') {
+    statusCode = 400;
+  }
+
+  if (statusCode >= 500) {
+    console.error(`[ServerError] ${req.method} ${req.originalUrl}:`, error);
+  }
+
   const payload = {
     success: false,
-    message: statusCode === 500 ? 'Internal server error' : error.message
+    message: statusCode === 500 ? 'Internal server error' : message
   };
 
   if (error.details) payload.errors = error.details;
