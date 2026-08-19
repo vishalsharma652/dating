@@ -447,22 +447,7 @@ function PaymentContent() {
               )}
             </div>
 
-            {/* Optional UTR / Reference Number */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-2">
-                Transaction ID / UPI Reference (UTR) <span className="text-zinc-500 text-[11px] lowercase">(optional)</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="e.g. 423987123456 or Kotak UPI Ref"
-                value={transactionRef}
-                onChange={(e) => setTransactionRef(e.target.value)}
-                className="h-12 bg-white/5 border-white/15 text-white placeholder:text-zinc-500 rounded-xl font-mono text-sm"
-              />
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Entering your 12-digit UTR / UPI transaction reference helps speed up admin verification.
-              </p>
-            </div>
+
 
             {/* Submit Proof Button */}
             <Button
