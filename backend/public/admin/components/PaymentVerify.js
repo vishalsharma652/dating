@@ -117,7 +117,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
   };
 
   return (
-    <div className="space-y-5 text-slate-100 max-w-full overflow-hidden">
+    <div className="space-y-5 text-slate-100 max-w-full">
       {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#171138] via-[#1c1448] to-[#120e2e] border border-purple-500/20 shadow-2xl relative overflow-hidden">
         <div className="flex items-center gap-3.5">
@@ -301,7 +301,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         </div>
       </div>
 
-      {/* Main Table Container (Clean Full Width, No Overflow Scroll) */}
+      {/* Main Table Container (Responsive Horizontal Scroll) */}
       <div className="rounded-2xl bg-[#0c0d19] border border-white/5 overflow-hidden shadow-2xl">
         {loading ? (
           <div className="p-14 text-center text-slate-400 flex flex-col items-center justify-center gap-2.5">
@@ -323,8 +323,8 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
             </p>
           </div>
         ) : (
-          <div className="w-full">
-            <table className="w-full text-left text-xs border-collapse table-auto">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse table-auto min-w-[980px]">
               <thead>
                 <tr className="border-b border-white/[0.06] bg-[#080914] text-[#627d98] font-black uppercase tracking-wider text-[10px]">
                   <th className="py-3.5 px-3 pl-5 whitespace-nowrap">ID &amp; DATE</th>
