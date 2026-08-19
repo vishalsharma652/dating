@@ -17,7 +17,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
   // Modals
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null);
-  const [actionModal, setActionModal] = useState({ show: false, item: null, type: 'approve', note: '' });
+  const [actionModal, setActionModal] = useState({ show: false, item: null, type: 'approve', utr: '', note: '', error: '' });
 
   const PAGE_SIZE = 15;
 
@@ -63,7 +63,9 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
       show: true,
       item,
       type: 'approve',
-      note: 'Payment verified and approved by admin'
+      utr: item.transaction_ref || '',
+      note: 'Payment verified and approved by admin',
+      error: ''
     });
   };
 
@@ -72,24 +74,40 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
       show: true,
       item,
       type: 'reject',
-      note: ''
+      utr: '',
+      note: '',
+      error: ''
     });
   };
 
   const handleActionSubmit = async () => {
     if (!actionModal.item) return;
-    if (actionModal.type === 'reject' && !actionModal.note.trim()) {
-      if (showNotice) showNotice('Please enter a rejection reason for the user', 'error');
-      return;
+
+    if (actionModal.type === 'approve') {
+      if (!actionModal.utr || !actionModal.utr.trim()) {
+        setActionModal((m) => ({ ...m, error: 'Please enter the Transaction UTR / Reference number from the screenshot proof.' }));
+        if (showNotice) showNotice('Transaction UTR is required to approve payment', 'error');
+        return;
+      }
+    } else if (actionModal.type === 'reject') {
+      if (!actionModal.note.trim()) {
+        setActionModal((m) => ({ ...m, error: 'Please enter a rejection reason for the user.' }));
+        if (showNotice) showNotice('Please enter a rejection reason for the user', 'error');
+        return;
+      }
     }
 
     setIsSubmitting(true);
+    setActionModal((m) => ({ ...m, error: '' }));
+
     try {
       const targetStatus = actionModal.type === 'approve' ? 'approved' : 'rejected';
       const res = await apiRequest(`/admin/payments/${actionModal.item.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           status: targetStatus,
+          transaction_ref: actionModal.utr ? actionModal.utr.trim() : undefined,
+          utr: actionModal.utr ? actionModal.utr.trim() : undefined,
           admin_note: actionModal.note.trim()
         })
       });
@@ -103,14 +121,18 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
             'success'
           );
         }
-        setActionModal({ show: false, item: null, type: 'approve', note: '' });
+        setActionModal({ show: false, item: null, type: 'approve', utr: '', note: '', error: '' });
         setSelectedRecord(null);
         fetchPayments();
       } else {
-        if (showNotice) showNotice(res.message || 'Action failed', 'error');
+        const errorMsg = res.message || 'Action failed';
+        setActionModal((m) => ({ ...m, error: errorMsg }));
+        if (showNotice) showNotice(errorMsg, 'error');
       }
     } catch (err) {
-      if (showNotice) showNotice(err.message || 'Server error', 'error');
+      const errorMsg = err.message || 'Server error';
+      setActionModal((m) => ({ ...m, error: errorMsg }));
+      if (showNotice) showNotice(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -701,30 +723,32 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
 
       {/* Approve / Reject Action Modal */}
       {actionModal.show && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="max-w-md w-full bg-[#121024] border border-purple-500/20 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="max-w-lg w-full bg-[#121024] border border-purple-500/20 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 my-8">
+            {/* Header */}
             <div className="flex items-center gap-3.5">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0 ${
                 actionModal.type === 'approve' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
               }`}>
-                <window.Icon name={actionModal.type === 'approve' ? 'check-circle-2' : 'alert-triangle'} size={24} />
+                <window.Icon name={actionModal.type === 'approve' ? 'shield-check' : 'alert-triangle'} size={24} />
               </div>
               <div>
                 <h3 className="text-lg font-black text-white whitespace-nowrap">
-                  {actionModal.type === 'approve' ? 'Approve Payment Request' : 'Reject Payment Request'}
+                  {actionModal.type === 'approve' ? 'Verify & Approve Payment' : 'Reject Payment Request'}
                 </h3>
-                <p className="text-xs text-slate-400">Request #REQ {actionModal.item?.id}</p>
+                <p className="text-xs text-slate-400">Request #REQ {actionModal.item?.id} · User: {actionModal.item?.user_name}</p>
               </div>
             </div>
 
+            {/* User & Payment Summary */}
             <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">User:</span>
+                <span className="text-slate-400 font-medium">User Profile:</span>
                 <span className="font-bold text-white">{actionModal.item?.user_name} (ID: {actionModal.item?.user_unique_id || actionModal.item?.user_id})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">Amount:</span>
-                <span className="font-black text-[#ec4899]">₹{actionModal.item?.amount}</span>
+                <span className="text-slate-400 font-medium">Package &amp; Amount:</span>
+                <span className="font-black text-[#ec4899]">{actionModal.item?.package_name} — ₹{actionModal.item?.amount}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400 font-medium">Coins to Credit:</span>
@@ -732,10 +756,72 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
               </div>
             </div>
 
+            {/* Screenshot Proof Preview (Check UTR here) */}
+            {actionModal.type === 'approve' && actionModal.item?.screenshot_url && (
+              <div className="p-3 rounded-2xl bg-[#080914] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                    <window.Icon name="image" size={13} className="text-pink-400" />
+                    Screenshot Proof (Verify UTR)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
+                    className="text-[#c084fc] hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <window.Icon name="external-link" size={12} /> Full Size
+                  </button>
+                </div>
+                <div
+                  onClick={() => setLightboxImage(actionModal.item.screenshot_url)}
+                  className="w-full max-h-48 rounded-xl bg-black/60 flex items-center justify-center overflow-hidden cursor-pointer border border-white/5 group relative"
+                >
+                  <img
+                    src={actionModal.item.screenshot_url}
+                    alt="Payment proof screenshot"
+                    className="max-h-44 w-auto object-contain rounded-lg group-hover:scale-105 transition duration-200"
+                  />
+                  <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
+                    🔍 Click to Zoom
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Approve Form: UTR Number Input */}
             {actionModal.type === 'approve' ? (
-              <p className="text-xs text-slate-300 leading-relaxed bg-emerald-500/10 p-3.5 rounded-xl border border-emerald-500/20">
-                Approving this request will instantly credit <strong className="text-emerald-400">{Number(actionModal.item?.coins || 0) + Number(actionModal.item?.bonus_coins || 0)} coins</strong> to the user's wallet and send them a verification notification.
-              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-amber-300 mb-1.5 flex items-center justify-between">
+                    <span>Transaction UTR / Reference <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-400 lowercase font-normal">(must be unique)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter 12-digit UTR from screenshot (e.g. 423987123456)"
+                    value={actionModal.utr}
+                    onChange={(e) => setActionModal((m) => ({ ...m, utr: e.target.value, error: '' }))}
+                    className="w-full h-12 px-3.5 text-xs rounded-xl bg-[#080914] border-2 border-purple-500/40 text-white font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition tracking-wider"
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    ⚠️ Screenshot me dekh kar sahi UTR number daalein. Agar ye UTR pehle kisi aur payment me use ho chuka hai toh system error dega.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Admin Note <span className="text-slate-500 text-[10px] lowercase">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Verified in Kotak 811 statement"
+                    value={actionModal.note}
+                    onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value }))}
+                    className="w-full h-10 px-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition"
+                  />
+                </div>
+              </div>
             ) : (
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
@@ -743,18 +829,29 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                 </label>
                 <textarea
                   rows="3"
-                  placeholder="e.g. Invalid transaction reference, payment not credited..."
+                  placeholder="e.g. Invalid screenshot, fake UTR, amount not received in account..."
                   value={actionModal.note}
-                  onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value }))}
+                  onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value, error: '' }))}
                   className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition resize-none font-medium"
                 />
               </div>
             )}
 
+            {/* Error Message Display in Modal */}
+            {actionModal.error && (
+              <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in slide-in-from-top-1">
+                <window.Icon name="alert-triangle" size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
+                <div className="font-semibold leading-relaxed">
+                  {actionModal.error}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setActionModal({ show: false, item: null, type: 'approve', note: '' })}
+                onClick={() => setActionModal({ show: false, item: null, type: 'approve', utr: '', note: '', error: '' })}
                 className="flex-1 h-12 rounded-xl bg-[#1b1738] hover:bg-[#25204d] text-slate-300 font-bold text-xs transition cursor-pointer border border-white/5"
               >
                 Cancel
@@ -772,7 +869,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                 {isSubmitting ? (
                   <window.Icon name="loader-2" size={16} className="animate-spin" />
                 ) : (
-                  actionModal.type === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'
+                  actionModal.type === 'approve' ? 'Verify UTR & Approve' : 'Confirm Rejection'
                 )}
               </button>
             </div>

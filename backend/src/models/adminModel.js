@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/db');
+const { AppError } = require('../utils/errors');
 const settingsModel = require('./settingsModel');
 
 async function dashboard() {
@@ -479,20 +480,47 @@ async function paymentRequests({ page = 1, limit = 20, status = null, search = '
   return { requests, total, stats };
 }
 
-async function updatePaymentRequest(id, { status, admin_note }) {
+async function updatePaymentRequest(id, { status, admin_note, transaction_ref, utr }) {
   const targetStatus = String(status || '').toLowerCase();
   if (!['approved', 'rejected', 'pending'].includes(targetStatus)) {
-    throw new Error('Invalid payment status');
+    throw new AppError('Invalid payment status', 400);
   }
 
   const updatedRequest = await transaction(async (connection) => {
     const [rows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1 FOR UPDATE', { id });
     const request = rows[0];
-    if (!request) throw new Error('Payment request not found');
+    if (!request) throw new AppError('Payment request not found', 404);
 
     const previousStatus = request.status;
 
-    if (targetStatus === 'approved' && previousStatus !== 'approved') {
+    if (targetStatus === 'approved') {
+      if (previousStatus === 'approved') {
+        throw new AppError('This payment request is already approved', 400);
+      }
+
+      // Extract and validate Transaction UTR
+      const rawUtr = (transaction_ref || utr || request.transaction_ref || '').trim();
+      if (!rawUtr) {
+        throw new AppError('Transaction UTR is required to approve this payment. Please enter the UTR number from the screenshot proof.', 400);
+      }
+
+      // Check if ANY other payment request has already been approved with the same UTR
+      const [duplicateUtr] = await connection.execute(
+        `SELECT id, user_id, amount, package_name, DATE_FORMAT(verified_at, "%d %b %Y %H:%i") AS verified_date 
+         FROM payment_requests 
+         WHERE transaction_ref = :utr AND id != :id AND status = 'approved' 
+         LIMIT 1`,
+        { utr: rawUtr, id }
+      );
+
+      if (duplicateUtr && duplicateUtr.length > 0) {
+        const dup = duplicateUtr[0];
+        throw new AppError(
+          `Duplicate UTR Error! Transaction UTR "${rawUtr}" has already been verified for Request #REQ-${dup.id} (₹${dup.amount} - ${dup.package_name}). One payment cannot have the same UTR twice.`,
+          400
+        );
+      }
+
       const totalCoins = Number(request.coins || 0) + Number(request.bonus_coins || 0);
       const userId = request.user_id;
 
@@ -514,7 +542,7 @@ async function updatePaymentRequest(id, { status, admin_note }) {
 
         await connection.execute('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
 
-        const ref = request.transaction_ref || `QR-VERIFY-${request.id}`;
+        const ref = rawUtr || `QR-VERIFY-${request.id}`;
         await connection.execute(
           `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
            VALUES (:userId, 'purchase', 'Coin Purchase (QR Verified)', :description, :amount, :coins, 'completed', 'upi_qr', :reference)`,
@@ -533,15 +561,15 @@ async function updatePaymentRequest(id, { status, admin_note }) {
              VALUES (:userId, 'payment_verified', 'Payment Verified 🎉', :message, '/user/wallet')`,
             {
               userId,
-              message: `Your payment of ₹${request.amount} for ${request.package_name} has been verified. ${totalCoins} coins have been added to your wallet!`
+              message: `Your payment of ₹${request.amount} for ${request.package_name} (UTR: ${rawUtr}) has been verified. ${totalCoins} coins have been added to your wallet!`
             }
           );
         } catch (nErr) { /* ignore */ }
       }
 
       await connection.execute(
-        `UPDATE payment_requests SET status = 'approved', verified_at = CURRENT_TIMESTAMP, admin_note = :adminNote WHERE id = :id`,
-        { id, adminNote: admin_note || request.admin_note || 'Approved by Admin' }
+        `UPDATE payment_requests SET status = 'approved', transaction_ref = :utr, verified_at = CURRENT_TIMESTAMP, admin_note = :adminNote WHERE id = :id`,
+        { id, utr: rawUtr, adminNote: admin_note || request.admin_note || 'Approved by Admin' }
       );
     } else if (targetStatus === 'rejected') {
       await connection.execute(

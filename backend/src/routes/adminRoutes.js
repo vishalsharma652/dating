@@ -30,7 +30,13 @@ router.get('/withdrawals', asyncHandler(admin.withdrawals));
 router.patch('/withdrawals/:id', upload.single('screenshot'), [param('id').isInt(), body('status').optional().isIn(['pending', 'completed', 'rejected'])], validate, asyncHandler(admin.updateWithdrawal));
 
 router.get('/payments', asyncHandler(admin.paymentRequests));
-router.patch('/payments/:id', [param('id').isInt(), body('status').isIn(['pending', 'approved', 'rejected'])], validate, asyncHandler(admin.updatePaymentRequest));
+router.patch('/payments/:id', [
+  param('id').isInt(),
+  body('status').isIn(['pending', 'approved', 'rejected']),
+  body('transaction_ref').optional().isString().trim(),
+  body('utr').optional().isString().trim(),
+  body('admin_note').optional().isString().trim()
+], validate, asyncHandler(admin.updatePaymentRequest));
 
 router.get('/reports', asyncHandler(admin.reports));
 
