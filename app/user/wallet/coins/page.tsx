@@ -154,11 +154,11 @@ export default function CoinPurchasePage() {
                     </ul>
                   </div>
 
-                  {/* Price & Buy Button */}
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <span className="text-xs text-zinc-400 font-semibold">Total Price</span>
-                      <span className="text-2xl font-black text-white tracking-tight">
+                  {/* Price & Compact Buy Button */}
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2.5">
+                    <div>
+                      <span className="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider">Price</span>
+                      <span className="text-xl sm:text-2xl font-black text-white tracking-tight">
                         ₹{Number(pkg.price).toLocaleString('en-IN')}
                       </span>
                     </div>
@@ -166,17 +166,18 @@ export default function CoinPurchasePage() {
                     <button
                       type="button"
                       disabled={isSelecting}
-                      className={`w-full h-11 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg ${
+                      className={`h-9 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer whitespace-nowrap ${
                         isPopular
-                          ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-black hover:opacity-95 shadow-amber-500/20'
-                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
+                          ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 hover:brightness-110 shadow-amber-400/25 font-extrabold'
+                          : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-indigo-600/25'
                       }`}
                     >
                       {isSelecting ? (
-                        'Processing...'
+                        'Please wait...'
                       ) : (
                         <>
-                          Recharge Now <ArrowRight size={14} />
+                          <span>Recharge</span>
+                          <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}
                     </button>
