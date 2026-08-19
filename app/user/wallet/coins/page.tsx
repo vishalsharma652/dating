@@ -4,74 +4,10 @@ import { useEffect, useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Loader } from '@/components/ui/loader';
 import {
-  Check, Sparkles, Crown, Zap, Shield, Star, Flame,
-  Heart, MessageCircle, Eye, ArrowRight, Gift
+  Zap, Shield, ArrowRight, Coins, CheckCircle2, Flame, HeartHandshake
 } from 'lucide-react';
 import { userApi, getStoredUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-
-const PREMIUM_PLANS = [
-  {
-    id: 'premium1',
-    tier: 1,
-    label: 'Premium 1',
-    subtitle: 'Silver',
-    tagline: 'Perfect to get started',
-    color: {
-      bg: 'from-slate-700/40 via-zinc-800/30 to-slate-900/40',
-      border: 'border-slate-400/30 hover:border-slate-400/60',
-      badge: 'bg-slate-600/30 border-slate-400/30 text-slate-300',
-      btn: 'from-slate-500 to-zinc-600 hover:from-slate-400 hover:to-zinc-500',
-      glow: 'bg-slate-400/8',
-      icon: 'text-slate-300',
-      accent: 'text-slate-300',
-      tag: 'bg-slate-500/20 text-slate-300 border-slate-400/20',
-    },
-    icon: <Star size={22} />,
-    emoji: '🥈',
-    popular: false,
-    features: [
-      { icon: <MessageCircle size={15} />, text: 'Unlimited Chat Messages' },
-      { icon: <Heart size={15} />, text: '50 Super Likes / month' },
-      { icon: <Eye size={15} />, text: 'See who liked you' },
-      { icon: <Zap size={15} />, text: 'Profile Boost — 3× / week' },
-      { icon: <Shield size={15} />, text: 'Hide Ads' },
-      { icon: <Gift size={15} />, text: 'Send Virtual Gifts' },
-    ],
-    packages: [], // filled from API or static
-  },
-  {
-    id: 'premium2',
-    tier: 2,
-    label: 'Premium 2',
-    subtitle: 'Gold',
-    tagline: 'Best for serious connections',
-    color: {
-      bg: 'from-amber-600/25 via-yellow-900/20 to-amber-950/30',
-      border: 'border-amber-400/40 hover:border-amber-400/70',
-      badge: 'bg-amber-500/20 border-amber-400/30 text-amber-300',
-      btn: 'from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500',
-      glow: 'bg-amber-400/10',
-      icon: 'text-amber-400',
-      accent: 'text-amber-400',
-      tag: 'bg-amber-500/15 text-amber-400 border-amber-400/25',
-    },
-    icon: <Crown size={22} />,
-    emoji: '🥇',
-    popular: true,
-    features: [
-      { icon: <MessageCircle size={15} />, text: 'Unlimited Chat — Priority Queue' },
-      { icon: <Heart size={15} />, text: 'Unlimited Super Likes' },
-      { icon: <Eye size={15} />, text: 'See who liked & visited you' },
-      { icon: <Zap size={15} />, text: 'Profile Boost — Daily + Top Placement' },
-      { icon: <Shield size={15} />, text: 'Hide Ads + Incognito Mode' },
-      { icon: <Gift size={15} />, text: 'Premium Exclusive Gifts' },
-      { icon: <Star size={15} />, text: 'Verified Gold Badge 🥇' },
-      { icon: <Flame size={15} />, text: 'Trending / Hot Profile Tag' },
-    ],
-    packages: [],
-  },
-];
 
 export default function CoinPurchasePage() {
   const [coinPackages, setCoinPackages] = useState<any[]>([]);
@@ -115,31 +51,26 @@ export default function CoinPurchasePage() {
   };
 
   if (isRedirecting) return <Loader text="Redirecting..." />;
-  if (loading) return <Loader text="Loading premium plans..." />;
-
-  // Split packages into two halves for plan 1 and plan 2
-  const half = Math.ceil(coinPackages.length / 2);
-  const plan1Packages = coinPackages.length > 0 ? coinPackages.slice(0, half) : [];
-  const plan2Packages = coinPackages.length > 0 ? coinPackages.slice(half) : [];
-  const splitPackages = [plan1Packages, plan2Packages];
+  if (loading) return <Loader text="Loading coin packages..." />;
 
   return (
     <div className="min-h-screen bg-[#070B18] text-white pb-20">
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#1a0530] via-[#0d1628] to-[#070B18] border-b border-white/5 px-4 py-14 text-center">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#1a0530] via-[#0d1628] to-[#070B18] border-b border-white/5 px-4 py-12 text-center">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-purple-700/10 rounded-full blur-3xl" />
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-500/6 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-purple-600/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-3xl" />
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-400/20 rounded-full px-4 py-1.5 text-xs font-black text-amber-400 mb-4 uppercase tracking-wider">
-            <Crown size={13} /> Premium Plans
+            <Coins size={14} className="text-amber-400" />
+            Coin Recharge
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black mb-3 bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
-            Upgrade Your Experience
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-3 bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
+            Recharge Your Coins
           </h1>
           <p className="text-zinc-400 text-sm sm:text-base max-w-md mx-auto">
-            Choose a premium plan and unlock exclusive features to connect with more people
+            Choose a coin package to chat, make calls, and send gifts to your matches.
           </p>
         </div>
       </div>
@@ -147,140 +78,151 @@ export default function CoinPurchasePage() {
       <Container>
         <div className="py-10">
           {error && (
-            <p className="mb-6 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400 border border-red-500/20">{error}</p>
+            <p className="mb-6 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400 border border-red-500/20 text-center font-medium">
+              {error}
+            </p>
           )}
 
-          {/* Plan Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            {PREMIUM_PLANS.map((plan, pi) => {
-              const pkgs = splitPackages[pi] ?? [];
+          {/* 4 Coin Packages Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+            {coinPackages.map((pkg: any) => {
+              const isPopular = Boolean(pkg.popular);
+              const isSelecting = purchasingId === pkg.id;
 
               return (
                 <div
-                  key={plan.id}
-                  className={`relative overflow-hidden rounded-3xl border bg-gradient-to-br ${plan.color.bg} ${plan.color.border} transition-all duration-300`}
+                  key={pkg.id}
+                  onClick={() => purchase(pkg.id)}
+                  className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 cursor-pointer group select-none ${
+                    isPopular
+                      ? 'bg-gradient-to-b from-[#2a1b4e] via-[#1a1133] to-[#100b24] border-2 border-amber-400/60 shadow-xl shadow-purple-900/30 hover:border-amber-300 hover:scale-[1.02]'
+                      : 'bg-gradient-to-b from-[#13172e] via-[#0d1022] to-[#090b17] border border-white/10 hover:border-purple-500/40 hover:bg-[#161b36] hover:scale-[1.01]'
+                  }`}
                 >
-                  {/* Glow */}
-                  <div className={`absolute inset-0 pointer-events-none ${plan.color.glow} rounded-3xl`} />
+                  {/* Glowing background on popular */}
+                  {isPopular && (
+                    <div className="absolute inset-0 bg-amber-400/5 rounded-3xl pointer-events-none" />
+                  )}
 
-                  {/* Popular badge */}
-                  {plan.popular && (
-                    <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-1 bg-amber-500/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                      <Sparkles size={10} /> Most Popular
+                  {/* Popular Badge */}
+                  {isPopular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                      <Flame size={12} className="fill-black" /> Best Value
                     </div>
                   )}
 
-                  <div className="relative z-10 p-6 sm:p-8">
-                    {/* Header */}
-                    <div className="flex items-start gap-4 mb-5">
-                      <div className={`w-14 h-14 rounded-2xl ${plan.color.badge} border flex items-center justify-center flex-shrink-0 ${plan.color.icon}`}>
-                        {plan.icon}
+                  <div>
+                    {/* Top Package Name & Icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl shadow-inner">
+                        🪙
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xl">{plan.emoji}</span>
-                          <h2 className="text-2xl font-black text-white">{plan.label}</h2>
-                        </div>
-                        <span className={`inline-block text-xs font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${plan.color.tag}`}>
-                          {plan.subtitle}
-                        </span>
-                        <p className="text-xs text-zinc-400 mt-1.5">{plan.tagline}</p>
-                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-zinc-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                        {pkg.name}
+                      </span>
                     </div>
 
-                    {/* Features */}
-                    <ul className="space-y-2.5 mb-6">
-                      {plan.features.map((f, fi) => (
-                        <li key={fi} className="flex items-center gap-3 text-sm text-zinc-200">
-                          <span className={`flex-shrink-0 ${plan.color.accent}`}>{f.icon}</span>
-                          <span>{f.text}</span>
-                          <Check size={13} className={`ml-auto flex-shrink-0 ${plan.color.accent}`} />
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Divider */}
-                    <div className="border-t border-white/6 mb-5" />
-
-                    {/* Coin Packages */}
-                    <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500 mb-3">Choose Coin Package</p>
-                    {pkgs.length === 0 ? (
-                      <p className="text-xs text-zinc-500 italic">No packages available</p>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-2.5">
-                        {pkgs.map((pkg: any) => (
-                          <button
-                            key={pkg.id}
-                            onClick={() => purchase(pkg.id)}
-                            disabled={purchasingId === pkg.id}
-                            className={`group w-full rounded-xl border border-white/8 bg-white/4 hover:bg-white/8 px-4 py-3 flex items-center justify-between transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
-                          >
-                            <div className="text-left">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-black text-white">{pkg.coins} Coins</span>
-                                {Boolean(pkg.popular) && (
-                                  <span className="text-[9px] bg-pink-500/20 border border-pink-500/30 text-pink-300 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wide">Best</span>
-                                )}
-                                {Number(pkg.bonus) > 0 && (
-                                  <span className="text-[9px] bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 px-1.5 py-0.5 rounded-full font-black">+{pkg.bonus} Bonus</span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-zinc-500">{pkg.name}</p>
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-base font-black text-white">₹{pkg.price}</span>
-                              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${plan.color.btn} flex items-center justify-center flex-shrink-0 transition group-hover:scale-110`}>
-                                <ArrowRight size={14} className="text-white" />
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                    {/* Coins Amount */}
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                          {Number(pkg.coins).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-amber-400 font-bold text-sm">Coins</span>
                       </div>
-                    )}
+                      {Number(pkg.bonus) > 0 && (
+                        <span className="inline-block text-[10px] text-emerald-400 font-black bg-emerald-500/15 border border-emerald-500/25 px-2 py-0.5 rounded-full mt-1.5">
+                          +{pkg.bonus} Bonus Coins
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Quick Features List */}
+                    <ul className="space-y-2 text-xs text-zinc-300 mb-6 border-t border-white/5 pt-4">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0" />
+                        <span>Instant Wallet Credit</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0" />
+                        <span>Chat &amp; Video Calling</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0" />
+                        <span>Coins Never Expire</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Price & Buy Button */}
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <span className="text-xs text-zinc-400 font-semibold">Total Price</span>
+                      <span className="text-2xl font-black text-white tracking-tight">
+                        ₹{Number(pkg.price).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isSelecting}
+                      className={`w-full h-11 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg ${
+                        isPopular
+                          ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-black hover:opacity-95 shadow-amber-500/20'
+                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
+                      }`}
+                    >
+                      {isSelecting ? (
+                        'Processing...'
+                      ) : (
+                        <>
+                          Recharge Now <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Comparison Table */}
-          <div className="rounded-2xl border border-white/8 bg-white/2 overflow-hidden mb-8">
-            <div className="px-5 py-4 border-b border-white/6 bg-white/3">
-              <h3 className="font-black text-sm uppercase tracking-wider text-zinc-300">Plan Comparison</h3>
+          {/* Trust Highlights */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+                <Zap size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Instant Credit</h4>
+                <p className="text-[11px] text-zinc-400 mt-0.5">Coins added to your wallet within minutes of payment</p>
+              </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/6">
-                    <th className="text-left px-5 py-3 text-zinc-400 font-bold">Feature</th>
-                    <th className="text-center px-4 py-3 text-slate-300 font-black">🥈 Silver</th>
-                    <th className="text-center px-4 py-3 text-amber-400 font-black">🥇 Gold</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/4">
-                  {[
-                    ['Super Likes', '50/month', 'Unlimited'],
-                    ['Profile Boost', '3× / week', 'Daily + Top'],
-                    ['Incognito Mode', '—', '✓'],
-                    ['Verified Badge', 'Silver', 'Gold 🥇'],
-                    ['Hot/Trending Tag', '—', '✓'],
-                    ['Exclusive Gifts', '—', '✓'],
-                  ].map(([feat, s, g], i) => (
-                    <tr key={i} className="hover:bg-white/2 transition">
-                      <td className="px-5 py-3 text-zinc-300">{feat}</td>
-                      <td className="px-4 py-3 text-center text-slate-300 font-semibold">{s}</td>
-                      <td className="px-4 py-3 text-center text-amber-400 font-semibold">{g}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <Shield size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">100% Safe &amp; Secure</h4>
+                <p className="text-[11px] text-zinc-400 mt-0.5">Verified UPI QR payments with end-to-end encryption</p>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 flex-shrink-0">
+                <HeartHandshake size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">24/7 Support</h4>
+                <p className="text-[11px] text-zinc-400 mt-0.5">Need help with payment? Contact our support team</p>
+              </div>
             </div>
           </div>
 
-          {/* Trust Note */}
+          {/* Footer Note */}
           <div className="text-center text-xs text-zinc-500 space-y-1">
-            <p>🔐 Secure payment · All purchases are non-refundable · Coins never expire</p>
-            <p>Need help? Contact <span className="text-pink-400">support@saathika.com</span></p>
+            <p>🔐 100% Secure Payment · Coins never expire in your wallet</p>
+            <p>Need help? Contact <span className="text-pink-400 font-semibold">support@saathika.com</span></p>
           </div>
         </div>
       </Container>
