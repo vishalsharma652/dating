@@ -1,7 +1,6 @@
 const { useState, useMemo, useRef } = React;
 
 window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefresh, rupees, dateStr }) {
-  const [statusFilter, setStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -56,10 +55,10 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
     };
   }, [withdrawals]);
 
-  // ── Filtering & Search ───────────────────────────────────────────
+  // ── Filtering & Search (Payment Done Only) ───────────────────────
   const filteredWithdrawals = useMemo(() => {
     return withdrawals.filter((w) => {
-      if (statusFilter !== 'all' && (w.status || '').toLowerCase() !== statusFilter) {
+      if ((w.status || '').toLowerCase() !== 'completed') {
         return false;
       }
       if (methodFilter !== 'all' && (w.method || '').toLowerCase() !== methodFilter) {
@@ -79,7 +78,7 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
       }
       return true;
     });
-  }, [withdrawals, statusFilter, methodFilter, search]);
+  }, [withdrawals, methodFilter, search]);
 
   // Pagination
   const totalPages = Math.ceil(filteredWithdrawals.length / PAGE_SIZE) || 1;
@@ -233,32 +232,8 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
           </span>
         </div>
 
-        {/* Status & Method Filter */}
+        {/* Method Filter */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              background: '#131326',
-              color: '#f8fafc',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="all">All Status ({stats.totalCount})</option>
-            <option value="pending">⏳ Pending Requests ({stats.pendingCount})</option>
-            <option value="completed">✓ Completed / Paid ({stats.completedCount})</option>
-            <option value="rejected">✕ Rejected ({stats.rejectedCount})</option>
-          </select>
-
           <select
             value={methodFilter}
             onChange={(e) => {
@@ -307,9 +282,9 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                     <div style={{ fontSize: '28px', marginBottom: '8px' }}>💳</div>
                     <div style={{ fontWeight: 700, fontSize: '14px', color: '#f8fafc' }}>No Withdrawal Records Found</div>
                     <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                      {search || statusFilter !== 'all' || methodFilter !== 'all'
-                        ? 'No withdrawal requests match your search or filter criteria.'
-                        : 'No withdrawal requests have been submitted yet.'}
+                      {search || methodFilter !== 'all'
+                        ? 'No payment done records match your search or filter criteria.'
+                        : 'No payment done records found.'}
                     </div>
                   </td>
                 </tr>
@@ -343,14 +318,20 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                       {/* User Info */}
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 800, fontSize: '14px', color: '#f8fafc', whiteSpace: 'nowrap' }}>
-                            {w.user_name || `User #${w.user_id}`}
-                          </span>
-                          {w.user_email && (
-                            <span style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                              ✉ {w.user_email}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 800, fontSize: '14px', color: '#f8fafc' }}>
+                              {w.user_name || `User #${w.user_id}`}
                             </span>
-                          )}
+                            {w.user_gender && ['female', 'woman', 'girl', 'women'].includes(String(w.user_gender).toLowerCase()) && (
+                              <span style={{ fontSize: '10px', background: 'rgba(236,72,153,0.15)', color: '#f472b6', padding: '1px 6px', borderRadius: '6px', fontWeight: 800, border: '1px solid rgba(236,72,153,0.3)' }}>
+                                ♀ Female
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                            {w.user_phone && <span>📞 {w.user_phone}</span>}
+                            {w.user_email && <span>✉ {w.user_email}</span>}
+                          </div>
                         </div>
                       </td>
 
@@ -444,8 +425,13 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                             textTransform: 'uppercase',
                             width: 'fit-content'
                           }}>
-                            {w.status || 'pending'}
+                            {isCompleted ? '✓ Payment Done' : (w.status || 'pending')}
                           </span>
+                          {w.admin_note && (
+                            <span style={{ fontSize: '11px', color: '#cbd5e1', fontFamily: 'monospace' }}>
+                              💬 {w.admin_note}
+                            </span>
+                          )}
                           {w.screenshot_url && (
                             <button
                               type="button"
@@ -1210,9 +1196,14 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                   <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Status</span>
                   <p style={{ margin: '4px 0 0' }}>
                     <span className={`badge ${selectedRecord.status === 'completed' ? 'green' : selectedRecord.status === 'pending' ? 'yellow' : 'red'}`}>
-                      {selectedRecord.status || 'pending'}
+                      {selectedRecord.status === 'completed' ? '✓ Payment Done' : (selectedRecord.status || 'pending')}
                     </span>
                   </p>
+                  {selectedRecord.completed_at && (
+                    <span style={{ fontSize: '11px', color: '#34d399', display: 'block', marginTop: '4px' }}>
+                      Paid: {dateStr ? dateStr(selectedRecord.completed_at) : new Date(selectedRecord.completed_at).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </div>
 
