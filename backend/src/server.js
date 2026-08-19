@@ -20,14 +20,13 @@ async function start() {
   try {
     await pool.query(`
       INSERT INTO coin_packages (name, coins, price, bonus, popular) VALUES
-      ('Starter', 50, 250.00, 0, FALSE),
-      ('Basic', 100, 550.00, 0, FALSE),
-      ('Popular', 200, 1150.00, 0, TRUE),
-      ('Pro', 400, 2350.00, 0, FALSE),
-      ('VIP', 1000, 6500.00, 0, FALSE)
+      ('Starter', 250, 50.00, 0, FALSE),
+      ('Basic', 600, 100.00, 0, FALSE),
+      ('Popular', 1250, 200.00, 0, TRUE),
+      ('Pro', 2500, 400.00, 0, FALSE)
       ON DUPLICATE KEY UPDATE coins = VALUES(coins), price = VALUES(price), bonus = VALUES(bonus), popular = VALUES(popular), active = TRUE
     `);
-    await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Starter', 'Basic', 'Popular', 'Pro', 'VIP')");
+    await pool.query("UPDATE coin_packages SET active = FALSE WHERE name NOT IN ('Starter', 'Basic', 'Popular', 'Pro')");
   } catch {}
   try {
     await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type VARCHAR(50) NOT NULL DEFAULT 'chat_charge'");
