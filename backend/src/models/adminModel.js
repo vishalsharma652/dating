@@ -358,24 +358,26 @@ async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {})
       params
     );
 
+    const coinsToRefund = Number(withdrawal.coins || 0) > 0 ? Number(withdrawal.coins) : Math.round(Number(withdrawal.amount || 0) * 4);
+
     if (targetStatus === 'rejected' && withdrawal.status !== 'rejected') {
-      await connection.execute('UPDATE users SET earnings = earnings + :amount WHERE id = :userId', {
-        amount: withdrawal.amount,
-        userId: withdrawal.user_id
-      });
-      await connection.execute('UPDATE wallets SET withdrawal_balance = withdrawal_balance + :amount WHERE user_id = :userId', {
-        amount: withdrawal.amount,
-        userId: withdrawal.user_id
-      });
+      await connection.execute(
+        'UPDATE users SET coins = coins + :coinsToRefund, earnings = earnings + :coinsToRefund WHERE id = :userId',
+        { coinsToRefund, userId: withdrawal.user_id }
+      );
+      await connection.execute(
+        'UPDATE wallets SET balance = balance + :coinsToRefund, withdrawal_balance = withdrawal_balance + :coinsToRefund WHERE user_id = :userId',
+        { coinsToRefund, userId: withdrawal.user_id }
+      );
     } else if (withdrawal.status === 'rejected' && targetStatus !== 'rejected') {
-      await connection.execute('UPDATE users SET earnings = GREATEST(0, earnings - :amount) WHERE id = :userId', {
-        amount: withdrawal.amount,
-        userId: withdrawal.user_id
-      });
-      await connection.execute('UPDATE wallets SET withdrawal_balance = GREATEST(0, withdrawal_balance - :amount) WHERE user_id = :userId', {
-        amount: withdrawal.amount,
-        userId: withdrawal.user_id
-      });
+      await connection.execute(
+        'UPDATE users SET coins = GREATEST(0, coins - :coinsToRefund), earnings = GREATEST(0, earnings - :coinsToRefund) WHERE id = :userId',
+        { coinsToRefund, userId: withdrawal.user_id }
+      );
+      await connection.execute(
+        'UPDATE wallets SET balance = GREATEST(0, balance - :coinsToRefund), withdrawal_balance = GREATEST(0, withdrawal_balance - :coinsToRefund) WHERE user_id = :userId',
+        { coinsToRefund, userId: withdrawal.user_id }
+      );
     }
 
     await connection.execute(

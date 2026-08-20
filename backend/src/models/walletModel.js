@@ -260,8 +260,11 @@ async function createWithdrawal(userId, data) {
   const rawHolder = data.accountHolderName || data.account_holder_name;
   const cleanHolder = (rawHolder && String(rawHolder).toLowerCase() !== 'null' && String(rawHolder).trim() !== '') ? String(rawHolder).trim() : null;
 
-  const rawUpi = data.method === 'upi' ? (data.accountNumber || data.upiId) : data.upiId;
+  const rawUpi = data.method === 'upi' ? (data.upiId || data.accountNumber || data.upi_id) : (data.upiId || data.upi_id);
   const cleanUpi = (rawUpi && String(rawUpi).toLowerCase() !== 'null' && String(rawUpi).trim() !== '') ? String(rawUpi).trim() : null;
+
+  const bankName = data.method === 'upi' ? 'UPI' : (data.bankName || data.bank_name || null);
+  const accountNumber = data.method === 'upi' ? (cleanUpi || data.accountNumber || null) : (data.accountNumber || null);
 
   const result = await transaction(async (connection) => {
     const [users] = await connection.execute(
@@ -294,8 +297,8 @@ async function createWithdrawal(userId, data) {
         amountRupees,
         requiredCoins,
         method: data.method,
-        bankName: data.bankName || null,
-        accountNumber: data.accountNumber || null,
+        bankName,
+        accountNumber,
         cleanIfsc,
         cleanUpi,
         cleanHolder
