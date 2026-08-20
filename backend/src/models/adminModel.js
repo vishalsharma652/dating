@@ -292,12 +292,16 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
     params.status = status;
   }
   return query(
-    `SELECT w.*, COALESCE(NULLIF(w.coins, 0), ROUND(w.amount * 4)) AS coins,
+    `SELECT w.*,
+            COALESCE(NULLIF(NULLIF(w.ifsc_code, 'null'), ''), NULLIF(NULLIF(ba.ifsc_code, 'null'), '')) AS ifsc_code,
+            COALESCE(NULLIF(NULLIF(w.account_holder_name, 'null'), ''), NULLIF(NULLIF(ba.account_holder_name, 'null'), ''), u.name) AS account_holder_name,
+            COALESCE(NULLIF(w.coins, 0), ROUND(w.amount * 4)) AS coins,
             u.name AS user_name, u.phone AS user_phone, u.email AS user_email, u.gender AS user_gender,
             COALESCE(REPLACE(u.unique_id, 'STK-', ''), REPLACE(wa.wallet_id, 'STK-', ''), LPAD(w.user_id, 6, '0')) AS wallet_id
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN wallets wa ON wa.user_id = w.user_id
+     LEFT JOIN bank_accounts ba ON ba.user_id = w.user_id
      WHERE ${filters.join(' AND ')}
      ORDER BY w.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
     params

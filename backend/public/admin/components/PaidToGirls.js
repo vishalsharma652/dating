@@ -804,12 +804,17 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
                             </button>
                           </div>
                         ) : (
-                          <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
-                            <div><strong>A/C Name:</strong> {w.account_holder_name || w.accountHolderName || w.user_name || 'N/A'}</div>
-                            <div><strong>Bank:</strong> {w.bank_name || 'N/A'}</div>
-                            <div><strong>A/C No:</strong> <span style={{ fontFamily: 'monospace' }}>{w.account_number || 'N/A'}</span></div>
-                            <div><strong>IFSC:</strong> <span style={{ fontFamily: 'monospace' }}>{w.ifsc_code || w.ifscCode || 'N/A'}</span></div>
-                          </div>
+                          {(() => {
+                            const getVal = (val) => (!val || String(val).toLowerCase() === 'null' || String(val).trim() === '') ? null : String(val).trim();
+                            return (
+                              <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
+                                <div><strong>A/C Name:</strong> {getVal(w.account_holder_name) || getVal(w.accountHolderName) || getVal(w.user_name) || 'N/A'}</div>
+                                <div><strong>Bank:</strong> {getVal(w.bank_name) || 'N/A'}</div>
+                                <div><strong>A/C No:</strong> <span style={{ fontFamily: 'monospace' }}>{getVal(w.account_number) || 'N/A'}</span></div>
+                                <div><strong>IFSC:</strong> <span style={{ fontFamily: 'monospace' }}>{getVal(w.ifsc_code) || getVal(w.ifscCode) || 'N/A'}</span></div>
+                              </div>
+                            );
+                          })()}
                         )}
                       </td>
 
@@ -1212,26 +1217,31 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
                           </button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: '#c084fc', fontWeight: 700 }}>IFSC Code:</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#f8fafc' }}>{modalItem.ifsc_code || 'N/A'}</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(modalItem.ifsc_code, 'modal-ifsc')}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: copiedId === 'modal-ifsc' ? '#10b981' : '#c084fc',
-                              cursor: 'pointer',
-                              fontSize: '11px',
-                              fontWeight: 700
-                            }}
-                          >
-                            {copiedId === 'modal-ifsc' ? '✓ Copied' : '📋'}
-                          </button>
-                        </div>
-                      </div>
+                      {(() => {
+                        const cleanIfsc = (modalItem.ifsc_code && String(modalItem.ifsc_code).toLowerCase() !== 'null' && String(modalItem.ifsc_code).trim() !== '') ? String(modalItem.ifsc_code).trim() : null;
+                        return (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#c084fc', fontWeight: 700 }}>IFSC Code:</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#f8fafc' }}>{cleanIfsc || 'N/A'}</span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(cleanIfsc || '', 'modal-ifsc')}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: copiedId === 'modal-ifsc' ? '#10b981' : '#c084fc',
+                                  cursor: 'pointer',
+                                  fontSize: '11px',
+                                  fontWeight: 700
+                                }}
+                              >
+                                {copiedId === 'modal-ifsc' ? '✓ Copied' : '📋'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

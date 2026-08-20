@@ -188,6 +188,15 @@ async function createWithdrawal(userId, data) {
     }
   }
 
+  const rawIfsc = data.ifscCode || data.ifsc_code;
+  const cleanIfsc = (rawIfsc && String(rawIfsc).toLowerCase() !== 'null' && String(rawIfsc).trim() !== '') ? String(rawIfsc).trim().toUpperCase() : null;
+
+  const rawHolder = data.accountHolderName || data.account_holder_name;
+  const cleanHolder = (rawHolder && String(rawHolder).toLowerCase() !== 'null' && String(rawHolder).trim() !== '') ? String(rawHolder).trim() : null;
+
+  const rawUpi = data.method === 'upi' ? (data.accountNumber || data.upiId) : data.upiId;
+  const cleanUpi = (rawUpi && String(rawUpi).toLowerCase() !== 'null' && String(rawUpi).trim() !== '') ? String(rawUpi).trim() : null;
+
   const result = await transaction(async (connection) => {
     const [users] = await connection.execute(
       'SELECT coins, earnings FROM users WHERE id = :userId LIMIT 1 FOR UPDATE',
@@ -212,9 +221,19 @@ async function createWithdrawal(userId, data) {
 
     // Record withdrawal request in rupees
     const [withdrawalResult] = await connection.execute(
-      `INSERT INTO withdrawals (user_id, amount, coins, method, bank_name, account_number, status)
-       VALUES (:userId, :amountRupees, :requiredCoins, :method, :bankName, :accountNumber, 'pending')`,
-      { userId, amountRupees, requiredCoins, method: data.method, bankName: data.bankName || null, accountNumber: data.accountNumber || null }
+      `INSERT INTO withdrawals (user_id, amount, coins, method, bank_name, account_number, ifsc_code, upi_id, account_holder_name, status)
+       VALUES (:userId, :amountRupees, :requiredCoins, :method, :bankName, :accountNumber, :cleanIfsc, :cleanUpi, :cleanHolder, 'pending')`,
+      {
+        userId,
+        amountRupees,
+        requiredCoins,
+        method: data.method,
+        bankName: data.bankName || null,
+        accountNumber: data.accountNumber || null,
+        cleanIfsc,
+        cleanUpi,
+        cleanHolder
+      }
     );
 
     await connection.execute(
