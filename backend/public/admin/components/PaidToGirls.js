@@ -1473,22 +1473,39 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
                 )}
               </div>
 
-              {/* UTR / Transaction Reference Note */}
+              {/* UTR / Transaction Reference or Rejection/Hold Note */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#cbd5e1', marginBottom: '6px' }}>
-                  Transaction / UTR Reference No. or Note (Optional)
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: modalStatus === 'rejected' ? '#f87171' : modalStatus === 'pending' ? '#fbbf24' : '#cbd5e1',
+                  marginBottom: '6px'
+                }}>
+                  {modalStatus === 'rejected'
+                    ? 'Rejection Reason (Notification will be sent to user) *'
+                    : modalStatus === 'pending'
+                    ? 'Hold Reason / Note (Notification will be sent to user)'
+                    : 'Transaction / UTR Reference No. or Note'}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. UTR: 412345678901, Paid via PhonePe/GPay..."
+                  placeholder={
+                    modalStatus === 'rejected'
+                      ? 'e.g. Invalid UPI ID, Bank Details Mismatch, KYC Incomplete...'
+                      : modalStatus === 'pending'
+                      ? 'e.g. Account under verification...'
+                      : 'e.g. UTR: 412345678901, Paid via PhonePe/GPay...'
+                  }
                   value={modalNote}
                   onChange={(e) => setModalNote(e.target.value)}
+                  required={modalStatus === 'rejected'}
                   style={{
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: `1px solid ${modalStatus === 'rejected' ? 'rgba(239, 68, 68, 0.5)' : modalStatus === 'pending' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.12)'}`,
+                    background: modalStatus === 'rejected' ? 'rgba(239, 68, 68, 0.05)' : modalStatus === 'pending' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(255, 255, 255, 0.04)',
                     color: '#f8fafc',
                     fontSize: '13px',
                     outline: 'none',

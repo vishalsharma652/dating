@@ -1,6 +1,7 @@
 const { query, transaction } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const settingsModel = require('./settingsModel');
+const notificationModel = require('./notificationModel');
 
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc, SUM(role = "user" AND online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS onlineUsers FROM users');
@@ -309,10 +310,12 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
 }
 
 async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {}) {
+  let prevWithdrawal = null;
   await transaction(async (connection) => {
     const [rows] = await connection.execute('SELECT * FROM withdrawals WHERE id = :id LIMIT 1 FOR UPDATE', { id });
     const withdrawal = rows[0];
     if (!withdrawal) return;
+    prevWithdrawal = withdrawal;
 
     const targetStatus = status || withdrawal.status;
     const updates = ['status = :status'];
@@ -338,7 +341,7 @@ async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {})
       params
     );
 
-    if (targetStatus === 'rejected' && withdrawal.status === 'pending') {
+    if (targetStatus === 'rejected' && withdrawal.status !== 'rejected') {
       await connection.execute('UPDATE users SET earnings = earnings + :amount WHERE id = :userId', {
         amount: withdrawal.amount,
         userId: withdrawal.user_id
@@ -347,7 +350,7 @@ async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {})
         amount: withdrawal.amount,
         userId: withdrawal.user_id
       });
-    } else if (withdrawal.status === 'rejected' && (targetStatus === 'completed' || targetStatus === 'pending')) {
+    } else if (withdrawal.status === 'rejected' && targetStatus !== 'rejected') {
       await connection.execute('UPDATE users SET earnings = GREATEST(0, earnings - :amount) WHERE id = :userId', {
         amount: withdrawal.amount,
         userId: withdrawal.user_id
@@ -365,11 +368,62 @@ async function updateWithdrawal(id, { status, screenshot_url, admin_note } = {})
          WHEN :status = 'rejected' THEN 'failed'
          ELSE status
        END
-       WHERE user_id = :userId AND type = 'withdrawal' AND description = :description`,
-      { status: targetStatus, userId: withdrawal.user_id, description: `Withdrawal #${id}` }
+       WHERE user_id = :userId AND type = 'withdrawal' AND (description = :descExact OR description LIKE :descLike)`,
+      {
+        status: targetStatus,
+        userId: withdrawal.user_id,
+        descExact: `Withdrawal #${id}`,
+        descLike: `Withdrawal #${id} %`
+      }
     );
   });
-  return query('SELECT * FROM withdrawals WHERE id = :id', { id }).then((rows) => rows[0]);
+
+  const updated = await query('SELECT * FROM withdrawals WHERE id = :id', { id }).then((rows) => rows[0]);
+
+  if (updated && prevWithdrawal) {
+    try {
+      const amount = Number(updated.amount || 0);
+      const coins = Number(updated.coins || 0) || Math.round(amount * 4);
+      const noteText = (admin_note !== undefined && String(admin_note).trim())
+        ? String(admin_note).trim()
+        : (updated.admin_note || '');
+
+      if (status === 'rejected') {
+        const reason = noteText || 'Requirements not met';
+        await notificationModel.create({
+          userId: updated.user_id,
+          type: 'withdrawal_status',
+          title: 'Withdrawal Request Rejected ❌',
+          message: `Your withdrawal request of ₹${amount} (${coins} coins) was rejected. Reason: ${reason}`,
+          linkUrl: '/user/withdraw/history',
+          metadata: { withdrawalId: id, status: 'rejected', reason, amount, coins }
+        });
+      } else if (status === 'pending') {
+        const holdNote = noteText || 'Under verification';
+        await notificationModel.create({
+          userId: updated.user_id,
+          type: 'withdrawal_status',
+          title: 'Withdrawal Request On Hold ⏳',
+          message: `Your withdrawal request of ₹${amount} is currently on hold. Note: ${holdNote}`,
+          linkUrl: '/user/withdraw/history',
+          metadata: { withdrawalId: id, status: 'pending', note: holdNote, amount, coins }
+        });
+      } else if (status === 'completed' && prevWithdrawal.status !== 'completed') {
+        await notificationModel.create({
+          userId: updated.user_id,
+          type: 'withdrawal_status',
+          title: 'Withdrawal Paid Successfully 🎉',
+          message: `Your payout of ₹${amount} (${coins} coins) has been successfully processed & transferred!`,
+          linkUrl: '/user/withdraw/history',
+          metadata: { withdrawalId: id, status: 'completed', amount, coins }
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create notification for withdrawal update:', notifErr);
+    }
+  }
+
+  return updated;
 }
 
 async function reports() {
