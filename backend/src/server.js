@@ -35,6 +35,15 @@ async function start() {
     await pool.query("ALTER TABLE withdrawals ADD COLUMN coins INT UNSIGNED NOT NULL DEFAULT 0 AFTER amount");
   } catch {}
   try {
+    await pool.query("ALTER TABLE withdrawals ADD COLUMN ifsc_code VARCHAR(30) NULL AFTER account_number");
+  } catch {}
+  try {
+    await pool.query("ALTER TABLE withdrawals ADD COLUMN upi_id VARCHAR(120) NULL AFTER ifsc_code");
+  } catch {}
+  try {
+    await pool.query("ALTER TABLE withdrawals ADD COLUMN account_holder_name VARCHAR(120) NULL AFTER bank_name");
+  } catch {}
+  try {
     await pool.query("ALTER TABLE withdrawals ADD COLUMN screenshot_url TEXT NULL");
   } catch {}
   try {

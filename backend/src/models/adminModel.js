@@ -282,13 +282,26 @@ async function chats({ page = 1, limit = 20 } = {}) {
   );
 }
 
+async function ensureWithdrawalColumns() {
+  try {
+    await query("ALTER TABLE withdrawals ADD COLUMN ifsc_code VARCHAR(30) NULL AFTER account_number");
+  } catch (e) {}
+  try {
+    await query("ALTER TABLE withdrawals ADD COLUMN upi_id VARCHAR(120) NULL AFTER ifsc_code");
+  } catch (e) {}
+  try {
+    await query("ALTER TABLE withdrawals ADD COLUMN account_holder_name VARCHAR(120) NULL AFTER bank_name");
+  } catch (e) {}
+}
+
 async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
+  await ensureWithdrawalColumns();
   const pageNumber = Math.max(Number(page) || 1, 1);
   const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 1000);
   const offset = (pageNumber - 1) * limitNumber;
   const filters = ['1=1'];
   const params = {};
-  if (status) {
+  if (status && status !== 'all') {
     filters.push('w.status = :status');
     params.status = status;
   }
@@ -302,7 +315,11 @@ async function withdrawals({ page = 1, limit = 20, status = null } = {}) {
      FROM withdrawals w
      LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN wallets wa ON wa.user_id = w.user_id
-     LEFT JOIN bank_accounts ba ON ba.user_id = w.user_id
+     LEFT JOIN (
+       SELECT user_id, MAX(ifsc_code) AS ifsc_code, MAX(account_holder_name) AS account_holder_name
+       FROM bank_accounts
+       GROUP BY user_id
+     ) ba ON ba.user_id = w.user_id
      WHERE ${filters.join(' AND ')}
      ORDER BY w.created_at DESC LIMIT ${limitNumber} OFFSET ${offset}`,
     params

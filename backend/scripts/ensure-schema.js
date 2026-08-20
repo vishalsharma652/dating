@@ -50,8 +50,21 @@ async function main() {
   if (!(await columnExists('withdrawals', 'coins'))) {
     await pool.query('ALTER TABLE withdrawals ADD COLUMN coins INT UNSIGNED NOT NULL DEFAULT 0 AFTER amount');
     console.log('Added withdrawals.coins column');
-  } else {
-    console.log('withdrawals.coins column already exists');
+  }
+
+  if (!(await columnExists('withdrawals', 'ifsc_code'))) {
+    await pool.query('ALTER TABLE withdrawals ADD COLUMN ifsc_code VARCHAR(30) NULL AFTER account_number');
+    console.log('Added withdrawals.ifsc_code column');
+  }
+
+  if (!(await columnExists('withdrawals', 'upi_id'))) {
+    await pool.query('ALTER TABLE withdrawals ADD COLUMN upi_id VARCHAR(120) NULL AFTER ifsc_code');
+    console.log('Added withdrawals.upi_id column');
+  }
+
+  if (!(await columnExists('withdrawals', 'account_holder_name'))) {
+    await pool.query('ALTER TABLE withdrawals ADD COLUMN account_holder_name VARCHAR(120) NULL AFTER bank_name');
+    console.log('Added withdrawals.account_holder_name column');
   }
 
   await pool.query("ALTER TABLE wallet_transactions MODIFY COLUMN type ENUM('welcome_bonus','purchase','earning','withdrawal','chat_charge','commission','gift_sent','gift_received') NOT NULL");
