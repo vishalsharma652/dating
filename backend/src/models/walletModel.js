@@ -2,7 +2,59 @@ const { query, transaction } = require('../config/db');
 const { AppError } = require('../utils/errors');
 
 async function transactions(userId) {
-  return query('SELECT id, type, title, description, amount, coins, status, DATE_FORMAT(created_at, "%Y-%m-%d") AS date FROM wallet_transactions WHERE user_id = :userId ORDER BY created_at DESC', { userId });
+  const wt = await query(
+    'SELECT CONCAT("wt-", id) AS id, type, title, description, amount, coins, status, DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") AS date, created_at FROM wallet_transactions WHERE user_id = :userId ORDER BY created_at DESC',
+    { userId }
+  );
+
+  const pr = await query(
+    `SELECT 
+      CONCAT("pr-", id) AS id,
+      'purchase' AS type,
+      CASE 
+        WHEN status = 'pending' AND admin_note IS NOT NULL AND TRIM(admin_note) != '' THEN 'Coin Purchase (On Hold)'
+        WHEN status = 'pending' THEN 'Coin Purchase (Pending Verification)'
+        WHEN status = 'rejected' THEN 'Coin Purchase (Rejected)'
+        ELSE 'Coin Purchase'
+      END AS title,
+      package_name AS description,
+      admin_note,
+      amount,
+      (coins + bonus_coins) AS coins,
+      status,
+      DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") AS date,
+      created_at
+     FROM payment_requests 
+     WHERE user_id = :userId AND status IN ('pending', 'rejected') 
+     ORDER BY created_at DESC`,
+    { userId }
+  );
+
+  const prMapped = (pr || []).map((item) => {
+    let desc = item.description || 'Coin Package';
+    if (item.admin_note && String(item.admin_note).trim()) {
+      if (item.status === 'rejected') {
+        desc += ` — Reason: ${item.admin_note}`;
+      } else if (item.status === 'pending') {
+        desc += ` — Note: ${item.admin_note}`;
+      }
+    }
+    return {
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      description: desc,
+      amount: item.amount,
+      coins: item.coins,
+      status: item.status,
+      date: item.date,
+      created_at: item.created_at
+    };
+  });
+
+  const combined = [...(wt || []), ...prMapped];
+  combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return combined;
 }
 
 async function wallet(userId) {

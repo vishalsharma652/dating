@@ -65,22 +65,30 @@ export default function TransactionHistoryPage() {
             }
 
             return (
-              <Card key={txn.id} className="p-4">
-                <div className="flex items-center justify-between">
+              <Card key={txn.id} className="p-4 bg-[#101827]/80 border-white/5">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white">{displayTitle}</h3>
                     <p className="text-sm text-zinc-400">{txn.description}</p>
                     <p className="text-xs text-zinc-500 mt-1">{txn.date}</p>
                   </div>
 
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className={`text-lg font-bold ${coinsVal >= 0 ? 'text-emerald-400' : 'text-pink-400'}`}>
+                  <div className="text-right flex-shrink-0">
+                    <div className="flex items-center justify-end gap-2 mb-1.5">
+                      <p className={`text-base sm:text-lg font-bold ${coinsVal >= 0 ? 'text-emerald-400' : 'text-pink-400'}`}>
                         {coinsVal > 0 ? '+' : ''}{coinsVal} coins
                       </p>
-                      {Number(txn.amount) > 0 && <span className="text-zinc-500">₹{txn.amount}</span>}
+                      {Number(txn.amount) > 0 && <span className="text-xs text-zinc-400 font-medium">₹{txn.amount}</span>}
                     </div>
-                    <Badge variant={txn.status === 'completed' ? 'default' : 'pink'}>{txn.status}</Badge>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${
+                      txn.status === 'completed' || txn.status === 'approved'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : (txn.status === 'rejected'
+                            ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30')
+                    }`}>
+                      {txn.status === 'pending' ? 'Pending' : txn.status}
+                    </span>
                   </div>
                 </div>
               </Card>
