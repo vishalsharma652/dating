@@ -1339,7 +1339,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
                     />
                     <span style={{ fontSize: '16px' }}>✕</span>
                     <span style={{ fontSize: '12px', fontWeight: 800, color: modalStatus === 'rejected' ? '#f87171' : '#94a3b8' }}>
-                      Rejected (Refund)
+                      Rejected
                     </span>
                   </label>
                 </div>
