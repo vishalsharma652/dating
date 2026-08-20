@@ -9,10 +9,24 @@ async function wallet(userId) {
   let rows = await query(
     `SELECT w.id AS walletRowId, 
       COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS walletId, 
-      w.balance AS coins, w.total_purchased AS totalPurchased, w.total_spent AS totalSpent,
-      w.total_earned AS totalEarned, w.withdrawal_balance AS withdrawalBalance,
+      w.balance AS coins,
+      GREATEST(COALESCE(w.total_purchased, 0), COALESCE(tx.calcPurchased, 0)) AS totalPurchased,
+      GREATEST(COALESCE(w.total_spent, 0), COALESCE(tx.calcSpent, 0)) AS totalSpent,
+      GREATEST(COALESCE(w.total_earned, 0), COALESCE(tx.calcEarned, 0)) AS totalEarned,
+      w.withdrawal_balance AS withdrawalBalance,
       u.earnings, u.coins AS userCoins
-     FROM users u LEFT JOIN wallets w ON w.user_id = u.id WHERE u.id = :userId LIMIT 1`,
+     FROM users u
+     LEFT JOIN wallets w ON w.user_id = u.id
+     LEFT JOIN (
+       SELECT user_id,
+              COALESCE(SUM(CASE WHEN type = 'purchase' AND status = 'completed' THEN coins ELSE 0 END), 0) AS calcPurchased,
+              COALESCE(SUM(CASE WHEN (type IN ('chat_charge', 'gift_sent') OR coins < 0) AND type != 'withdrawal' AND status = 'completed' THEN ABS(coins) ELSE 0 END), 0) AS calcSpent,
+              COALESCE(SUM(CASE WHEN type IN ('earning', 'gift_received', 'welcome_bonus') AND status = 'completed' THEN coins ELSE 0 END), 0) AS calcEarned
+       FROM wallet_transactions
+       WHERE user_id = :userId
+       GROUP BY user_id
+     ) tx ON tx.user_id = u.id
+     WHERE u.id = :userId LIMIT 1`,
     { userId }
   );
   if (!rows[0]) return null;
