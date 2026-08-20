@@ -200,8 +200,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           <div style={{ zIndex: 2, maxWidth: '62%' }}>
             <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'white', marginBottom: '2px', letterSpacing: '-0.01em' }}>Keep Growing!</h4>
             <p className="muted" style={{ fontSize: '10.5px', lineHeight: '1.3', marginBottom: '8px', color: '#94a3b8' }}>Track platform metrics in real-time.</p>
-            <button className="btn-action btn-primary" style={{ height: '26px', padding: '0 10px', fontSize: '10px', borderRadius: '4px' }} onClick={() => onTabChange('reports')}>
-              View Reports &rarr;
+            <button className="btn-action btn-primary" style={{ height: '26px', padding: '0 10px', fontSize: '10px', borderRadius: '4px' }} onClick={() => onTabChange('users')}>
+              View Users &rarr;
             </button>
           </div>
           {/* Stacked coins illustration */}

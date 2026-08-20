@@ -686,8 +686,6 @@ function App() {
             apiRequest={apiRequest}
           />
         );
-      case 'reports':
-        return <window.Reports data={reportsData} rupees={rupees} />;
       case 'settings':
         return <window.Settings data={settingsData} onSave={handleSaveSettings} />;
       default:
@@ -707,7 +705,7 @@ function App() {
             </div>
           </div>
           <h1>Sign in</h1>
-          <p className="muted" style={{ marginTop: '8px' }}>Manage users, KYC verification, wallets, chats, withdrawals, and reports.</p>
+          <p className="muted" style={{ marginTop: '8px' }}>Manage users, KYC verification, wallets, chats, and withdrawals.</p>
 
           <label className="field" style={{ marginTop: '20px' }}>
             <span>Email or Phone</span>
@@ -738,7 +736,6 @@ function App() {
     { id: 'wallet', label: 'Wallets', group: 'Operations', icon: 'wallet' },
     { id: 'chats', label: 'Chat Monitor', group: 'Operations', icon: 'message-square' },
     { id: 'withdrawals', label: 'Withdrawals', group: 'Operations', icon: 'arrow-up-right' },
-    { id: 'reports', label: 'Reports', group: 'Insights', icon: 'bar-chart-3' },
     { id: 'settings', label: 'Settings', group: 'System', icon: 'settings' }
   ];
 
