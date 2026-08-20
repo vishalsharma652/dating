@@ -105,7 +105,7 @@ export default function WalletPage() {
         )}
 
         {/* Balance Cards Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
 
           {/* Coins Balance */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-600/20 to-rose-900/20 border border-pink-500/20 p-5">
@@ -125,26 +125,8 @@ export default function WalletPage() {
             )}
           </div>
 
-          {/* Earnings Balance */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/20 to-teal-900/20 border border-emerald-500/20 p-5">
-            <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <BadgeIndianRupee size={18} className="text-emerald-400" />
-            </div>
-            <p className="text-xs font-bold text-emerald-300/70 uppercase tracking-wider mb-2">Earnings</p>
-            <p className="text-4xl font-black text-white mb-0.5">₹{Number(wallet.earnings ?? 0).toFixed(0)}</p>
-            <p className="text-xs text-zinc-500">Available to withdraw</p>
-            {isFemale && (
-              <Link
-                href="/user/withdraw"
-                className="inline-flex items-center gap-1.5 mt-3 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition"
-              >
-                <ArrowUpRight size={12} /> Withdraw
-              </Link>
-            )}
-          </div>
-
           {/* Total Stats */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/20 to-indigo-900/20 border border-blue-500/20 p-5 sm:col-span-2 lg:col-span-1">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/20 to-indigo-900/20 border border-blue-500/20 p-5">
             <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
               <TrendingUp size={18} className="text-blue-400" />
             </div>
@@ -188,14 +170,6 @@ export default function WalletPage() {
                   Transaction History
                 </Link>
               </Button>
-              {isFemale && (
-                <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-white/10 text-zinc-300 hover:bg-white/5" asChild>
-                  <Link href="/user/earnings">
-                    <TrendingUp size={16} />
-                    View Earnings
-                  </Link>
-                </Button>
-              )}
               {isFemale && (
                 <Button variant="outline" className="rounded-xl font-bold text-sm gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10" asChild>
                   <Link href="/user/withdraw">
