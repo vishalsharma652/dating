@@ -18,6 +18,8 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
+  const cleanVal = (val) => (!val || String(val).toLowerCase() === 'null' || String(val).trim() === '') ? null : String(val).trim();
+
   // Lightbox preview state
   const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -386,14 +388,11 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                                 {w.account_number}
                               </div>
                             )}
-                            {(() => {
-                              const cleanIfsc = (w.ifsc_code && String(w.ifsc_code).toLowerCase() !== 'null' && String(w.ifsc_code).trim() !== '') ? String(w.ifsc_code).trim() : null;
-                              return cleanIfsc ? (
-                                <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                                  IFSC: {cleanIfsc}
-                                </div>
-                              ) : null;
-                            })()}
+                            {cleanVal(w.ifsc_code) && (
+                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                                IFSC: {cleanVal(w.ifsc_code)}
+                              </div>
+                            )}
                           </div>
                           {detailsStr && (
                             <button
@@ -786,31 +785,28 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                           </button>
                         </div>
                       </div>
-                      {(() => {
-                        const cleanIfsc = (modalItem.ifsc_code && String(modalItem.ifsc_code).toLowerCase() !== 'null' && String(modalItem.ifsc_code).trim() !== '') ? String(modalItem.ifsc_code).trim() : null;
-                        return (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: '#c084fc', fontWeight: 700 }}>IFSC Code:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#f8fafc' }}>{cleanIfsc || 'N/A'}</span>
-                              <button
-                                type="button"
-                                onClick={() => copyToClipboard(cleanIfsc || '', 'modal-ifsc')}
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: copiedId === 'modal-ifsc' ? '#10b981' : '#c084fc',
-                                  cursor: 'pointer',
-                                  fontSize: '11px',
-                                  fontWeight: 700
-                                }}
-                              >
-                                {copiedId === 'modal-ifsc' ? '✓ Copied' : '📋'}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: '#c084fc', fontWeight: 700 }}>IFSC Code:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#f8fafc' }}>
+                            {cleanVal(modalItem.ifsc_code) || cleanVal(modalItem.ifscCode) || 'N/A'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(cleanVal(modalItem.ifsc_code) || cleanVal(modalItem.ifscCode) || '', 'modal-ifsc')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: copiedId === 'modal-ifsc' ? '#10b981' : '#c084fc',
+                              cursor: 'pointer',
+                              fontSize: '11px',
+                              fontWeight: 700
+                            }}
+                          >
+                            {copiedId === 'modal-ifsc' ? '✓ Copied' : '📋'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
