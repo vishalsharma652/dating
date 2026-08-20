@@ -69,13 +69,24 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
     });
   };
 
+  const openHoldModal = (item) => {
+    setActionModal({
+      show: true,
+      item,
+      type: 'hold',
+      utr: item.transaction_ref || '',
+      note: item.admin_note || '',
+      error: ''
+    });
+  };
+
   const openRejectModal = (item) => {
     setActionModal({
       show: true,
       item,
       type: 'reject',
       utr: '',
-      note: '',
+      note: item.admin_note || '',
       error: ''
     });
   };
@@ -95,13 +106,19 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         if (showNotice) showNotice('Please enter a rejection reason for the user', 'error');
         return;
       }
+    } else if (actionModal.type === 'hold') {
+      if (!actionModal.note.trim()) {
+        setActionModal((m) => ({ ...m, error: 'Please enter a hold reason / note for the user.' }));
+        if (showNotice) showNotice('Please enter a hold note for the user', 'error');
+        return;
+      }
     }
 
     setIsSubmitting(true);
     setActionModal((m) => ({ ...m, error: '' }));
 
     try {
-      const targetStatus = actionModal.type === 'approve' ? 'approved' : 'rejected';
+      const targetStatus = actionModal.type === 'approve' ? 'approved' : (actionModal.type === 'hold' ? 'pending' : 'rejected');
       const res = await apiRequest(`/admin/payments/${actionModal.item.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -117,7 +134,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           showNotice(
             actionModal.type === 'approve'
               ? `Payment #REQ ${actionModal.item.id} approved! 🪙 Coins credited to user wallet.`
-              : `Payment #REQ ${actionModal.item.id} rejected.`,
+              : (actionModal.type === 'hold' ? `Payment #REQ ${actionModal.item.id} put on Hold.` : `Payment #REQ ${actionModal.item.id} rejected.`),
             'success'
           );
         }
@@ -139,7 +156,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
   };
 
   return (
-    <div className="space-y-5 text-slate-100 max-w-full">
+    <div className="space-y-5 text-slate-100 max-w-full font-sans">
       {/* Top Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#171138] via-[#1c1448] to-[#120e2e] border border-purple-500/20 shadow-2xl relative overflow-hidden">
         <div className="flex items-center gap-3.5">
@@ -148,13 +165,13 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Payment Proof Verification</h1>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Payment Verification</h1>
               <span className="px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-[#341d6b] text-[#c084fc] border border-purple-400/30">
-                KOTAK 811
+                UPI / QR &amp; MANUAL
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Verify UPI QR code payment screenshots and credit coins to user accounts.
+              Verify payment screenshot proofs, manage Pending/Hold, Approved &amp; Rejected status, and credit coins.
             </p>
           </div>
         </div>
@@ -172,7 +189,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: PENDING VERIFICATION */}
+        {/* Card 1: PENDING / HOLD */}
         <div
           onClick={() => { setStatusFilter('pending'); setPage(1); }}
           className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
@@ -182,14 +199,14 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-400 truncate">PENDING VERIFICATION</span>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-400 truncate">PENDING / HOLD</span>
             <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center flex-shrink-0">
               <window.Icon name="clock" size={14} />
             </div>
           </div>
           <div className="mt-2.5">
             <h3 className="text-2xl sm:text-3xl font-black text-white">{stats.pendingCount || 0}</h3>
-            <p className="text-[11px] text-amber-400/90 font-bold mt-0.5">₹{Number(stats.pendingAmount || 0).toLocaleString('en-IN')} to verify</p>
+            <p className="text-[11px] text-amber-400/90 font-bold mt-0.5">₹{Number(stats.pendingAmount || 0).toLocaleString('en-IN')} on hold / pending</p>
           </div>
         </div>
 
@@ -259,11 +276,11 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
 
       {/* Filter Toolbar */}
       <div className="p-3 rounded-2xl bg-[#0e101f] border border-white/5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-xl">
-        {/* Status Tabs (Zero Scroll) */}
-        <div className="flex items-center gap-1 bg-[#080914] p-1 rounded-xl border border-white/5 w-auto">
+        {/* Status Tabs */}
+        <div className="flex items-center gap-1 bg-[#080914] p-1 rounded-xl border border-white/5 w-auto flex-wrap">
           {[
             { id: 'all', label: 'All Requests' },
-            { id: 'pending', label: 'Pending ⏳' },
+            { id: 'pending', label: 'Pending / Hold ⏳' },
             { id: 'approved', label: 'Approved ✅' },
             { id: 'rejected', label: 'Rejected ❌' },
           ].map((tab) => (
@@ -323,7 +340,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         </div>
       </div>
 
-      {/* Main Table Container (Responsive Horizontal Scroll) */}
+      {/* Main Table Container */}
       <div className="rounded-2xl bg-[#0c0d19] border border-white/5 overflow-hidden shadow-2xl">
         {loading ? (
           <div className="p-14 text-center text-slate-400 flex flex-col items-center justify-center gap-2.5">
@@ -355,7 +372,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                   <th className="py-3.5 px-3 whitespace-nowrap">COINS TO CREDIT</th>
                   <th className="py-3.5 px-3 text-center whitespace-nowrap">SCREENSHOT PROOF</th>
                   <th className="py-3.5 px-3 whitespace-nowrap">TRANSACTION UTR</th>
-                  <th className="py-3.5 px-3 whitespace-nowrap">STATUS</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">STATUS &amp; NOTE</th>
                   <th className="py-3.5 px-3 pr-5 text-right whitespace-nowrap">ACTIONS</th>
                 </tr>
               </thead>
@@ -386,7 +403,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                         </div>
                       </td>
 
-                      {/* USER DETAILS (Avatar + Name + ID Badge, No Phone) */}
+                      {/* USER DETAILS */}
                       <td className="py-3 px-3 align-middle whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <img
@@ -435,7 +452,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                         )}
                       </td>
 
-                      {/* SCREENSHOT PROOF (Pink Icon Card / Thumbnail) */}
+                      {/* SCREENSHOT PROOF */}
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
                         {item.screenshot_url ? (
                           <div
@@ -450,7 +467,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                                 e.target.style.display = 'none';
                                 if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                               }}
-                              className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-200"
+                              className="w-full h-full object-cover group-hover/thumb:scale-105 transition duration-200"
                             />
                             <div className="hidden absolute inset-0 w-full h-full flex-col items-center justify-center bg-[#1a0e28] text-[#f472b6] p-0.5 text-center">
                               <window.Icon name="image" size={14} />
@@ -492,67 +509,78 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                         )}
                       </td>
 
-                      {/* STATUS (Pills matching image) */}
+                      {/* STATUS & REASON / HOLD NOTE */}
                       <td className="py-3 px-3 align-middle whitespace-nowrap">
                         {isPending && (
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2a1d08] border border-[#f59e0b]/40 text-[#f59e0b] whitespace-nowrap">
                               <window.Icon name="clock" size={11} />
-                              Pending
+                              Pending / Hold
                             </span>
-                            <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
-                              {new Date(item.created_at).toLocaleDateString('en-GB')}
-                            </div>
+                            {item.admin_note && (
+                              <div className="text-[10px] text-amber-300 font-semibold mt-1 max-w-[180px] truncate" title={item.admin_note}>
+                                Note: {item.admin_note}
+                              </div>
+                            )}
                           </div>
                         )}
                         {isApproved && (
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#07241d] border border-[#10b981]/40 text-[#10b981] whitespace-nowrap">
                               <window.Icon name="check" size={11} />
-                              Approved
+                              Approved ✅
                             </span>
-                            <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
-                              {new Date(item.verified_at || item.created_at).toLocaleDateString('en-GB')}
-                            </div>
+                            {item.verified_at && (
+                              <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
+                                {new Date(item.verified_at).toLocaleDateString('en-IN')}
+                              </div>
+                            )}
                           </div>
                         )}
                         {isRejected && (
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2b0e14] border border-[#f43f5e]/40 text-[#f43f5e] whitespace-nowrap">
                               <window.Icon name="x" size={11} />
-                              Rejected
+                              Rejected ❌
                             </span>
-                            <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
-                              {new Date(item.created_at).toLocaleDateString('en-GB')}
-                            </div>
+                            {item.admin_note && (
+                              <div className="text-[10px] text-rose-300 font-semibold mt-1 max-w-[180px] truncate" title={item.admin_note}>
+                                Reason: {item.admin_note}
+                              </div>
+                            )}
                           </div>
                         )}
                       </td>
 
-                      {/* ACTIONS (Green check, Red cross, Eye button) */}
+                      {/* ACTIONS ON EVERY ROW */}
                       <td className="py-3 px-3 pr-5 text-right align-middle whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                          {isPending ? (
-                            <>
-                              {/* Approve Green Button */}
-                              <button
-                                onClick={() => openApproveModal(item)}
-                                className="w-8 h-8 rounded-lg bg-[#064e3b] hover:bg-[#059669] text-[#34d399] hover:text-white flex items-center justify-center border border-[#10b981]/40 transition shadow-md cursor-pointer"
-                                title="Approve & Credit Coins"
-                              >
-                                <window.Icon name="check" size={15} />
-                              </button>
+                          {/* Approve Green Button */}
+                          <button
+                            onClick={() => openApproveModal(item)}
+                            className="w-8 h-8 rounded-lg bg-[#064e3b] hover:bg-[#059669] text-[#34d399] hover:text-white flex items-center justify-center border border-[#10b981]/40 transition shadow-md cursor-pointer"
+                            title="Approve & Credit Coins"
+                          >
+                            <window.Icon name="check" size={15} />
+                          </button>
 
-                              {/* Reject Red Button */}
-                              <button
-                                onClick={() => openRejectModal(item)}
-                                className="w-8 h-8 rounded-lg bg-[#4c0519] hover:bg-[#e11d48] text-[#f43f5e] hover:text-white flex items-center justify-center border border-[#f43f5e]/40 transition shadow-md cursor-pointer"
-                                title="Reject Submission"
-                              >
-                                <window.Icon name="x" size={15} />
-                              </button>
-                            </>
-                          ) : null}
+                          {/* Hold Amber Button */}
+                          <button
+                            onClick={() => openHoldModal(item)}
+                            className="w-8 h-8 rounded-lg bg-[#3b2506] hover:bg-[#d97706] text-[#fbbf24] hover:text-white flex items-center justify-center border border-[#f59e0b]/40 transition shadow-md cursor-pointer"
+                            title="Put Payment On Hold"
+                          >
+                            <window.Icon name="clock" size={14} />
+                          </button>
+
+                          {/* Reject Red Button */}
+                          <button
+                            onClick={() => openRejectModal(item)}
+                            className="w-8 h-8 rounded-lg bg-[#4c0519] hover:bg-[#e11d48] text-[#f43f5e] hover:text-white flex items-center justify-center border border-[#f43f5e]/40 transition shadow-md cursor-pointer"
+                            title="Reject Submission"
+                          >
+                            <window.Icon name="x" size={15} />
+                          </button>
 
                           {/* Eye Details Button */}
                           <button
@@ -599,150 +627,138 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         )}
       </div>
 
-      {/* Record Detail Modal (Fully Responsive) */}
+      {/* Detail Modal */}
       {selectedRecord && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
           <div className="max-w-2xl w-full max-h-[92vh] flex flex-col bg-[#121024] border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-[#16132e]">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-[#16132e]">
               <div>
-                <span className="text-[11px] font-mono font-bold text-[#c084fc] bg-[#241a4a] px-2.5 py-0.5 rounded-full border border-purple-400/30">
-                  #REQ {selectedRecord.id}
-                </span>
-                <h3 className="text-base sm:text-lg font-black text-white mt-1">Payment Verification Details</h3>
+                <h3 className="text-base sm:text-lg font-black text-white">Payment Request #REQ {selectedRecord.id}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedRecord.user_name} (ID: {selectedRecord.user_unique_id || selectedRecord.user_id})</p>
               </div>
               <button
-                type="button"
                 onClick={() => setSelectedRecord(null)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition cursor-pointer text-sm font-bold"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition cursor-pointer text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
-              {/* User & Package Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2">
-                  <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">User Profile</p>
-                  <div className="font-black text-white text-sm sm:text-base">{selectedRecord.user_name}</div>
-                  <div className="text-slate-400">
-                    Unique ID: <span className="font-mono text-[#c084fc] font-bold">{selectedRecord.user_unique_id || selectedRecord.user_id}</span>
-                  </div>
-                  {selectedRecord.user_gender && (
-                    <div className="text-slate-400">
-                      Gender: <span className="text-slate-200 capitalize font-semibold">{selectedRecord.user_gender}</span>
-                    </div>
-                  )}
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-[#080914] border border-white/5">
+                <div>
+                  <span className="text-slate-400 block font-medium">Package:</span>
+                  <span className="font-bold text-white text-sm">{selectedRecord.package_name}</span>
                 </div>
-
-                <div className="p-4 rounded-2xl bg-[#080914] border border-white/5 space-y-2">
-                  <p className="text-slate-400 font-black uppercase tracking-wider text-[10px]">Package &amp; Amount</p>
-                  <div className="font-black text-white text-sm sm:text-base">{selectedRecord.package_name}</div>
-                  <div className="text-slate-400">Amount: <span className="text-[#ec4899] font-black text-sm sm:text-base">₹{selectedRecord.amount}</span></div>
-                  <div className="text-slate-400">Coins to Credit: <span className="text-emerald-400 font-black">🪙 {Number(selectedRecord.coins || 0) + Number(selectedRecord.bonus_coins || 0)} Coins</span></div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Amount Paid:</span>
+                  <span className="font-black text-[#ec4899] text-sm">₹{selectedRecord.amount}</span>
                 </div>
-              </div>
-
-              {/* Screenshot Preview */}
-              <div>
-                <div className="flex items-center justify-between text-xs font-bold text-slate-300 mb-2">
-                  <span className="flex items-center gap-1.5">
-                    <window.Icon name="image" size={13} className="text-pink-400" />
-                    Uploaded Payment Screenshot
+                <div>
+                  <span className="text-slate-400 block font-medium">Coins to Credit:</span>
+                  <span className="font-black text-emerald-400 text-sm">🪙 {Number(selectedRecord.coins || 0) + Number(selectedRecord.bonus_coins || 0)} Coins</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Status:</span>
+                  <span className={`font-bold capitalize ${
+                    selectedRecord.status === 'approved' ? 'text-emerald-400' : selectedRecord.status === 'rejected' ? 'text-rose-400' : 'text-amber-400'
+                  }`}>
+                    {selectedRecord.status}
                   </span>
-                  {selectedRecord.screenshot_url && (
-                    <button
-                      type="button"
-                      onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
-                      className="text-[#c084fc] hover:underline flex items-center gap-1 font-bold text-xs cursor-pointer"
-                    >
-                      <window.Icon name="external-link" size={12} /> Full Screen
-                    </button>
-                  )}
                 </div>
-                {selectedRecord.screenshot_url ? (
-                  <div
-                    onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
-                    className="w-full max-h-72 rounded-2xl border border-white/10 bg-[#080914] p-3 flex items-center justify-center overflow-hidden cursor-pointer group shadow-inner relative"
-                  >
-                    <img
-                      src={selectedRecord.screenshot_url}
-                      alt="Payment proof"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                      }}
-                      className="max-h-64 w-auto object-contain rounded-xl group-hover:scale-[1.02] transition"
-                    />
-                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
-                      🔍 Click to Zoom
-                    </span>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-slate-500 bg-[#080914] rounded-2xl font-medium text-xs">No screenshot uploaded</div>
-                )}
               </div>
 
-              {/* Reference UTR */}
               {selectedRecord.transaction_ref && (
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
-                  <span className="text-slate-400 font-semibold">Transaction UTR / Reference:</span>
-                  <span className="font-mono font-black text-white text-xs sm:text-sm bg-black/40 px-3 py-1 rounded-xl border border-white/10 select-all break-all">
-                    {selectedRecord.transaction_ref}
-                  </span>
+                <div className="p-3.5 rounded-2xl bg-[#080914] border border-white/5 flex items-center justify-between">
+                  <div>
+                    <span className="text-slate-400 block font-medium">Transaction UTR:</span>
+                    <span className="font-mono font-bold text-white text-sm select-all">{selectedRecord.transaction_ref}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(selectedRecord.transaction_ref, 'modal-utr')}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <window.Icon name={copiedId === 'modal-utr' ? 'check' : 'copy'} size={14} />
+                    {copiedId === 'modal-utr' ? 'Copied' : 'Copy'}
+                  </button>
                 </div>
               )}
 
-              {/* Admin Note */}
+              {selectedRecord.screenshot_url && (
+                <div>
+                  <span className="text-slate-300 font-bold block mb-2">Screenshot Proof:</span>
+                  <div
+                    onClick={() => setLightboxImage(selectedRecord.screenshot_url)}
+                    className="max-h-72 rounded-2xl bg-black/60 border border-white/10 overflow-hidden flex items-center justify-center p-2 cursor-pointer group"
+                  >
+                    <img
+                      src={selectedRecord.screenshot_url}
+                      alt="Proof"
+                      className="max-h-64 object-contain rounded-xl group-hover:scale-105 transition duration-200"
+                    />
+                  </div>
+                </div>
+              )}
+
               {selectedRecord.admin_note && (
                 <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-                  <strong className="font-black">Admin Note:</strong> {selectedRecord.admin_note}
+                  <strong className="font-black">Admin Note / Reason:</strong> {selectedRecord.admin_note}
                 </div>
               )}
             </div>
 
             {/* Footer Action Buttons */}
-            {selectedRecord.status === 'pending' && (
-              <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-white/10 bg-[#0e0c1f] flex items-center gap-3 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => openApproveModal(selectedRecord)}
-                  className="flex-1 h-11 sm:h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer whitespace-nowrap"
-                >
-                  <window.Icon name="check" size={15} />
-                  Approve &amp; Credit Coins
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openRejectModal(selectedRecord)}
-                  className="flex-1 h-11 sm:h-12 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-rose-500/30 cursor-pointer whitespace-nowrap"
-                >
-                  <window.Icon name="x" size={15} />
-                  Reject Submission
-                </button>
-              </div>
-            )}
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-white/10 bg-[#0e0c1f] flex items-center gap-2.5 flex-shrink-0 flex-wrap">
+              <button
+                type="button"
+                onClick={() => openApproveModal(selectedRecord)}
+                className="flex-1 h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 cursor-pointer whitespace-nowrap"
+              >
+                <window.Icon name="check" size={15} />
+                Approve &amp; Credit
+              </button>
+              <button
+                type="button"
+                onClick={() => openHoldModal(selectedRecord)}
+                className="flex-1 h-11 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-amber-500/30 cursor-pointer whitespace-nowrap"
+              >
+                <window.Icon name="clock" size={14} />
+                Hold Payment
+              </button>
+              <button
+                type="button"
+                onClick={() => openRejectModal(selectedRecord)}
+                className="flex-1 h-11 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-rose-500/30 cursor-pointer whitespace-nowrap"
+              >
+                <window.Icon name="x" size={15} />
+                Reject Submission
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Approve / Reject Action Modal (Fully Responsive) */}
+      {/* Approve / Hold / Reject Action Modal */}
       {actionModal.show && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
           <div className="max-w-lg w-full max-h-[92vh] flex flex-col bg-[#121024] border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
-            {/* Modal Header (Sticky) */}
+            {/* Modal Header */}
             <div className="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-white/10 flex items-center justify-between flex-shrink-0 bg-[#16132e]">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner flex-shrink-0 ${
-                  actionModal.type === 'approve' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  actionModal.type === 'approve'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : (actionModal.type === 'hold' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30')
                 }`}>
-                  <window.Icon name={actionModal.type === 'approve' ? 'shield-check' : 'alert-triangle'} size={20} />
+                  <window.Icon name={actionModal.type === 'approve' ? 'shield-check' : (actionModal.type === 'hold' ? 'clock' : 'alert-triangle')} size={20} />
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white leading-tight">
-                    {actionModal.type === 'approve' ? 'Verify & Approve Payment' : 'Reject Payment Request'}
+                    {actionModal.type === 'approve'
+                      ? 'Verify & Approve Payment'
+                      : (actionModal.type === 'hold' ? 'Put Payment On Hold' : 'Reject Payment Request')}
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5">Request #REQ {actionModal.item?.id} · {actionModal.item?.user_name}</p>
                 </div>
@@ -756,9 +772,8 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
               </button>
             </div>
 
-            {/* Modal Body (Scrollable) */}
+            {/* Modal Body */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
-              {/* User & Payment Summary Card */}
               <div className="p-3.5 rounded-2xl bg-[#080914] border border-white/5 space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">User:</span>
@@ -774,7 +789,6 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                 </div>
               </div>
 
-              {/* Screenshot Proof Preview (Check UTR) */}
               {actionModal.type === 'approve' && actionModal.item?.screenshot_url && (
                 <div className="p-3 rounded-2xl bg-[#080914] border border-white/10 space-y-2">
                   <div className="flex items-center justify-between text-xs">
@@ -799,14 +813,10 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                       alt="Payment proof screenshot"
                       className="max-h-44 sm:max-h-52 w-auto object-contain rounded-lg group-hover:scale-105 transition duration-200"
                     />
-                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] text-slate-300 font-semibold backdrop-blur">
-                      🔍 Click to Zoom
-                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Approve Form: UTR Number Input */}
               {actionModal.type === 'approve' ? (
                 <div className="space-y-3">
                   <div>
@@ -822,9 +832,6 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                       className="w-full h-11 sm:h-12 px-3.5 text-xs sm:text-sm rounded-xl bg-[#080914] border-2 border-purple-500/40 text-white font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition tracking-wider"
                       autoFocus
                     />
-                    <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                      ⚠️ Screenshot me se UTR number daalein. Duplicate UTR aane par system error dega.
-                    </p>
                   </div>
 
                   <div>
@@ -840,9 +847,23 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                     />
                   </div>
                 </div>
+              ) : actionModal.type === 'hold' ? (
+                <div>
+                  <label className="block text-xs font-bold text-amber-300 mb-1.5">
+                    Hold Reason / Note for User <span className="text-rose-400">*</span>
+                  </label>
+                  <textarea
+                    rows="3"
+                    placeholder="e.g. Screenshot unreadable, please upload clear receipt or UTR..."
+                    value={actionModal.note}
+                    onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value, error: '' }))}
+                    className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-amber-500/30 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition resize-none font-medium"
+                    autoFocus
+                  />
+                </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-bold text-rose-300 mb-1.5">
                     Rejection Reason <span className="text-rose-400">*</span>
                   </label>
                   <textarea
@@ -850,12 +871,12 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                     placeholder="e.g. Invalid screenshot, fake UTR, amount not received in account..."
                     value={actionModal.note}
                     onChange={(e) => setActionModal((m) => ({ ...m, note: e.target.value, error: '' }))}
-                    className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition resize-none font-medium"
+                    className="w-full p-3.5 text-xs rounded-xl bg-[#080914] border border-rose-500/30 text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition resize-none font-medium"
+                    autoFocus
                   />
                 </div>
               )}
 
-              {/* Error Message Display in Modal */}
               {actionModal.error && (
                 <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in slide-in-from-top-1">
                   <window.Icon name="alert-triangle" size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
@@ -866,7 +887,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
               )}
             </div>
 
-            {/* Modal Footer (Sticky) */}
+            {/* Modal Footer */}
             <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-white/10 bg-[#0e0c1f] flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
               <button
                 type="button"
@@ -882,13 +903,13 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                 className={`flex-1 h-11 sm:h-12 rounded-xl font-bold text-xs sm:text-sm text-white transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer ${
                   actionModal.type === 'approve'
                     ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:opacity-95 shadow-emerald-600/20'
-                    : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
+                    : (actionModal.type === 'hold' ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20')
                 }`}
               >
                 {isSubmitting ? (
                   <window.Icon name="loader-2" size={16} className="animate-spin" />
                 ) : (
-                  actionModal.type === 'approve' ? 'Verify UTR & Approve' : 'Confirm Rejection'
+                  actionModal.type === 'approve' ? 'Verify UTR & Approve' : (actionModal.type === 'hold' ? 'Put Payment On Hold ⏳' : 'Confirm Rejection ❌')
                 )}
               </button>
             </div>

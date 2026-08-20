@@ -555,28 +555,33 @@ async function paymentRequests({ page = 1, limit = 20, status = null, search = '
   return { requests, total, stats };
 }
 
-async function updatePaymentRequest(id, { status, admin_note, transaction_ref, utr }) {
-  const targetStatus = String(status || '').toLowerCase();
-  if (!['approved', 'rejected', 'pending'].includes(targetStatus)) {
-    throw new AppError('Invalid payment status', 400);
-  }
+async function updatePaymentRequest(id, { status, transaction_ref, utr, admin_note } = {}) {
+  const targetStatus = (status || '').toLowerCase();
+  const rawUtr = utr || transaction_ref || null;
 
   const updatedRequest = await transaction(async (connection) => {
-    const [rows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1 FOR UPDATE', { id });
+    const [rows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1', { id });
+    if (!rows[0]) throw new AppError('Payment request not found', 404);
     const request = rows[0];
-    if (!request) throw new AppError('Payment request not found', 404);
 
-    const previousStatus = request.status;
+    const totalCoins = Number(request.coins || 0) + Number(request.bonus_coins || 0);
+    const userId = request.user_id;
+
+    // If changing FROM approved TO (rejected or pending), revert credited coins
+    if (request.status === 'approved' && (targetStatus === 'rejected' || targetStatus === 'pending')) {
+      await connection.execute(
+        'UPDATE wallets SET balance = GREATEST(balance - :totalCoins, 0), total_purchased = GREATEST(total_purchased - :totalCoins, 0) WHERE user_id = :userId',
+        { totalCoins, userId }
+      );
+      await connection.execute(
+        'UPDATE users SET coins = GREATEST(coins - :totalCoins, 0) WHERE id = :userId',
+        { totalCoins, userId }
+      );
+    }
 
     if (targetStatus === 'approved') {
-      if (previousStatus === 'approved') {
-        throw new AppError('This payment request is already approved', 400);
-      }
-
-      // Extract and validate Transaction UTR
-      const rawUtr = (transaction_ref || utr || request.transaction_ref || '').trim();
-      if (!rawUtr) {
-        throw new AppError('Transaction UTR is required to approve this payment. Please enter the UTR number from the screenshot proof.', 400);
+      if (!rawUtr || !rawUtr.trim()) {
+        throw new AppError('Transaction UTR / Reference ID is required to approve payment request.', 400);
       }
 
       // Check if ANY other payment request has already been approved with the same UTR
@@ -596,50 +601,50 @@ async function updatePaymentRequest(id, { status, admin_note, transaction_ref, u
         );
       }
 
-      const totalCoins = Number(request.coins || 0) + Number(request.bonus_coins || 0);
-      const userId = request.user_id;
-
-      const [users] = await connection.execute('SELECT id, unique_id, name FROM users WHERE id = :userId LIMIT 1', { userId });
-      if (users[0]) {
-        const userUniqueId = String(users[0].unique_id || userId).replace(/^STK-/i, '').padStart(6, '0');
-        const [existingWallet] = await connection.execute('SELECT id FROM wallets WHERE user_id = :userId LIMIT 1', { userId });
-        if (!existingWallet[0]) {
-          await connection.execute(
-            'INSERT INTO wallets (user_id, wallet_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance) VALUES (:userId, :userUniqueId, :totalCoins, :totalCoins, 0, 0, 0)',
-            { userId, userUniqueId, totalCoins }
-          );
-        } else {
-          await connection.execute(
-            'UPDATE wallets SET balance = balance + :totalCoins, total_purchased = total_purchased + :totalCoins, wallet_id = :userUniqueId WHERE user_id = :userId',
-            { totalCoins, userUniqueId, userId }
-          );
-        }
-
-        await connection.execute('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
-
-        const ref = rawUtr || `QR-VERIFY-${request.id}`;
-        await connection.execute(
-          `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
-           VALUES (:userId, 'purchase', 'Coin Purchase (QR Verified)', :description, :amount, :coins, 'completed', 'upi_qr', :reference)`,
-          {
-            userId,
-            description: request.package_name || 'Coin Package',
-            amount: request.amount,
-            coins: totalCoins,
-            reference: ref
+      // Only credit coins if request was NOT already approved
+      if (request.status !== 'approved') {
+        const [users] = await connection.execute('SELECT id, unique_id, name FROM users WHERE id = :userId LIMIT 1', { userId });
+        if (users[0]) {
+          const userUniqueId = String(users[0].unique_id || userId).replace(/^STK-/i, '').padStart(6, '0');
+          const [existingWallet] = await connection.execute('SELECT id FROM wallets WHERE user_id = :userId LIMIT 1', { userId });
+          if (!existingWallet[0]) {
+            await connection.execute(
+              'INSERT INTO wallets (user_id, wallet_id, balance, total_purchased, total_spent, total_earned, withdrawal_balance) VALUES (:userId, :userUniqueId, :totalCoins, :totalCoins, 0, 0, 0)',
+              { userId, userUniqueId, totalCoins }
+            );
+          } else {
+            await connection.execute(
+              'UPDATE wallets SET balance = balance + :totalCoins, total_purchased = total_purchased + :totalCoins, wallet_id = :userUniqueId WHERE user_id = :userId',
+              { totalCoins, userUniqueId, userId }
+            );
           }
-        );
 
-        try {
+          await connection.execute('UPDATE users SET coins = coins + :totalCoins WHERE id = :userId', { totalCoins, userId });
+
+          const ref = rawUtr || `QR-VERIFY-${request.id}`;
           await connection.execute(
-            `INSERT INTO notifications (user_id, type, title, message, link_url)
-             VALUES (:userId, 'payment_verified', 'Payment Verified 🎉', :message, '/user/wallet')`,
+            `INSERT INTO wallet_transactions (user_id, type, title, description, amount, coins, status, payment_gateway, payment_reference)
+             VALUES (:userId, 'purchase', 'Coin Purchase (QR Verified)', :description, :amount, :coins, 'completed', 'upi_qr', :reference)`,
             {
               userId,
-              message: `Your payment of ₹${request.amount} for ${request.package_name} (UTR: ${rawUtr}) has been verified. ${totalCoins} coins have been added to your wallet!`
+              description: request.package_name || 'Coin Package',
+              amount: request.amount,
+              coins: totalCoins,
+              reference: ref
             }
           );
-        } catch (nErr) { /* ignore */ }
+
+          try {
+            await connection.execute(
+              `INSERT INTO notifications (user_id, type, title, message, link_url)
+               VALUES (:userId, 'payment_verified', 'Payment Verified 🎉', :message, '/user/wallet')`,
+              {
+                userId,
+                message: `Your payment of ₹${request.amount} for ${request.package_name} (UTR: ${rawUtr}) has been verified. ${totalCoins} coins have been added to your wallet!`
+              }
+            );
+          } catch (nErr) { /* ignore */ }
+        }
       }
 
       await connection.execute(
@@ -662,16 +667,29 @@ async function updatePaymentRequest(id, { status, admin_note, transaction_ref, u
           }
         );
       } catch (nErr) { /* ignore */ }
-    } else if (targetStatus === 'pending') {
+    } else if (targetStatus === 'pending' || targetStatus === 'hold') {
       await connection.execute(
         `UPDATE payment_requests SET status = 'pending', admin_note = :adminNote WHERE id = :id`,
-        { id, adminNote: admin_note || null }
+        { id, adminNote: admin_note || 'Payment put on hold by Admin' }
       );
+
+      try {
+        await connection.execute(
+          `INSERT INTO notifications (user_id, type, title, message, link_url)
+           VALUES (:userId, 'payment_hold', 'Payment Verification On Hold ⏳', :message, '/user/wallet/coins')`,
+          {
+            userId: request.user_id,
+            message: `Your payment verification for ₹${request.amount} has been put on hold.${admin_note ? ' Note: ' + admin_note : ''}`
+          }
+        );
+      } catch (nErr) { /* ignore */ }
     }
 
     const [updatedRows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1', { id });
     return updatedRows[0];
   });
+
+  return updatedRequest;
 }
 
 async function revenueDetails() {
