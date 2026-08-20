@@ -673,7 +673,49 @@ async function updatePaymentRequest(id, { status, admin_note, transaction_ref, u
     return updatedRows[0];
   });
 
-  return updatedRequest;
+async function revenueDetails() {
+  const [totals] = await query(`
+    SELECT 
+      COALESCE(SUM(amount), 0) AS totalRevenue,
+      COUNT(*) AS totalTransactions,
+      COALESCE(SUM(coins), 0) AS totalCoinsSold,
+      COALESCE(AVG(amount), 0) AS averageOrderValue
+    FROM wallet_transactions
+    WHERE type = 'purchase' AND status = 'completed'
+  `);
+
+  const packageBreakdown = await query(`
+    SELECT 
+      COALESCE(NULLIF(description, ''), 'Custom Recharge') AS packageName,
+      amount AS price,
+      COUNT(*) AS count,
+      SUM(coins) AS totalCoins,
+      SUM(amount) AS totalRevenue
+    FROM wallet_transactions
+    WHERE type = 'purchase' AND status = 'completed'
+    GROUP BY description, amount
+    ORDER BY totalRevenue DESC
+  `);
+
+  const transactionsList = await query(`
+    SELECT 
+      wt.id, wt.user_id, wt.title, wt.description, wt.amount, wt.coins, wt.status,
+      wt.payment_gateway, wt.payment_reference,
+      DATE_FORMAT(wt.created_at, '%Y-%m-%d %H:%i') AS date,
+      u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+      COALESCE(REPLACE(u.unique_id, 'STK-', ''), REPLACE(wa.wallet_id, 'STK-', ''), LPAD(wt.user_id, 6, '0')) AS wallet_id
+    FROM wallet_transactions wt
+    LEFT JOIN users u ON u.id = wt.user_id
+    LEFT JOIN wallets wa ON wa.user_id = wt.user_id
+    WHERE wt.type = 'purchase' AND wt.status = 'completed'
+    ORDER BY wt.created_at DESC
+  `);
+
+  return {
+    summary: totals[0] || { totalRevenue: 0, totalTransactions: 0, totalCoinsSold: 0, averageOrderValue: 0 },
+    packages: packageBreakdown || [],
+    transactions: transactionsList || []
+  };
 }
 
 module.exports = {
@@ -694,6 +736,7 @@ module.exports = {
   paymentRequests,
   updatePaymentRequest,
   reports,
+  revenueDetails,
   updateOrder,
   settings,
   upsertSetting

@@ -686,6 +686,18 @@ function App() {
             apiRequest={apiRequest}
           />
         );
+      case 'revenue':
+      case 'total_revenue':
+      case 'reports':
+        return (
+          <window.RevenueBreakdown
+            rupees={rupees}
+            dateStr={dateStr}
+            showNotice={showNotice}
+            onTabChange={setActiveTab}
+            apiRequest={apiRequest}
+          />
+        );
       case 'settings':
         return <window.Settings data={settingsData} onSave={handleSaveSettings} />;
       default:
@@ -739,7 +751,10 @@ function App() {
     { id: 'settings', label: 'Settings', group: 'System', icon: 'settings' }
   ];
 
-  const currentTabDetails = menuItems.find((item) => item.id === activeTab) || (activeTab === 'paid_to_girls' ? { id: 'paid_to_girls', label: 'Paid to Female 💖', group: 'Operations', icon: 'heart' } : undefined);
+  const currentTabDetails = menuItems.find((item) => item.id === activeTab) || (
+    activeTab === 'paid_to_girls' ? { id: 'paid_to_girls', label: 'Paid to Female 💖', group: 'Operations', icon: 'heart' } :
+    (activeTab === 'revenue' || activeTab === 'total_revenue' || activeTab === 'reports') ? { id: 'revenue', label: 'Total Revenue 💰', group: 'Operations', icon: 'banknote' } : undefined
+  );
 
   return (
     <section className="app">

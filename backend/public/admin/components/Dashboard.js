@@ -123,10 +123,10 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           badge: 'INR',
           iconName: 'banknote',
           color: colors.revenue,
-          desc: 'Total revenue earned',
+          desc: 'Total revenue earned — Click for breakdown',
           wavePath: 'M 0 18 Q 25 24 50 8 T 100 6',
           areaPath: 'M 0 18 Q 25 24 50 8 T 100 6 L 100 30 L 0 30 Z',
-          onClick: () => onTabChange && onTabChange('reports')
+          onClick: () => onTabChange && onTabChange('revenue')
         })}
         {renderMetricCard({
           id: 'paid',

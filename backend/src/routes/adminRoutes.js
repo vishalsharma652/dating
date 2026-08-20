@@ -39,6 +39,7 @@ router.patch('/payments/:id', [
 ], validate, asyncHandler(admin.updatePaymentRequest));
 
 router.get('/reports', asyncHandler(admin.reports));
+router.get('/revenue', asyncHandler(admin.revenueDetails));
 
 // Catalog and Commerce modules have been removed. Related routes are disabled.
 

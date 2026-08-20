@@ -254,6 +254,10 @@ async function upsertSetting(req, res) {
   return ok(res, { setting: await adminModel.upsertSetting(req.body.key, req.body.value) }, 'Setting saved');
 }
 
+async function revenueDetails(req, res) {
+  return ok(res, { revenue: await adminModel.revenueDetails() });
+}
+
 module.exports = {
   loginRules,
   login,
@@ -271,6 +275,7 @@ module.exports = {
   paymentRequests,
   updatePaymentRequest,
   reports,
+  revenueDetails,
   categories,
   createCategory,
   updateCategory,
