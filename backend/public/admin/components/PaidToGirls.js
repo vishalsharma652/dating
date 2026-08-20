@@ -232,7 +232,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '26px' }}>💖</span>
             <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' }}>
-              Paid to Girls (Female User Payouts)
+              Paid to Female (Female User Payouts)
             </h2>
           </div>
           <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#cbd5e1', maxWidth: '650px' }}>
@@ -428,7 +428,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
               {stats.rejectedCount}
             </div>
             <div style={{ fontSize: '11px', color: '#fca5a5', marginTop: '2px' }}>
-              Coins refunded to girl
+              Coins refunded to female user
             </div>
           </div>
           <div style={{
@@ -568,7 +568,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
         <div style={{ flex: '1 1 280px', maxWidth: '400px', position: 'relative' }}>
           <input
             type="text"
-            placeholder="Search by Girl Name, Email, Wallet ID, UPI..."
+            placeholder="Search by Female Name, Email, Wallet ID, UPI..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -631,7 +631,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
             <thead>
               <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>WALLET ID</th>
-                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>GIRL DETAILS</th>
+                <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>FEMALE DETAILS</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>AMOUNT (₹)</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>COINS</th>
                 <th style={{ padding: '14px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>METHOD</th>

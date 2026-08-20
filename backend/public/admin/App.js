@@ -742,7 +742,7 @@ function App() {
     { id: 'settings', label: 'Settings', group: 'System', icon: 'settings' }
   ];
 
-  const currentTabDetails = menuItems.find((item) => item.id === activeTab) || (activeTab === 'paid_to_girls' ? { id: 'paid_to_girls', label: 'Paid to Girls 💖', group: 'Operations', icon: 'heart' } : undefined);
+  const currentTabDetails = menuItems.find((item) => item.id === activeTab) || (activeTab === 'paid_to_girls' ? { id: 'paid_to_girls', label: 'Paid to Female 💖', group: 'Operations', icon: 'heart' } : undefined);
 
   return (
     <section className="app">

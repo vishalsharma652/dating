@@ -45,14 +45,23 @@ export default function TransactionHistoryPage() {
           {transactions.length === 0 && <Card className="p-8 text-center text-zinc-500">No transactions found.</Card>}
           {transactions.map((txn) => {
             const coinsVal = Number(txn.coins || 0);
-            const isVideo = Math.abs(coinsVal) >= 100 || String(txn.title || '').toLowerCase().includes('video') || String(txn.description || '').toLowerCase().includes('video');
-            const isVoice = String(txn.title || '').toLowerCase().includes('voice') || String(txn.title || '').toLowerCase().includes('audio');
+            const titleLower = String(txn.title || '').toLowerCase();
+            const descLower = String(txn.description || '').toLowerCase();
+            const typeLower = String(txn.type || '').toLowerCase();
 
             let displayTitle = txn.title;
-            if (isVideo) {
+            if (typeLower === 'withdrawal' || titleLower.includes('withdrawal') || descLower.includes('withdrawal')) {
+              displayTitle = txn.title || 'Withdrawal Requested';
+            } else if (typeLower === 'purchase' || titleLower.includes('purchase')) {
+              displayTitle = txn.title || 'Coin Purchase';
+            } else if (typeLower === 'welcome_bonus' || titleLower.includes('welcome')) {
+              displayTitle = txn.title || 'Welcome Bonus';
+            } else if (titleLower.includes('video') || descLower.includes('video')) {
               displayTitle = coinsVal < 0 ? 'Video Call (1 min) Charged' : 'Video Call (1 min) Earning';
-            } else if (isVoice) {
+            } else if (titleLower.includes('voice') || titleLower.includes('audio') || descLower.includes('voice') || descLower.includes('audio')) {
               displayTitle = coinsVal < 0 ? 'Voice Call (1 min) Charged' : 'Voice Call (1 min) Earning';
+            } else if (!displayTitle) {
+              displayTitle = 'Transaction';
             }
 
             return (

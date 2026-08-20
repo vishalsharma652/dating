@@ -14,7 +14,7 @@ window.Reports = function Reports({ data, rupees }) {
         </div>
         <div className="metric">
           <div>
-            <p className="muted">Total Paid to Girls</p>
+            <p className="muted">Total Paid to Female</p>
             <p className="metric-value">{rupees(r.totalPaid || 0)}</p>
           </div>
           <div className="metric-icon">INR</div>

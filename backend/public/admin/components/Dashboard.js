@@ -130,7 +130,7 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
         })}
         {renderMetricCard({
           id: 'paid',
-          title: 'Paid to Girls',
+          title: 'Paid to Female',
           value: rupees(d.totalPaid || 0),
           badge: 'PAID',
           iconName: 'heart',
