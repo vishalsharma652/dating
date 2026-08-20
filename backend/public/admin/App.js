@@ -758,7 +758,7 @@ function App() {
           </button>
         </div>
         <nav className="nav">
-          {['Overview', 'Operations', 'Insights', 'System'].map((group) => (
+          {['Overview', 'Operations', 'System'].map((group) => (
             <div key={group}>
               <div className="nav-group">{group}</div>
               {menuItems.filter((item) => item.group === group).map((item) => (
