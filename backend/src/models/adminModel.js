@@ -672,6 +672,7 @@ async function updatePaymentRequest(id, { status, admin_note, transaction_ref, u
     const [updatedRows] = await connection.execute('SELECT * FROM payment_requests WHERE id = :id LIMIT 1', { id });
     return updatedRows[0];
   });
+}
 
 async function revenueDetails() {
   const [totals] = await query(`
