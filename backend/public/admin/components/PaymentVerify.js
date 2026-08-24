@@ -172,7 +172,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: PENDING VERIFICATION */}
+        {/* Card 1: PAYMENT UNDER VERIFICATION */}
         <div
           onClick={() => { setStatusFilter('pending'); setPage(1); }}
           className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
@@ -182,7 +182,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-400 truncate">PENDING VERIFICATION</span>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-400 truncate">PAYMENT UNDER VERIFICATION</span>
             <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center flex-shrink-0">
               <window.Icon name="clock" size={14} />
             </div>
@@ -193,7 +193,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           </div>
         </div>
 
-        {/* Card 2: APPROVED & CREDITED */}
+        {/* Card 2: PAYMENT SUCCESSFULLY DONE */}
         <div
           onClick={() => { setStatusFilter('approved'); setPage(1); }}
           className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
@@ -203,7 +203,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-400 truncate">APPROVED &amp; CREDITED</span>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-400 truncate">PAYMENT SUCCESSFULLY DONE</span>
             <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0">
               <window.Icon name="check-circle-2" size={14} />
             </div>
@@ -214,7 +214,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           </div>
         </div>
 
-        {/* Card 3: REJECTED */}
+        {/* Card 3: PAYMENT NOT RECEIVED */}
         <div
           onClick={() => { setStatusFilter('rejected'); setPage(1); }}
           className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
@@ -224,7 +224,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-400 truncate">REJECTED</span>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-400 truncate">PAYMENT NOT RECEIVED</span>
             <div className="w-7 h-7 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
               <window.Icon name="x-circle" size={14} />
             </div>
@@ -263,9 +263,9 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
         <div className="flex items-center gap-1 bg-[#080914] p-1 rounded-xl border border-white/5 w-auto">
           {[
             { id: 'all', label: 'All Requests' },
-            { id: 'pending', label: 'Pending ⏳' },
-            { id: 'approved', label: 'Approved ✅' },
-            { id: 'rejected', label: 'Rejected ❌' },
+            { id: 'pending', label: 'Under Verification ⏳' },
+            { id: 'approved', label: 'Successfully Done ✅' },
+            { id: 'rejected', label: 'Not Received ❌' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -498,7 +498,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2a1d08] border border-[#f59e0b]/40 text-[#f59e0b] whitespace-nowrap">
                               <window.Icon name="clock" size={11} />
-                              Pending
+                              Payment Under Verification
                             </span>
                             <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
                               {new Date(item.created_at).toLocaleDateString('en-GB')}
@@ -509,7 +509,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#07241d] border border-[#10b981]/40 text-[#10b981] whitespace-nowrap">
                               <window.Icon name="check" size={11} />
-                              Approved
+                              Payment Successfully Done
                             </span>
                             <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
                               {new Date(item.verified_at || item.created_at).toLocaleDateString('en-GB')}
@@ -520,7 +520,7 @@ window.PaymentVerify = function PaymentVerify({ rupees, dateStr, showNotice, onT
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2b0e14] border border-[#f43f5e]/40 text-[#f43f5e] whitespace-nowrap">
                               <window.Icon name="x" size={11} />
-                              Rejected
+                              Payment Not Received
                             </span>
                             <div className="text-[9px] text-slate-400 mt-0.5 font-medium whitespace-nowrap">
                               {new Date(item.created_at).toLocaleDateString('en-GB')}

@@ -10,6 +10,9 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
   const [search, setSearch] = useState('');
   const [gatewayFilter, setGatewayFilter] = useState('all');
   const [copiedId, setCopiedId] = useState(null);
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 10;
 
   const fetchRevenue = async () => {
     setLoading(true);
@@ -55,6 +58,16 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
     }
     return list;
   }, [data.transactions, search, gatewayFilter]);
+
+  const totalPages = Math.ceil(filteredTransactions.length / PAGE_SIZE) || 1;
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredTransactions.slice(start, start + PAGE_SIZE);
+  }, [filteredTransactions, page]);
+
+  const showingFrom = filteredTransactions.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const showingTo = Math.min(page * PAGE_SIZE, filteredTransactions.length);
 
   const totalRev = Number(data.summary?.totalRevenue || 0);
 
@@ -135,7 +148,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <h2 style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-                  Total Revenue Transactions
+                  Total Revenue (Approved Payments)
                 </h2>
                 <span style={{
                   background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)',
@@ -150,7 +163,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                 </span>
               </div>
               <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>Verified live payment logs &amp; reference UTR records</span>
+                <span>✓ Verified &amp; approved incoming payments only</span>
               </p>
             </div>
           </div>
@@ -225,7 +238,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                 type="text"
                 placeholder="Search Name, Wallet ID, UTR..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 style={{
                   width: '260px',
                   padding: '9px 14px 9px 36px',
@@ -242,7 +255,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch('')}
+                  onClick={() => { setSearch(''); setPage(1); }}
                   style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
                 >
                   ✕
@@ -252,7 +265,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
 
             <select
               value={gatewayFilter}
-              onChange={(e) => setGatewayFilter(e.target.value)}
+              onChange={(e) => { setGatewayFilter(e.target.value); setPage(1); }}
               style={{
                 padding: '9px 14px',
                 fontSize: '12.5px',
@@ -288,7 +301,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table style={{ width: '100%', minWidth: '980px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{
                   background: 'rgba(15, 23, 42, 0.9)',
@@ -297,20 +310,21 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                   fontSize: '11px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em'
+                  letterSpacing: '0.08em',
+                  whiteSpace: 'nowrap'
                 }}>
-                  <th style={{ padding: '14px 18px' }}>Wallet ID</th>
-                  <th style={{ padding: '14px 18px' }}>User</th>
-                  <th style={{ padding: '14px 18px' }}>Package / Type</th>
-                  <th style={{ padding: '14px 18px' }}>Amount Paid</th>
-                  <th style={{ padding: '14px 18px' }}>Coins Credited</th>
-                  <th style={{ padding: '14px 18px' }}>Gateway &amp; Reference UTR</th>
-                  <th style={{ padding: '14px 18px' }}>Date &amp; Time</th>
-                  <th style={{ padding: '14px 18px' }}>Status</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Wallet ID</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>User</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Package / Type</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Amount Paid</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Coins Credited</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Gateway &amp; Reference UTR</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Date &amp; Time</th>
+                  <th style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map((t, idx) => {
+                {paginatedTransactions.map((t, idx) => {
                   const amt = Number(t.amount || 0);
                   const userName = t.user_name || 'User #' + t.user_id;
                   const initial = userName.trim().charAt(0).toUpperCase() || 'U';
@@ -331,7 +345,7 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                     >
 
                       {/* Wallet ID */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span style={{
                           fontFamily: 'monospace',
                           fontWeight: 800,
@@ -348,8 +362,8 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                       </td>
 
                       {/* User Details with Initial Avatar */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap' }}>
                           <div style={{
                             width: '36px',
                             height: '36px',
@@ -367,14 +381,14 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                             {initial}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 800, color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.2' }}>{userName}</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>{t.user_phone || t.user_email || '—'}</div>
+                            <div style={{ fontWeight: 800, color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.2', whiteSpace: 'nowrap' }}>{userName}</div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px', whiteSpace: 'nowrap' }}>{t.user_email || `ID: ${t.wallet_id || t.user_id}`}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* Package / Description Tag */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span style={{
                           display: 'inline-block',
                           background: 'rgba(56, 189, 248, 0.12)',
@@ -383,24 +397,25 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                           padding: '3px 9px',
                           borderRadius: '6px',
                           fontSize: '11.5px',
-                          fontWeight: 800
+                          fontWeight: 800,
+                          whiteSpace: 'nowrap'
                         }}>
                           {t.description || t.title || 'Coin Package'}
                         </span>
                         {t.title && t.title !== t.description && (
-                          <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{t.title}</div>
+                          <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap' }}>{t.title}</div>
                         )}
                       </td>
 
                       {/* Amount Paid */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 900, color: '#34d399', fontSize: '14.5px', letterSpacing: '-0.01em' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 900, color: '#34d399', fontSize: '14.5px', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
                           +{rupees ? rupees(amt) : `₹${amt}`}
                         </div>
                       </td>
 
                       {/* Coins Credited */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -411,15 +426,16 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                           padding: '4px 10px',
                           borderRadius: '8px',
                           fontSize: '12px',
-                          fontWeight: 800
+                          fontWeight: 800,
+                          whiteSpace: 'nowrap'
                         }}>
                           🪙 +{t.coins}
                         </span>
                       </td>
 
                       {/* Gateway & Ref UTR Code Block */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                           <span style={{
                             fontSize: '10px',
                             fontWeight: 900,
@@ -428,7 +444,8 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                             border: `1px solid ${gStyle.border}`,
                             padding: '3px 8px',
                             borderRadius: '6px',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            whiteSpace: 'nowrap'
                           }}>
                             {gStyle.label}
                           </span>
@@ -450,7 +467,8 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                                 fontSize: '11px',
                                 fontWeight: 700,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                               title="Click to copy full UTR reference"
                             >
@@ -467,21 +485,22 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                       </td>
 
                       {/* Status Pulse Badge */}
-                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
+                          whiteSpace: 'nowrap',
                           background: 'rgba(16, 185, 129, 0.12)',
                           color: '#34d399',
                           border: '1px solid rgba(16, 185, 129, 0.3)',
-                          padding: '4px 12px',
+                          padding: '5px 12px',
                           borderRadius: '20px',
                           fontSize: '11px',
                           fontWeight: 800,
                           letterSpacing: '0.04em'
                         }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', marginRight: '6px', boxShadow: '0 0 8px #34d399' }} />
-                          COMPLETED
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', marginRight: '6px', boxShadow: '0 0 8px #34d399', flexShrink: 0 }} />
+                          Payment Successfully Done
                         </span>
                       </td>
 
@@ -490,6 +509,105 @@ window.RevenueBreakdown = function RevenueBreakdown({ rupees, dateStr, showNotic
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* ── Pagination Footer ───────────────────────────── */}
+        {!loading && filteredTransactions.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'space-between',
+            padding: '16px 24px',
+            background: 'rgba(15, 23, 42, 0.9)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            flexWrap: 'wrap',
+            gap: '12px',
+            fontSize: '12.5px',
+            color: '#94a3b8'
+          }}>
+            <div>
+              Showing <strong style={{ color: '#f8fafc' }}>{showingFrom}</strong> to <strong style={{ color: '#f8fafc' }}>{showingTo}</strong> of <strong style={{ color: '#f8fafc' }}>{filteredTransactions.length}</strong> revenue records
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(30, 41, 59, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: page <= 1 ? '#64748b' : '#f8fafc',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: page <= 1 ? 0.5 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                ← Previous
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) {
+                    acc.push('...');
+                  }
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) => {
+                  if (item === '...') {
+                    return <span key={`dots-${idx}`} style={{ padding: '0 4px', color: '#64748b' }}>...</span>;
+                  }
+                  const isCurrent = item === page;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setPage(item)}
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '10px',
+                        background: isCurrent ? 'linear-gradient(135deg, #7c5cff, #4f8cff)' : 'rgba(30, 41, 59, 0.8)',
+                        border: isCurrent ? '1px solid #7c5cff' : '1px solid rgba(255, 255, 255, 0.12)',
+                        color: isCurrent ? '#ffffff' : '#cbd5e1',
+                        fontWeight: isCurrent ? 800 : 600,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(30, 41, 59, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: page >= totalPages ? '#64748b' : '#f8fafc',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  opacity: page >= totalPages ? 0.5 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
 

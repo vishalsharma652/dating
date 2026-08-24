@@ -12,9 +12,10 @@ async function transactions(userId) {
       CONCAT("pr-", id) AS id,
       'purchase' AS type,
       CASE 
-        WHEN status = 'pending' AND admin_note IS NOT NULL AND TRIM(admin_note) != '' THEN 'Coin Purchase (On Hold)'
-        WHEN status = 'pending' THEN 'Coin Purchase (Pending Verification)'
-        WHEN status = 'rejected' THEN 'Coin Purchase (Rejected)'
+        WHEN status = 'pending' AND admin_note IS NOT NULL AND TRIM(admin_note) != '' THEN 'Coin Purchase (Payment Under Verification - On Hold)'
+        WHEN status = 'pending' THEN 'Coin Purchase (Payment Under Verification)'
+        WHEN status = 'rejected' THEN 'Coin Purchase (Payment Not Received)'
+        WHEN status = 'approved' THEN 'Coin Purchase (Payment Successfully Done)'
         ELSE 'Coin Purchase'
       END AS title,
       package_name AS description,

@@ -331,7 +331,6 @@ window.Withdrawals = function Withdrawals({ withdrawals = [], onProcess, onRefre
                             )}
                           </div>
                           <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                            {w.user_phone && <span>📞 {w.user_phone}</span>}
                             {w.user_email && <span>✉ {w.user_email}</span>}
                           </div>
                         </div>

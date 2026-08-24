@@ -727,7 +727,7 @@ window.PaidToGirls = function PaidToGirls({ withdrawals = [], onProcess, onRefre
                               <span>{w.user_name || 'Female User'}</span>
                               {w.status === 'completed' && <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{w.user_phone || w.user_email || `ID: ${w.user_id}`}</div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{w.user_email || `ID: ${w.user_id}`}</div>
                           </div>
                         </div>
                       </td>

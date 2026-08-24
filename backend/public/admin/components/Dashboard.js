@@ -11,7 +11,8 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
     kyc: '251, 191, 36',      // Warning/Orange
     withdraw: '45, 226, 230',  // Neon Cyan
     chats: '168, 85, 247',    // Purple
-    coins: '251, 191, 36'      // Yellow
+    coins: '251, 191, 36',     // Yellow
+    femaleCoins: '236, 72, 153' // Female Pink
   };
 
   // Helper to render metric card
@@ -118,15 +119,29 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
         })}
         {renderMetricCard({
           id: 'revenue',
-          title: 'Total Revenue',
+          title: 'Total Revenue (Approved)',
           value: rupees(d.revenue || 0),
-          badge: 'INR',
+          badge: 'DONE',
           iconName: 'banknote',
           color: colors.revenue,
-          desc: 'Total revenue earned — Click for breakdown',
+          desc: '✓ Approved & received payments only',
           wavePath: 'M 0 18 Q 25 24 50 8 T 100 6',
           areaPath: 'M 0 18 Q 25 24 50 8 T 100 6 L 100 30 L 0 30 Z',
           onClick: () => onTabChange && onTabChange('revenue')
+        })}
+        {renderMetricCard({
+          id: 'payment_verify',
+          title: 'Payment Verification',
+          value: d.pendingPaymentsCount || 0,
+          badge: 'VERIFY',
+          iconName: 'check-check',
+          color: '168, 85, 247',
+          desc: (d.pendingPaymentsCount && d.pendingPaymentsCount > 0)
+            ? `⏳ ${d.pendingPaymentsCount} under verification (₹${Number(d.pendingPaymentsAmount || 0).toLocaleString('en-IN')})`
+            : `✓ ${d.approvedPaymentsCount || 0} payment${(d.approvedPaymentsCount || 0) === 1 ? '' : 's'} done`,
+          wavePath: 'M 0 12 Q 25 22 50 14 T 100 6',
+          areaPath: 'M 0 12 Q 25 22 50 14 T 100 6 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('payment_verify')
         })}
         {renderMetricCard({
           id: 'paid',
@@ -142,6 +157,10 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           areaPath: 'M 0 24 Q 25 20 50 26 T 100 22 L 100 30 L 0 30 Z',
           onClick: () => onTabChange && onTabChange('paid_to_girls')
         })}
+      </div>
+
+      {/* ── Row 2 Metrics (4 cards) ───────────────── */}
+      <div className="metric-row-2">
         {renderMetricCard({
           id: 'kyc',
           title: 'Pending KYC',
@@ -154,10 +173,6 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           areaPath: 'M 0 8 Q 25 14 50 4 T 100 18 L 100 30 L 0 30 Z',
           onClick: () => onTabChange && onTabChange('kyc')
         })}
-      </div>
-
-      {/* ── Row 2 Metrics (3 cards + 1 banner) ───────────────── */}
-      <div className="metric-row-2">
         {renderMetricCard({
           id: 'withdraw',
           title: 'Withdrawals (Paid)',
@@ -195,38 +210,18 @@ window.Dashboard = function Dashboard({ data, users, onViewProfile, onTabChange,
           onClick: () => onTabChange && onTabChange('wallet')
         })}
         
-        {/* Keep Growing Banner Card */}
-        <div className="metric" style={{ background: 'linear-gradient(135deg, rgba(129, 140, 248, 0.12) 0%, rgba(99, 102, 241, 0.02) 100%)', border: '1px solid rgba(129, 140, 248, 0.22)', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px', position: 'relative', overflow: 'hidden', minHeight: '130px' }}>
-          <div style={{ zIndex: 2, maxWidth: '62%' }}>
-            <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'white', marginBottom: '2px', letterSpacing: '-0.01em' }}>Keep Growing!</h4>
-            <p className="muted" style={{ fontSize: '10.5px', lineHeight: '1.3', marginBottom: '8px', color: '#94a3b8' }}>Track platform metrics in real-time.</p>
-            <button className="btn-action btn-primary" style={{ height: '26px', padding: '0 10px', fontSize: '10px', borderRadius: '4px' }} onClick={() => onTabChange('users')}>
-              View Users &rarr;
-            </button>
-          </div>
-          {/* Stacked coins illustration */}
-          <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.85 }}>
-            <svg width="72" height="72" viewBox="0 0 100 100" fill="none">
-              <defs>
-                <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#818cf8" />
-                  <stop offset="100%" stopColor="#6366f1" />
-                </linearGradient>
-              </defs>
-              <ellipse cx="40" cy="70" rx="18" ry="8" fill="url(#coinGrad)" opacity="0.4" />
-              <ellipse cx="40" cy="65" rx="18" ry="8" fill="url(#coinGrad)" opacity="0.6" />
-              <ellipse cx="40" cy="60" rx="18" ry="8" fill="url(#coinGrad)" />
-              
-              <ellipse cx="60" cy="55" rx="14" ry="6" fill="#10b981" opacity="0.4" />
-              <ellipse cx="60" cy="50" rx="14" ry="6" fill="#10b981" opacity="0.6" />
-              <ellipse cx="60" cy="45" rx="14" ry="6" fill="#10b981" />
-              
-              {/* Arrow rising */}
-              <path d="M22,65 L48,38 L62,45 L82,22" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M72,22 L82,22 L82,32" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
+        {renderMetricCard({
+          id: 'female_coins',
+          title: 'Female Coins Received',
+          value: Number(d.femaleCoinsReceived || 0).toLocaleString('en-IN'),
+          badge: 'EARN',
+          iconName: 'heart',
+          color: colors.femaleCoins || '236, 72, 153',
+          desc: 'Total coins received by female users',
+          wavePath: 'M 0 14 Q 25 26 50 10 T 100 4',
+          areaPath: 'M 0 14 Q 25 26 50 10 T 100 4 L 100 30 L 0 30 Z',
+          onClick: () => onTabChange && onTabChange('paid_to_girls')
+        })}
       </div>
 
       {/* ── Row 3 Charts (Trend Analysis) ────────────────────── */}

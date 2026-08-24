@@ -6,13 +6,32 @@ const notificationModel = require('./notificationModel');
 async function dashboard() {
   const [users] = await query('SELECT COUNT(*) AS totalUsers, SUM(role = "user") AS members, SUM(kyc_status = "pending") AS pendingKyc, SUM(role = "user" AND online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS onlineUsers FROM users');
   const [revenueRow] = await query('SELECT COALESCE(SUM(amount), 0) AS revenue FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
+  const [incomingStatsRow] = await query('SELECT COUNT(*) AS totalPaymentRequests, SUM(status = "pending") AS pendingPaymentsCount, COALESCE(SUM(CASE WHEN status = "pending" THEN amount ELSE 0 END), 0) AS pendingPaymentsAmount, SUM(status = "approved") AS approvedPaymentsCount, COALESCE(SUM(CASE WHEN status = "approved" THEN amount ELSE 0 END), 0) AS approvedPaymentsAmount, SUM(status = "rejected") AS rejectedPaymentsCount FROM payment_requests');
   const [paidRow] = await query('SELECT COUNT(*) AS completedWithdrawals, COALESCE(SUM(amount), 0) AS totalPaid FROM withdrawals WHERE status = "completed"');
   const [withdrawals] = await query('SELECT COUNT(*) AS pendingWithdrawals, COALESCE(SUM(amount), 0) AS pendingWithdrawalAmount FROM withdrawals WHERE status = "pending"');
   const [totalWithdrawalsRow] = await query('SELECT COUNT(*) AS totalWithdrawals, COALESCE(SUM(amount), 0) AS totalWithdrawalAmount FROM withdrawals');
   const [chats] = await query('SELECT COUNT(*) AS activeChats FROM chats');
   const [coins] = await query('SELECT COALESCE(SUM(coins), 0) AS coinsSold FROM wallet_transactions WHERE type = "purchase" AND status = "completed"');
+  const [femaleCoinsRow] = await query(`
+    SELECT GREATEST(
+      COALESCE((
+        SELECT SUM(CASE WHEN wt.coins > 0 AND wt.type != 'purchase' THEN wt.coins ELSE 0 END)
+        FROM wallet_transactions wt
+        JOIN users u ON u.id = wt.user_id
+        WHERE LOWER(COALESCE(u.gender, '')) IN ('female', 'woman', 'girl', 'women')
+      ), 0),
+      COALESCE((
+        SELECT SUM(u.earnings + COALESCE(w_done.spent_coins, 0))
+        FROM users u
+        LEFT JOIN (
+          SELECT user_id, SUM(coins) AS spent_coins FROM withdrawals WHERE status = 'completed' GROUP BY user_id
+        ) w_done ON w_done.user_id = u.id
+        WHERE LOWER(COALESCE(u.gender, '')) IN ('female', 'woman', 'girl', 'women')
+      ), 0)
+    ) AS femaleCoinsReceived
+  `);
   const recentUsers = await query('SELECT id, unique_id, name, email, phone, role, status, (online_status = true AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online_status, created_at FROM users ORDER BY created_at DESC LIMIT 5');
-  return { ...users, ...revenueRow, ...paidRow, ...withdrawals, ...totalWithdrawalsRow, ...chats, ...coins, recentUsers };
+  return { ...users, ...revenueRow, ...incomingStatsRow, ...paidRow, ...withdrawals, ...totalWithdrawalsRow, ...chats, ...coins, ...femaleCoinsRow, recentUsers };
 }
 
 async function listTable(table, { page = 1, limit = 20 } = {}) {

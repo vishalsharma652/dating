@@ -80,14 +80,18 @@ export default function TransactionHistoryPage() {
                       </p>
                       {Number(txn.amount) > 0 && <span className="text-xs text-zinc-400 font-medium">₹{txn.amount}</span>}
                     </div>
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                       txn.status === 'completed' || txn.status === 'approved'
                         ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                         : (txn.status === 'rejected'
                             ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                             : 'bg-amber-500/15 text-amber-400 border border-amber-500/30')
                     }`}>
-                      {txn.status === 'pending' ? 'Pending' : txn.status}
+                      {txn.status === 'completed' || txn.status === 'approved'
+                        ? 'Payment Successfully Done ✅'
+                        : txn.status === 'rejected'
+                        ? 'Payment Not Received ❌'
+                        : 'Payment Under Verification ⏳'}
                     </span>
                   </div>
                 </div>
