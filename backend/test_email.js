@@ -13,11 +13,19 @@ async function testEmail() {
 
   console.log('Testing SMTP Sender:', cleanUser, '| Target Recipient:', targetEmail);
 
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: port,
+    secure: secure,
     auth: {
       user: cleanUser,
       pass: cleanPass,
+    },
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 

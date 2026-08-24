@@ -66,11 +66,13 @@ function createTransporter() {
   if (process.env.SMTP_HOST) {
     const cleanUser = String(process.env.SMTP_USER || '').replace(/["'\s]/g, '');
     const cleanPass = String(process.env.SMTP_PASS || '').replace(/["'\s]/g, '');
+    const port = Number(process.env.SMTP_PORT) || 587;
+    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
 
     return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      host: process.env.SMTP_HOST,
+      port: port,
+      secure: secure,
       auth: {
         user: cleanUser,
         pass: cleanPass,
@@ -97,7 +99,7 @@ async function sendOtpEmail(toEmail, otp, name) {
     const transporter = createTransporter();
 
     const info = await transporter.sendMail({
-      from: cleanUser,
+      from: process.env.SMTP_FROM || cleanUser,
       to: cleanTo,
       subject: `Your Saathika Verification Code: ${otp}`,
 
