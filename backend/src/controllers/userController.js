@@ -861,20 +861,32 @@ async function changePassword(req, res) {
   return ok(res, null, 'Password updated successfully!');
 }
 
+async function submitSupportTicket(req, res) {
+  const adminModel = require('../models/adminModel');
+  const { name, email, category, subject, message } = req.body;
+  const ticketId = await adminModel.createSupportTicket({
+    userId: req.user ? req.user.id : null,
+    name,
+    email,
+    category,
+    subject,
+    message
+  });
+  return created(res, { ticketId }, 'Support message submitted to admin successfully!');
+}
+
+async function getUserSupportTickets(req, res) {
+  const adminModel = require('../models/adminModel');
+  const tickets = await adminModel.getUserSupportTickets(req.user.id);
+  return ok(res, { tickets });
+}
+
 module.exports = {
   profileRules,
   dashboard,
   getProfile,
   getPublicProfile,
   getUserGiftWall,
-  toggleFollow,
-  getFollowStatus,
-  respondFollowRequest,
-  getFollowRequests,
-  getFollowing,
-  getFollowers,
-  getFriends,
-  togglePinChat,
   updateProfile,
   uploadPhoto,
   uploadAvatar,
@@ -884,19 +896,27 @@ module.exports = {
   submitKyc,
   discover,
   searchUsers,
+  toggleFollow,
+  getFollowStatus,
+  getFollowRequests,
+  respondFollowRequest,
+  getFollowing,
+  getFollowers,
+  getFriends,
   reactToProfile,
   matches,
   chats,
+  togglePinChat,
+  chatRequests,
   requestChat,
   respondToChatRequest,
-  chatRequests,
+  startChatSession,
+  chargeChatMinute,
+  endChatSession,
   messages,
   sendMessage,
   uploadChatMedia,
   deleteMessage,
-  startChatSession,
-  chargeChatMinute,
-  endChatSession,
   wallet,
   transactions,
   coinPackages,
@@ -916,5 +936,7 @@ module.exports = {
   markNotificationsRead,
   settings,
   deleteAccount,
-  changePassword
+  changePassword,
+  submitSupportTicket,
+  getUserSupportTickets
 };

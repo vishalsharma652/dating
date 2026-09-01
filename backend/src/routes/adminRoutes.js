@@ -40,6 +40,8 @@ router.patch('/payments/:id', [
 
 router.get('/reports', asyncHandler(admin.reports));
 router.get('/revenue', asyncHandler(admin.revenueDetails));
+router.get('/support', asyncHandler(admin.supportTickets));
+router.patch('/support/:id', [param('id').isInt()], validate, asyncHandler(admin.updateSupportTicket));
 
 // Catalog and Commerce modules have been removed. Related routes are disabled.
 

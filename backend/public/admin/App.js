@@ -75,6 +75,7 @@ function App() {
   const [walletTransactions, setWalletTransactions] = useState([]);
   const [chatsList, setChatsList] = useState([]);
   const [withdrawalsList, setWithdrawalsList] = useState([]);
+  const [supportTicketsList, setSupportTicketsList] = useState([]);
   const [reportsData, setReportsData] = useState(null);
   const [settingsData, setSettingsData] = useState({});
 
@@ -204,17 +205,27 @@ function App() {
     }
   }, [token, walletPage, walletGender, walletSearch, walletDate]);
 
+  const loadSupportTickets = async () => {
+    try {
+      const res = await apiRequest('/admin/support');
+      setSupportTicketsList(res.data.tickets || []);
+    } catch (err) {
+      showNotice(err.message, 'error');
+    }
+  };
+
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [db, ky, ch, wd, rp, st, usDropdown] = await Promise.all([
+      const [db, ky, ch, wd, rp, st, usDropdown, sp] = await Promise.all([
         apiRequest('/admin/dashboard'),
         apiRequest('/admin/kyc'),
         apiRequest('/admin/chats'),
         apiRequest('/admin/withdrawals?limit=500'),
         apiRequest('/admin/reports'),
         apiRequest('/admin/settings'),
-        apiRequest('/admin/users?limit=200')
+        apiRequest('/admin/users?limit=200'),
+        apiRequest('/admin/support')
       ]);
 
       setDashboardData(db.data.dashboard || {});
@@ -225,6 +236,7 @@ function App() {
       setReportsData(rp.data.reports || {});
       setSettingsData(st.data.settings || {});
       setDropdownUsers(usDropdown.data.users || []);
+      setSupportTicketsList(sp.data.tickets || []);
       await loadUsersList();
     } catch (err) {
       showNotice(err.message, 'error');
@@ -700,6 +712,8 @@ function App() {
         );
       case 'settings':
         return <window.Settings data={settingsData} onSave={handleSaveSettings} />;
+      case 'support':
+        return <window.SupportTickets tickets={supportTicketsList} onRefresh={loadSupportTickets} showNotice={showNotice} />;
       default:
         return <window.Dashboard data={dashboardData} users={usersList} onViewProfile={openUserProfile} onTabChange={setActiveTab} rupees={rupees} />;
     }
@@ -707,8 +721,8 @@ function App() {
 
   if (!token) {
     return (
-      <section className="login-page">
-        <form className="login-card" onSubmit={handleLogin}>
+      <div className="login-page">
+        <div className="login-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
             <img src="./logo.jpg" alt="Saathika Logo" style={{ width: '48px', height: '48px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} />
             <div>
@@ -718,30 +732,42 @@ function App() {
           </div>
           <h1>Sign in</h1>
           <p className="muted" style={{ marginTop: '8px' }}>Manage users, KYC verification, wallets, chats, and withdrawals.</p>
-
-          <label className="field" style={{ marginTop: '20px' }}>
-            <span>Email or Phone</span>
-            <input className="input" type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter admin email or phone" required />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
-          </label>
-
-          {notice.message && notice.type === 'error' && (
-            <div className="notice error" style={{ marginTop: '16px' }}>{notice.message}</div>
-          )}
-
-          <button className="btn block" type="submit" disabled={loading}>
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
-        </form>
-      </section>
+          {notice.message && <div className={`notice ${notice.type}`} style={{ marginTop: '16px' }}>{notice.message}</div>}
+          <form onSubmit={handleLogin} style={{ marginTop: '16px' }}>
+            <div className="field">
+              <span>Admin Email or Phone</span>
+              <input
+                type="text"
+                required
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter admin email or phone"
+              />
+            </div>
+            <div className="field">
+              <span>Password</span>
+              <input
+                type="password"
+                required
+                className="input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <button className="btn block" type="submit" disabled={loading}>
+              {loading ? 'Authenticating...' : 'Login to Admin Panel'}
+            </button>
+          </form>
+        </div>
+      </div>
     );
   }
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', group: 'Overview', icon: 'layout-dashboard' },
+    { id: 'support', label: 'Support Tickets 📩', group: 'Operations', icon: 'help-circle' },
     { id: 'users', label: 'Users', group: 'Operations', icon: 'users' },
     { id: 'payment_verify', label: 'Payment Verify', group: 'Operations', icon: 'check-check' },
     { id: 'kyc', label: 'KYC Verification', group: 'Operations', icon: 'shield-check' },

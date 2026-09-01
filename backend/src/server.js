@@ -101,7 +101,7 @@ async function start() {
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
 
   global.io = io;

@@ -740,6 +740,136 @@ async function revenueDetails() {
   };
 }
 
+async function ensureSupportTicketsTable() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        category VARCHAR(100) DEFAULT 'General Query',
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        admin_reply TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+  } catch (err) {
+    console.error('Error creating support_tickets table:', err);
+  }
+}
+
+async function createSupportTicket({ userId, name, email, category, subject, message }) {
+  await ensureSupportTicketsTable();
+  const result = await query(
+    `INSERT INTO support_tickets (user_id, name, email, category, subject, message, status)
+     VALUES (:userId, :name, :email, :category, :subject, :message, 'pending')`,
+    {
+      userId: userId || null,
+      name: name || 'User',
+      email: email || '',
+      category: category || 'General Query',
+      subject: subject || 'No Subject',
+      message: message || ''
+    }
+  );
+  return result.insertId;
+}
+
+async function supportTickets({ page = 1, limit = 20, status = null, search = '' } = {}) {
+  await ensureSupportTicketsTable();
+  const pageNumber = Math.max(Number(page) || 1, 1);
+  const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const offset = (pageNumber - 1) * limitNumber;
+
+  const filters = ['1=1'];
+  const params = {};
+
+  if (status && status !== 'all') {
+    filters.push('st.status = :status');
+    params.status = status;
+  }
+
+  if (search && String(search).trim() !== '') {
+    params.search = `%${String(search).trim()}%`;
+    filters.push('(st.name LIKE :search OR st.email LIKE :search OR st.subject LIKE :search OR st.message LIKE :search OR st.category LIKE :search)');
+  }
+
+  const whereClause = filters.join(' AND ');
+
+  const [tickets, countRows] = await Promise.all([
+    query(
+      `SELECT st.*, u.phone AS user_phone, COALESCE(REPLACE(u.unique_id, 'STK-', ''), LPAD(u.id, 6, '0')) AS user_unique_id
+       FROM support_tickets st
+       LEFT JOIN users u ON u.id = st.user_id
+       WHERE ${whereClause}
+       ORDER BY st.created_at DESC
+       LIMIT ${limitNumber} OFFSET ${offset}`,
+      params
+    ),
+    query(
+      `SELECT COUNT(*) AS total FROM support_tickets st WHERE ${whereClause}`,
+      params
+    )
+  ]);
+
+  return { tickets, total: Number(countRows[0]?.total) || 0 };
+}
+
+async function updateSupportTicket(id, { status, admin_reply }) {
+  await ensureSupportTicketsTable();
+  const updates = [];
+  const params = { id };
+  if (status) {
+    updates.push('status = :status');
+    params.status = status;
+  }
+  if (admin_reply !== undefined) {
+    updates.push('admin_reply = :admin_reply');
+    params.admin_reply = admin_reply;
+  }
+
+  if (updates.length > 0) {
+    await query(`UPDATE support_tickets SET ${updates.join(', ')} WHERE id = :id`, params);
+  }
+
+  const updated = await query('SELECT * FROM support_tickets WHERE id = :id', { id }).then((rows) => rows[0]);
+
+  if (updated && updated.user_id) {
+    try {
+      const isResolved = status === 'resolved';
+      const title = isResolved ? 'Support Request Resolved ✅' : 'New Reply from Support Admin 📩';
+      const replyMsg = admin_reply ? ` Admin Reply: "${admin_reply}"` : '';
+      const message = isResolved
+        ? `Your support request regarding "${updated.subject}" has been marked resolved by admin.${replyMsg}`
+        : `Admin responded to your request "${updated.subject}":${replyMsg}`;
+
+      await notificationModel.create({
+        userId: updated.user_id,
+        type: isResolved ? 'support_resolved' : 'support_reply',
+        title,
+        message,
+        linkUrl: '/user/help'
+      });
+    } catch (e) {
+      console.error('Failed to create support ticket notification:', e);
+    }
+  }
+
+  return updated;
+}
+
+async function getUserSupportTickets(userId) {
+  await ensureSupportTicketsTable();
+  return query(
+    `SELECT * FROM support_tickets WHERE user_id = :userId ORDER BY created_at DESC LIMIT 20`,
+    { userId }
+  );
+}
+
 module.exports = {
   dashboard,
   listTable,
@@ -761,6 +891,10 @@ module.exports = {
   revenueDetails,
   updateOrder,
   settings,
-  upsertSetting
+  upsertSetting,
+  createSupportTicket,
+  supportTickets,
+  updateSupportTicket,
+  getUserSupportTickets
 };
 

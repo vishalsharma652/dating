@@ -96,4 +96,7 @@ router.post('/change-password', [
   body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
 ], validate, asyncHandler(user.changePassword));
 
+router.post('/support', asyncHandler(user.submitSupportTicket));
+router.get('/support', asyncHandler(user.getUserSupportTickets));
+
 module.exports = router;

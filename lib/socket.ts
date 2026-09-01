@@ -12,7 +12,11 @@ const SOCKET_URL = (() => {
     if (isHttps) {
       return `https://${window.location.host}`;
     }
-    return `http://${window.location.hostname}:5000`;
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return window.location.origin;
+    }
+    return `http://${host}:5000`;
   }
   return 'http://localhost:5000';
 })();
@@ -25,7 +29,7 @@ export function getSocket(): Socket {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
     });
   }
   return socket;

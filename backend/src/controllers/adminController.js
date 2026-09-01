@@ -258,6 +258,17 @@ async function revenueDetails(req, res) {
   return ok(res, { revenue: await adminModel.revenueDetails() });
 }
 
+async function supportTickets(req, res) {
+  const data = await adminModel.supportTickets(req.query);
+  return ok(res, data);
+}
+
+async function updateSupportTicket(req, res) {
+  const id = Number(req.params.id);
+  const data = await adminModel.updateSupportTicket(id, req.body);
+  return ok(res, { ticket: data }, 'Support ticket updated successfully');
+}
+
 module.exports = {
   loginRules,
   login,
@@ -291,6 +302,8 @@ module.exports = {
   settings,
   updateBrand,
   updateBrandLogo,
-  upsertSetting
+  upsertSetting,
+  supportTickets,
+  updateSupportTicket
 };
 

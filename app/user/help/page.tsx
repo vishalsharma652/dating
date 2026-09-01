@@ -1,9 +1,23 @@
 'use client';
 
 import { Container } from '@/components/ui/container';
-import { Search, MessageCircle, Clock, CheckCircle2, ChevronDown, Phone, Mail, HelpCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+  Search,
+  MessageCircle,
+  Clock,
+  CheckCircle2,
+  ChevronDown,
+  Phone,
+  Mail,
+  HelpCircle,
+  Send,
+  MessageSquare,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { getStoredUser, getToken, getApiBaseUrl } from '@/lib/api';
 
 function isWithinSupportHours(): boolean {
   const now = new Date();
@@ -23,13 +37,11 @@ function getTimeUntilOpen(): string {
   const m = ist.getMinutes();
 
   if (h >= 18) {
-    // Opens next day at 10 AM
     const minsLeft = (24 - h - 1) * 60 + (60 - m) + 10 * 60;
     const hrs = Math.floor(minsLeft / 60);
     const mins = minsLeft % 60;
     return `Opens in ${hrs}h ${mins}m (tomorrow at 10:00 AM IST)`;
   } else {
-    // Before 10 AM
     const minsLeft = (10 - h - 1) * 60 + (60 - m);
     const hrs = Math.floor(minsLeft / 60);
     const mins = minsLeft % 60;
@@ -94,6 +106,35 @@ export default function HelpPage() {
   const [supportOnline, setSupportOnline] = useState(false);
   const [timeMsg, setTimeMsg] = useState('');
 
+  // Support Form State
+  const formRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    category: 'General Query',
+    subject: '',
+    message: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [userTickets, setUserTickets] = useState<any[]>([]);
+
+  const loadUserTickets = async () => {
+    try {
+      const token = getToken();
+      const baseUrl = getApiBaseUrl();
+      if (!token) return;
+      const res = await fetch(`${baseUrl}/user/support`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUserTickets(data.data.tickets || []);
+      }
+    } catch (e) {}
+  };
+
   useEffect(() => {
     const check = () => {
       const online = isWithinSupportHours();
@@ -101,9 +142,65 @@ export default function HelpPage() {
       if (!online) setTimeMsg(getTimeUntilOpen());
     };
     check();
+    loadUserTickets();
     const interval = setInterval(check, 60000);
+
+    // Pre-fill logged-in user data
+    const user = getStoredUser();
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || user.username || prev.name,
+        email: user.email || prev.email,
+      }));
+    }
+
     return () => clearInterval(interval);
   }, []);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.subject.trim() || !formData.message.trim()) {
+      setFormError('Please fill in both the subject and message fields.');
+      return;
+    }
+
+    setFormError('');
+    setSubmitting(true);
+
+    try {
+      const token = getToken();
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/user/support`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to submit support request');
+      }
+
+      setSubmitted(true);
+      loadUserTickets();
+      setFormData((prev) => ({
+        ...prev,
+        subject: '',
+        message: '',
+      }));
+    } catch (err: any) {
+      setFormError(err.message || 'Error submitting request. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const filteredFaqs = faqs
     .map((cat) => ({
@@ -129,7 +226,7 @@ export default function HelpPage() {
             <HelpCircle size={13} /> Help Center
           </div>
           <h1 className="text-3xl sm:text-4xl font-black mb-3">How can we help you?</h1>
-          <p className="text-zinc-400 text-sm mb-7">Search our FAQ or contact our support team</p>
+          <p className="text-zinc-400 text-sm mb-7">Search our FAQ or send a message to our support team</p>
 
           {/* Search */}
           <div className="relative max-w-md mx-auto">
@@ -195,32 +292,23 @@ export default function HelpPage() {
                 </div>
               </div>
 
-              {/* Contact Buttons */}
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-2.5 flex-shrink-0">
-                {supportOnline ? (
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm transition"
-                  >
-                    <MessageCircle size={15} />
-                    Chat with Us
-                  </Link>
-                ) : (
-                  <button
-                    disabled
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-700/50 text-zinc-500 font-bold text-sm cursor-not-allowed border border-zinc-600/30"
-                  >
-                    <MessageCircle size={15} />
-                    Chat Offline
-                  </button>
-                )}
-                <Link
+                <button
+                  onClick={scrollToForm}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-sm transition shadow-lg shadow-pink-600/20"
+                >
+                  <MessageSquare size={15} />
+                  Send Us a Message
+                </button>
+
+                <a
                   href="mailto:support@saathika.com"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 font-bold text-sm transition"
                 >
                   <Mail size={15} />
                   Email Us
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -248,9 +336,9 @@ export default function HelpPage() {
             </div>
           </div>
 
-          {/* Quick Contact Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-            <div className="rounded-2xl bg-white/3 border border-white/8 p-5 flex items-center gap-4">
+          {/* Quick Contact Card */}
+          <div className="mb-10">
+            <div className="rounded-2xl bg-white/3 border border-white/8 p-5 flex items-center gap-4 max-w-md">
               <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
                 <Mail size={20} className="text-blue-400" />
               </div>
@@ -260,58 +348,230 @@ export default function HelpPage() {
                 <p className="text-[11px] text-zinc-500 mt-0.5">Response within 24 hours</p>
               </div>
             </div>
-            <div className="rounded-2xl bg-white/3 border border-white/8 p-5 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
-                <Phone size={20} className="text-green-400" />
+          </div>
+
+          {/* ── Contact Support Ticket Form Section ── */}
+          <div ref={formRef} className="mb-12 rounded-3xl bg-white/[0.02] border border-white/10 p-6 sm:p-8 relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center">
+                <MessageSquare className="text-pink-400" size={20} />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Phone Support</p>
-                <p className="text-xs text-zinc-400">+91 98765 43210</p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">Mon–Sun, 10 AM – 6 PM IST</p>
+                <h2 className="text-xl font-bold text-white">Send Us a Message</h2>
+                <p className="text-xs text-zinc-400">Have a question or facing an issue? Fill out the form below and we'll reply to your email.</p>
               </div>
             </div>
+
+            {submitted ? (
+              <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-6 text-center animate-fade-in">
+                <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-white mb-1">Message Sent Successfully!</h3>
+                <p className="text-sm text-zinc-300 mb-4 max-w-md mx-auto">
+                  Thank you for reaching out. Our support team has received your message and will respond to <span className="text-emerald-400 font-semibold">{formData.email || 'your email'}</span> as soon as possible.
+                </p>
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition"
+                >
+                  Send Another Message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                {formError && (
+                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Your Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Your Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Your Email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Category</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full bg-[#0d1326] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition"
+                    >
+                      <option value="General Query">General Query</option>
+                      <option value="Account & Profile">Account & Profile</option>
+                      <option value="Payments & Coins">Payments & Coins</option>
+                      <option value="Chat & Matching">Chat & Matching</option>
+                      <option value="Technical Issue">Technical Issue</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Subject</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Brief subject of your query"
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">Your Message</label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Describe your issue or question in detail..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold text-sm transition shadow-lg shadow-pink-600/25"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Submit Request
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
+
+          {/* ── My Support Tickets & Admin Replies ── */}
+          {userTickets.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-xl font-black mb-4 text-white flex items-center gap-2">
+                <MessageSquare className="text-pink-400" size={20} />
+                My Support Requests & Admin Replies
+              </h2>
+              <div className="space-y-4">
+                {userTickets.map((t: any) => (
+                  <div key={t.id} className="rounded-2xl bg-white/[0.03] border border-white/10 p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b border-white/5 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-bold text-pink-400 bg-pink-500/10 px-2.5 py-1 rounded-lg border border-pink-500/20">
+                          #TKT-{t.id}
+                        </span>
+                        <span className="text-xs font-medium text-zinc-400">{t.category}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          t.status === 'resolved'
+                            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                            : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                        }`}>
+                          {t.status}
+                        </span>
+                        <span className="text-[11px] text-zinc-500">
+                          {t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-white mb-1.5">{t.subject}</h3>
+                    <p className="text-xs text-zinc-300 leading-relaxed bg-white/3 p-3 rounded-xl border border-white/5 mb-3">
+                      {t.message}
+                    </p>
+
+                    {t.admin_reply ? (
+                      <div className="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 mb-1">
+                          <CheckCircle2 size={15} /> Admin Response
+                        </div>
+                        <p className="text-xs text-emerald-100 leading-relaxed">{t.admin_reply}</p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-amber-400/80 italic">Waiting for admin reply...</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* FAQ Sections */}
           <h2 className="text-xl font-black mb-6 text-white">Frequently Asked Questions</h2>
           <div className="space-y-6">
-            {filteredFaqs.length > 0 ? filteredFaqs.map((cat) => (
-              <div key={cat.category} className="rounded-2xl border border-white/6 bg-white/2 overflow-hidden">
-                <div className="px-5 py-3.5 border-b border-white/6 flex items-center gap-2.5 bg-white/3">
-                  <span className="text-lg">{cat.icon}</span>
-                  <h3 className="font-black text-sm text-zinc-200 uppercase tracking-wider">{cat.category}</h3>
+            {filteredFaqs.length > 0 ? (
+              filteredFaqs.map((cat) => (
+                <div key={cat.category} className="rounded-2xl border border-white/6 bg-white/2 overflow-hidden">
+                  <div className="px-5 py-3.5 border-b border-white/6 flex items-center gap-2.5 bg-white/3">
+                    <span className="text-lg">{cat.icon}</span>
+                    <h3 className="font-black text-sm text-zinc-200 uppercase tracking-wider">{cat.category}</h3>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {cat.items.map((item, idx) => {
+                      const key = `${cat.category}-${idx}`;
+                      const isOpen = openItem === key;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setOpenItem(isOpen ? null : key)}
+                          className="w-full text-left px-5 py-4 transition hover:bg-white/3"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-sm font-semibold text-zinc-200 leading-relaxed">{item.q}</span>
+                            <ChevronDown
+                              size={16}
+                              className={`flex-shrink-0 mt-0.5 text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                            />
+                          </div>
+                          {isOpen && (
+                            <p className="mt-3 text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
+                              {item.a}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="divide-y divide-white/5">
-                  {cat.items.map((item, idx) => {
-                    const key = `${cat.category}-${idx}`;
-                    const isOpen = openItem === key;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => setOpenItem(isOpen ? null : key)}
-                        className="w-full text-left px-5 py-4 transition hover:bg-white/3"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <span className="text-sm font-semibold text-zinc-200 leading-relaxed">{item.q}</span>
-                          <ChevronDown
-                            size={16}
-                            className={`flex-shrink-0 mt-0.5 text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                          />
-                        </div>
-                        {isOpen && (
-                          <p className="mt-3 text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
-                            {item.a}
-                          </p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <div className="text-center py-12 text-zinc-500">
                 <Search size={36} className="mx-auto mb-3 opacity-40" />
-                <p>No results found for "<span className="text-white">{searchQuery}</span>"</p>
+                <p>
+                  No results found for "<span className="text-white">{searchQuery}</span>"
+                </p>
               </div>
             )}
           </div>
@@ -320,9 +580,10 @@ export default function HelpPage() {
           <div className="mt-10 rounded-2xl border border-white/6 bg-gradient-to-r from-pink-600/8 to-purple-600/8 p-6 text-center">
             <CheckCircle2 size={28} className="mx-auto mb-2.5 text-pink-400" />
             <p className="text-sm font-bold text-white mb-1">We're here for you</p>
-            <p className="text-xs text-zinc-400">Every query is important. Our team is dedicated to making your Saathika experience the best it can be.</p>
+            <p className="text-xs text-zinc-400">
+              Every query is important. Our team is dedicated to making your Saathika experience the best it can be.
+            </p>
           </div>
-
         </div>
       </Container>
     </div>
