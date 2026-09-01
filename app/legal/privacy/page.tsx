@@ -1,4 +1,20 @@
+import type { Metadata } from 'next';
 import { Card } from '@/components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description:
+    'Read the Saathika Privacy Policy to understand how we collect, protect, and use your personal data on our dating platform.',
+  alternates: {
+    canonical: '/legal/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy — Saathika',
+    description:
+      'Read the Saathika Privacy Policy to understand how we protect your personal data.',
+    url: 'https://saathika.app/legal/privacy',
+  },
+};
 
 export default function PrivacyPage() {
   return (

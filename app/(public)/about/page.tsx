@@ -1,6 +1,21 @@
-import { PublicNav } from '@/components/public-nav';
+import type { Metadata } from 'next';
 import { Card } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'About Us — Reimagining Indian Dating',
+  description:
+    'Learn about Saathika mission to create a safe, premium, and authentic dating experience in India with verified profiles and smart matchmaking.',
+  alternates: {
+    canonical: '/about',
+  },
+  openGraph: {
+    title: 'About Saathika — Premium Indian Dating Platform',
+    description:
+      'Learn about Saathika mission to create a safe, premium, and authentic dating experience in India with verified profiles.',
+    url: 'https://saathika.app/about',
+  },
+};
 
 export default function AboutPage() {
   return (

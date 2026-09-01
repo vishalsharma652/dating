@@ -1,4 +1,20 @@
+import type { Metadata } from 'next';
 import { Card } from '@/components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description:
+    'Read the terms and conditions governing the use of the Saathika dating app and website services.',
+  alternates: {
+    canonical: '/legal/terms',
+  },
+  openGraph: {
+    title: 'Terms of Service — Saathika',
+    description:
+      'Read the terms and conditions governing the use of the Saathika dating platform.',
+    url: 'https://saathika.app/legal/terms',
+  },
+};
 
 export default function TermsPage() {
   return (
