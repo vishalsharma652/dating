@@ -332,7 +332,7 @@ function PaymentContent() {
               {/* Dynamic QR Code */}
               <div className="p-3 bg-white rounded-2xl shadow-2xl mb-4 border border-white/30 relative">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(`upi://pay?pa=9352692626@kotakbank&pn=SNEHA%20GOYAL&am=${pkg?.price || ''}&cu=INR`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(`upi://pay?pa=9352692626@kotakbank&am=${pkg?.price || ''}&cu=INR`)}`}
                   alt="Kotak 811 UPI QR Code"
                   className="w-52 h-52 rounded-xl object-contain"
                 />
@@ -342,22 +342,18 @@ function PaymentContent() {
               </div>
 
               {/* Account Details Box */}
-              <div className="w-full rounded-2xl bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] p-4 text-left shadow-lg border border-red-400/30 mt-2">
-                <p className="text-[10px] uppercase tracking-widest font-black text-white/80">Account Holder</p>
-                <h4 className="text-lg font-black text-white tracking-wide mt-0.5">SNEHA GOYAL</h4>
-                <div className="mt-2.5 pt-2.5 border-t border-white/20 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-white/70 font-semibold uppercase">UPI ID</p>
-                    <p className="text-xs font-mono font-bold text-white tracking-wider">9352692626@kotakbank</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copyUpiHandle}
-                    className="px-3.5 py-1.5 rounded-xl bg-white text-[#be123c] font-black text-xs hover:bg-zinc-100 transition shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy UPI'}
-                  </button>
+              <div className="w-full rounded-2xl bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] p-4 text-left shadow-lg border border-red-400/30 mt-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-white/70 font-semibold uppercase">UPI ID</p>
+                  <p className="text-xs font-mono font-bold text-white tracking-wider">9352692626@kotakbank</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={copyUpiHandle}
+                  className="px-3.5 py-1.5 rounded-xl bg-white text-[#be123c] font-black text-xs hover:bg-zinc-100 transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy UPI'}
+                </button>
               </div>
             </div>
           </div>

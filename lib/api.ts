@@ -37,6 +37,27 @@ export function clearAuthSession() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem('ember_user');
+  localStorage.removeItem('onboardEmail');
+  localStorage.removeItem('onboardName');
+  localStorage.removeItem('onboardDob');
+  localStorage.removeItem('backendOtp');
+
+  // Clear any cookies
+  if (typeof document !== 'undefined') {
+    document.cookie.split(';').forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, '')
+        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+    });
+  }
+
+  try {
+    const { disconnectSocket } = require('./socket');
+    disconnectSocket();
+  } catch {
+    // Ignore if socket module is not imported yet
+  }
 }
 
 export function getStoredUser<T = any>() {
@@ -157,10 +178,17 @@ export const authApi = {
       body: JSON.stringify(body),
     }),
   me: () => apiRequest<{ user: any }>('/auth/me'),
-  logout: () =>
-    apiRequest<null>('/auth/logout', {
-      method: 'POST',
-    }),
+  logout: async () => {
+    try {
+      await apiRequest<null>('/auth/logout', {
+        method: 'POST',
+      });
+    } catch {
+      // Ignore API errors during logout
+    } finally {
+      clearAuthSession();
+    }
+  },
   heartbeat: () =>
     apiRequest<{ user: any }>('/auth/heartbeat', {
       method: 'POST',

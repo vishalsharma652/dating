@@ -98,16 +98,12 @@ async function sendOtpEmail(toEmail, otp, name) {
     const cleanTo = String(toEmail || '').replace(/["'\s]/g, '');
     const transporter = createTransporter();
 
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || cleanUser,
-      to: cleanTo,
-      subject: `Your Saathika Verification Code: ${otp}`,
+    const fromHeader = process.env.SMTP_FROM || `"Saathika" <${cleanUser}>`;
 
-      headers: {
-        'X-Priority': '1',
-        'X-MSMail-Priority': 'High',
-        'Importance': 'High',
-      },
+    const info = await transporter.sendMail({
+      from: fromHeader,
+      to: cleanTo,
+      subject: `Saathika - Verification Code`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
           <div style="background:linear-gradient(135deg,#ec4899,#6366f1);padding:32px;text-align:center">
