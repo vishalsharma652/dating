@@ -98,29 +98,41 @@ async function sendOtpEmail(toEmail, otp, name) {
     const cleanTo = String(toEmail || '').replace(/["'\s]/g, '');
     const transporter = createTransporter();
 
-    const fromHeader = process.env.SMTP_FROM || `"Saathika" <${cleanUser}>`;
+    const fromHeader = process.env.SMTP_FROM || `"Saathika Verification" <${cleanUser}>`;
 
     const info = await transporter.sendMail({
       from: fromHeader,
       to: cleanTo,
-      subject: `Saathika - Verification Code`,
+      replyTo: cleanUser,
+      headers: {
+        'X-Auto-Response-Suppress': 'OOF, AutoReply',
+        'Auto-Submitted': 'auto-generated',
+        'X-Priority': '1',
+        'Importance': 'high',
+      },
+      subject: `Your Saathika verification code: ${otp}`,
+      text: `Hi ${name || 'there'},\n\nYour Saathika verification code is: ${otp}\n\nThis code expires in 3 minutes. Please do not share this code with anyone.\n\nIf you didn't request this code, you can safely ignore this email.`,
       html: `
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-          <div style="background:linear-gradient(135deg,#ec4899,#6366f1);padding:32px;text-align:center">
-            <h1 style="color:#fff;margin:0;font-size:26px">Saathika</h1>
-            <p style="color:rgba(255,255,255,0.8);margin:8px 0 0">Your love story begins here</p>
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:500px;margin:0 auto;background-color:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05)">
+          <div style="background-color:#4f46e5;padding:24px 32px;text-align:center">
+            <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;letter-spacing:-0.5px">Saathika Verification</h1>
           </div>
-          <div style="padding:32px">
-            <p style="color:#374151;font-size:16px">Hi <strong>${name || 'there'}</strong>,</p>
-            <p style="color:#6b7280;font-size:14px">Use the code below to verify your email address. It expires in <strong>3 minutes</strong>.</p>
-            <div style="text-align:center;margin:28px 0">
-              <span style="display:inline-block;background:#f9fafb;border:2px dashed #e5e7eb;border-radius:12px;padding:16px 40px;font-size:36px;font-weight:bold;letter-spacing:10px;color:#111827">${otp}</span>
+          <div style="padding:32px 24px;background-color:#ffffff">
+            <p style="color:#1f2937;font-size:15px;line-height:1.5;margin-top:0">Hi <strong>${name || 'there'}</strong>,</p>
+            <p style="color:#4b5563;font-size:14px;line-height:1.5">Your one-time email verification code for Saathika is:</p>
+            
+            <div style="text-align:center;margin:24px 0">
+              <span style="display:inline-block;background-color:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;padding:14px 28px;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827">${otp}</span>
             </div>
-            <p style="color:#9ca3af;font-size:12px;text-align:center">If you didn't create an account on Saathika, you can safely ignore this email.</p>
+
+            <p style="color:#6b7280;font-size:13px;line-height:1.5;margin-bottom:24px">This code expires in <strong>3 minutes</strong>. For your security, do not share this code with anyone.</p>
+            
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0" />
+            
+            <p style="color:#9ca3af;font-size:12px;line-height:1.4;text-align:center;margin:0">If you did not request this verification code, please ignore this email.</p>
           </div>
         </div>
       `,
-      text: `Hi ${name || 'there'}, your Saathika verification code is: ${otp}. It expires in 3 minutes.`,
     });
 
     console.log(`[OTP EMAIL SUCCESS] Verification email sent to ${cleanTo}. MessageId: ${info?.messageId} | Generated OTP: [ ${otp} ]`);
@@ -428,36 +440,44 @@ async function forgotPassword(req, res) {
     const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
 
     try {
+      const cleanUser = String(process.env.SMTP_USER || '').replace(/["'\s]/g, '');
       const transporter = createTransporter();
       await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Saathika Dating" <noreply@saathika.com>`,
+        from: process.env.SMTP_FROM || `"Saathika Security" <${cleanUser}>`,
         to: user.email,
-        subject: `🔐 Your Password Reset OTP: ${otp}`,
+        replyTo: cleanUser,
+        headers: {
+          'X-Auto-Response-Suppress': 'OOF, AutoReply',
+          'Auto-Submitted': 'auto-generated',
+          'X-Priority': '1',
+          'Importance': 'high',
+        },
+        subject: `Saathika Password Reset OTP: ${otp}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background-color: #070B18; color: #ffffff; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background-color: #ffffff; color: #111827; border-radius: 12px; border: 1px solid #e5e7eb;">
             <div style="text-align: center; margin-bottom: 20px;">
-              <h2 style="color: #EC4899; font-size: 22px; font-weight: 800; margin: 0;">Saathika Dating</h2>
-              <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Password Reset Request</p>
+              <h2 style="color: #4f46e5; font-size: 22px; font-weight: 800; margin: 0;">Saathika Security</h2>
+              <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Password Reset Request</p>
             </div>
             
-            <p style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">Hello <strong>${user.name || 'User'}</strong>,</p>
-            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">You requested to reset your password for your Saathika account. Please enter the <strong>6-Digit OTP Code</strong> below to complete your password reset.</p>
+            <p style="font-size: 14px; color: #374151; line-height: 1.6;">Hello <strong>${user.name || 'User'}</strong>,</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">You requested to reset your password for your Saathika account. Please enter the 6-digit OTP code below to complete your password reset.</p>
 
             <!-- OTP Box -->
-            <div style="text-align: center; margin: 28px 0; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px dashed rgba(236,72,153,0.4);">
-              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #ec4899; font-weight: 700; margin-bottom: 8px;">Your Password Reset OTP</div>
-              <div style="display: inline-block; background: linear-gradient(135deg, #EC4899 0%, #7C3AED 100%); font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #ffffff; padding: 12px 28px; border-radius: 12px;">
+            <div style="text-align: center; margin: 24px 0; padding: 16px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #4f46e5; font-weight: 700; margin-bottom: 8px;">Your Reset Code</div>
+              <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #111827; padding: 8px 16px;">
                 ${otp}
               </div>
-              <p style="font-size: 11px; color: #94a3b8; margin-top: 10px; margin-bottom: 0;">Valid for 30 minutes</p>
+              <p style="font-size: 11px; color: #6b7280; margin-top: 8px; margin-bottom: 0;">Valid for 30 minutes</p>
             </div>
 
-            <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 20px;">
+            <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 20px;">
               If you did not request a password reset, please ignore this email.
             </p>
           </div>
         `,
-        text: `Hello ${user.name || 'User'}, your Saathika password reset OTP code is: ${otp}. It expires in 30 minutes.`,
+        text: `Hello ${user.name || 'User'},\n\nYour Saathika password reset code is: ${otp}. It expires in 30 minutes.\n\nIf you did not request this, please ignore this email.`,
       });
     } catch (err) {
       console.error('[Reset Email] Failed:', err.message);
