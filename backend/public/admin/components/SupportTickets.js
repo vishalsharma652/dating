@@ -317,233 +317,247 @@ window.SupportTickets = function SupportTickets({ tickets = [], onRefresh, showN
           )}
         </div>
 
-        {/* ── High-End Glassmorphic Popup Modal with Fixed Header & Sticky Footer ── */}
-        {selectedTicket && (
-          <div
-            className="modal-backdrop"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 99999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px',
-              background: 'rgba(5, 7, 15, 0.85)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              boxSizing: 'border-box'
-            }}
-            onClick={() => setSelectedTicket(null)}
-          >
-            <div
-              style={{
-                width: '100%',
-                maxWidth: '720px',
-                maxHeight: '90vh',
-                display: 'flex',
-                flexDirection: 'column',
-                background: 'linear-gradient(145deg, rgba(17, 24, 44, 0.98) 0%, rgba(10, 14, 28, 0.99) 100%)',
-                border: '1px solid rgba(129, 140, 248, 0.3)',
-                borderRadius: '24px',
-                boxShadow: '0 30px 90px rgba(0, 0, 0, 0.95), 0 0 50px rgba(124, 92, 255, 0.2)',
-                color: '#f8fafc',
-                overflow: 'hidden',
-                position: 'relative'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              
-              {/* 1. Modal Fixed Header Bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15, 23, 42, 0.6)' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <span style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800, boxShadow: '0 4px 12px rgba(79,70,229,0.4)' }}>
-                      #TKT-{selectedTicket.id}
-                    </span>
-                    <span className={getCategoryBadgeClass(selectedTicket.category)} style={{ fontSize: '11px', padding: '4px 12px' }}>
-                      {selectedTicket.category || 'General Query'}
-                    </span>
-                    <span className={`badge ${selectedTicket.status === 'resolved' ? 'green' : selectedTicket.status === 'pending' ? 'yellow' : 'red'}`} style={{ fontSize: '11px', padding: '4px 12px' }}>
-                      {selectedTicket.status}
-                    </span>
-                  </div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>
-                    Ticket Details & Admin Reply
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    color: '#94a3b8',
-                    fontSize: '18px',
-                    fontWeight: 700,
-                    display: 'grid',
-                    placeItems: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onClick={() => setSelectedTicket(null)}
-                >
-                  ✕
-                </button>
+        {/* Render Modal via Portal to avoid backdrop-filter trapping inside .panel */}
+        {renderModal()}
+      </div>
+    </section>
+  );
+
+  function renderModal() {
+    if (!selectedTicket) return null;
+
+    const modalContent = (
+      <div
+        className="modal-backdrop"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          background: 'rgba(5, 7, 15, 0.85)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxSizing: 'border-box'
+        }}
+        onClick={() => setSelectedTicket(null)}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '720px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(145deg, #11182c 0%, #0a0e1c 100%)',
+            border: '1px solid rgba(129, 140, 248, 0.3)',
+            borderRadius: '24px',
+            boxShadow: '0 30px 90px rgba(0, 0, 0, 0.95), 0 0 50px rgba(124, 92, 255, 0.2)',
+            color: '#f8fafc',
+            overflow: 'hidden',
+            position: 'relative'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 1. Modal Fixed Header Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15, 23, 42, 0.6)', flexShrink: 0 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                <span style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 800, boxShadow: '0 4px 12px rgba(79,70,229,0.4)' }}>
+                  #TKT-{selectedTicket.id}
+                </span>
+                <span className={getCategoryBadgeClass(selectedTicket.category)} style={{ fontSize: '11px', padding: '4px 12px' }}>
+                  {selectedTicket.category || 'General Query'}
+                </span>
+                <span className={`badge ${selectedTicket.status === 'resolved' ? 'green' : selectedTicket.status === 'pending' ? 'yellow' : 'red'}`} style={{ fontSize: '11px', padding: '4px 12px' }}>
+                  {selectedTicket.status}
+                </span>
               </div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>
+                Ticket Details & Admin Reply
+              </h3>
+            </div>
+            <button
+              type="button"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#94a3b8',
+                fontSize: '18px',
+                fontWeight: 700,
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => setSelectedTicket(null)}
+            >
+              ✕
+            </button>
+          </div>
 
-              {/* 2. Modal Inner Scrollable Body */}
-              <div style={{ padding: '24px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-                
-                {/* Sender Info Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: '#fff', fontWeight: 800, display: 'grid', placeItems: 'center', fontSize: '16px', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)' }}>
-                      {(selectedTicket.name || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>{selectedTicket.name}</div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>{selectedTicket.email}</div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    {selectedTicket.user_unique_id && (
-                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#34d399', background: 'rgba(16,185,129,0.12)', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.25)', display: 'inline-block', marginBottom: '4px' }}>
-                        ID: {selectedTicket.user_unique_id}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>
-                      {new Date(selectedTicket.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                    </div>
-                  </div>
+          {/* 2. Modal Inner Scrollable Body */}
+          <div style={{ padding: '24px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, minHeight: 0 }}>
+            {/* Sender Info Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', color: '#fff', fontWeight: 800, display: 'grid', placeItems: 'center', fontSize: '16px', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)', flexShrink: 0 }}>
+                  {(selectedTicket.name || 'U').charAt(0).toUpperCase()}
                 </div>
-
-                {/* User Issue Subject & Full Message Card */}
-                <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#818cf8', marginBottom: '8px' }}>
-                    📌 ISSUE SUBJECT:
-                  </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#ffffff', marginBottom: '14px' }}>
-                    {selectedTicket.subject}
-                  </div>
-
-                  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#818cf8', marginBottom: '6px' }}>
-                    💬 MESSAGE CONTENT:
-                  </div>
-                  <div style={{ fontSize: '14px', lineHeight: 1.6, color: '#e2e8f0', whiteSpace: 'pre-wrap', background: 'rgba(255, 255, 255, 0.025)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    {selectedTicket.message}
-                  </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>{selectedTicket.name}</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>{selectedTicket.email}</div>
                 </div>
-
-                {/* Current Admin Reply (if exists) */}
-                {selectedTicket.admin_reply && (
-                  <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>
-                      <span>💬 Official Admin Response:</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, color: '#a7f3d0' }}>
-                      {selectedTicket.admin_reply}
-                    </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                {selectedTicket.user_unique_id && (
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#34d399', background: 'rgba(16,185,129,0.12)', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.25)', display: 'inline-block', marginBottom: '4px' }}>
+                    ID: {selectedTicket.user_unique_id}
                   </div>
                 )}
-
-                {/* Quick Templates */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#818cf8', marginBottom: '10px' }}>
-                    ⚡ Quick Response Templates (Click to apply)
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px' }}>
-                    {quickTemplates.map((tmpl, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        style={{
-                          fontSize: '12px',
-                          padding: '10px 14px',
-                          borderRadius: '12px',
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          color: '#cbd5e1',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          lineHeight: 1.3
-                        }}
-                        onClick={() => setReplyText(tmpl)}
-                      >
-                        {tmpl}
-                      </button>
-                    ))}
-                  </div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>
+                  {new Date(selectedTicket.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                 </div>
+              </div>
+            </div>
 
-                {/* Response Textarea */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, marginBottom: '8px', color: '#ffffff' }}>
-                    Send Official Admin Reply (Will be delivered to user)
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your reply to the user or solution details here..."
-                    className="input"
+            {/* User Issue Subject & Full Message Card */}
+            <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#818cf8', marginBottom: '8px' }}>
+                📌 ISSUE SUBJECT:
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#ffffff', marginBottom: '14px' }}>
+                {selectedTicket.subject}
+              </div>
+
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#818cf8', marginBottom: '6px' }}>
+                💬 MESSAGE CONTENT:
+              </div>
+              <div style={{ fontSize: '14px', lineHeight: 1.6, color: '#e2e8f0', whiteSpace: 'pre-wrap', background: 'rgba(255, 255, 255, 0.025)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                {selectedTicket.message}
+              </div>
+            </div>
+
+            {/* Current Admin Reply (if exists) */}
+            {selectedTicket.admin_reply && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>
+                  <span>💬 Official Admin Response:</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, color: '#a7f3d0' }}>
+                  {selectedTicket.admin_reply}
+                </p>
+              </div>
+            )}
+
+            {/* Quick Templates */}
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#818cf8', marginBottom: '10px' }}>
+                ⚡ Quick Response Templates (Click to apply)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
+                {quickTemplates.map((tmpl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
                     style={{
-                      height: 'auto',
-                      padding: '14px',
-                      borderRadius: '14px',
-                      fontSize: '14px',
-                      lineHeight: 1.5,
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      borderColor: 'rgba(129, 140, 248, 0.3)',
-                      color: '#ffffff'
+                      fontSize: '12px',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#cbd5e1',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      lineHeight: 1.3
                     }}
-                  />
-                </div>
+                    onClick={() => setReplyText(tmpl)}
+                  >
+                    {tmpl}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* 3. Modal Sticky Action Footer */}
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15, 23, 42, 0.8)' }}>
-                <button
-                  type="button"
-                  className="btn secondary"
-                  style={{ height: '42px', padding: '0 20px', borderRadius: '12px', fontSize: '13px', fontWeight: 700 }}
-                  onClick={() => setSelectedTicket(null)}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  className="btn secondary"
-                  style={{ height: '42px', padding: '0 20px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
-                  onClick={() => handleUpdateStatus(selectedTicket.id, 'pending', replyText)}
-                  disabled={updating}
-                >
-                  Save as Pending ⏳
-                </button>
-
-                <button
-                  type="button"
-                  className="btn success"
-                  style={{ height: '42px', padding: '0 24px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}
-                  onClick={() => handleUpdateStatus(selectedTicket.id, 'resolved', replyText)}
-                  disabled={updating}
-                >
-                  {updating ? 'Sending Reply...' : '✅ Send Reply & Mark Resolved'}
-                </button>
-              </div>
-
+            {/* Response Textarea */}
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 800, marginBottom: '8px', color: '#ffffff' }}>
+                Send Official Admin Reply (Will be delivered to user)
+              </label>
+              <textarea
+                rows={4}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Type your reply to the user or solution details here..."
+                className="input"
+                style={{
+                  height: 'auto',
+                  minHeight: '100px',
+                  padding: '14px',
+                  borderRadius: '14px',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  borderColor: 'rgba(129, 140, 248, 0.3)',
+                  color: '#ffffff',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
           </div>
-        )}
+
+          {/* 3. Modal Sticky Action Footer */}
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center', padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15, 23, 42, 0.95)', flexShrink: 0, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn secondary"
+              style={{ height: '42px', padding: '0 20px', borderRadius: '12px', fontSize: '13px', fontWeight: 700 }}
+              onClick={() => setSelectedTicket(null)}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className="btn secondary"
+              style={{ height: '42px', padding: '0 20px', borderRadius: '12px', fontSize: '13px', fontWeight: 700, borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
+              onClick={() => handleUpdateStatus(selectedTicket.id, 'pending', replyText)}
+              disabled={updating}
+            >
+              Save as Pending ⏳
+            </button>
+
+            <button
+              type="button"
+              className="btn success"
+              style={{ height: '42px', padding: '0 24px', borderRadius: '12px', fontSize: '13px', fontWeight: 800 }}
+              onClick={() => handleUpdateStatus(selectedTicket.id, 'resolved', replyText)}
+              disabled={updating}
+            >
+              {updating ? 'Sending Reply...' : '✅ Send Reply & Mark Resolved'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (typeof document !== 'undefined' && typeof ReactDOM !== 'undefined' && ReactDOM.createPortal) {
+      return ReactDOM.createPortal(modalContent, document.body);
+    }
+    return modalContent;
+  }
       </div>
     </section>
   );
