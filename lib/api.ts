@@ -1,3 +1,5 @@
+import { disconnectSocket } from './socket';
+
 export function getApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -53,10 +55,9 @@ export function clearAuthSession() {
   }
 
   try {
-    const { disconnectSocket } = require('./socket');
     disconnectSocket();
   } catch {
-    // Ignore if socket module is not imported yet
+    // Ignore if socket is not initialized
   }
 }
 
