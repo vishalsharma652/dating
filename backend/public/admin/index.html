@@ -718,14 +718,21 @@
 
       .modal-backdrop {
         position: fixed;
-        inset: 0;
-        z-index: 60;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(7, 7, 13, 0.8);
+        background: rgba(7, 7, 13, 0.85);
         backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         padding: 16px;
+        box-sizing: border-box;
       }
       .modal { 
         width: 100%; 
@@ -767,19 +774,19 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- React Components -->
-    <script type="text/babel" src="./components/Dashboard.js?v=3.6"></script>
-    <script type="text/babel" src="./components/Users.js?v=3.6"></script>
-    <script type="text/babel" src="./components/Kyc.js?v=3.6"></script>
-    <script type="text/babel" src="./components/Wallet.js?v=3.6"></script>
-    <script type="text/babel" src="./components/Chats.js?v=3.6"></script>
-    <script type="text/babel" src="./components/PaidToGirls.js?v=3.6"></script>
-    <script type="text/babel" src="./components/PaymentVerify.js?v=4.1"></script>
-    <script type="text/babel" src="./components/Withdrawals.js?v=4.5"></script>
-    <script type="text/babel" src="./components/RevenueBreakdown.js?v=3.6"></script>
-    <script type="text/babel" src="./components/Settings.js?v=3.6"></script>
-    <script type="text/babel" src="./components/SupportTickets.js?v=1.0"></script>
+    <script type="text/babel" src="./components/Dashboard.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Users.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Kyc.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Wallet.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Chats.js?v=5.0"></script>
+    <script type="text/babel" src="./components/PaidToGirls.js?v=5.0"></script>
+    <script type="text/babel" src="./components/PaymentVerify.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Withdrawals.js?v=5.0"></script>
+    <script type="text/babel" src="./components/RevenueBreakdown.js?v=5.0"></script>
+    <script type="text/babel" src="./components/Settings.js?v=5.0"></script>
+    <script type="text/babel" src="./components/SupportTickets.js?v=5.0"></script>
 
     <!-- Main Controller -->
-    <script type="text/babel" src="./App.js?v=3.6"></script>
+    <script type="text/babel" src="./App.js?v=5.0"></script>
   </body>
 </html>

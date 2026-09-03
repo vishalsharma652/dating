@@ -319,10 +319,31 @@ window.SupportTickets = function SupportTickets({ tickets = [], onRefresh, showN
 
         {/* ── High-End Glassmorphic Popup Modal with Fixed Header & Sticky Footer ── */}
         {selectedTicket && (
-          <div className="modal-backdrop" style={{ background: 'rgba(5, 7, 15, 0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', zIndex: 1000 }} onClick={() => setSelectedTicket(null)}>
+          <div
+            className="modal-backdrop"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+              background: 'rgba(5, 7, 15, 0.85)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxSizing: 'border-box'
+            }}
+            onClick={() => setSelectedTicket(null)}
+          >
             <div
               style={{
-                width: '94%',
+                width: '100%',
                 maxWidth: '720px',
                 maxHeight: '90vh',
                 display: 'flex',
