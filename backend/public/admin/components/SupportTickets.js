@@ -558,7 +558,4 @@ window.SupportTickets = function SupportTickets({ tickets = [], onRefresh, showN
     }
     return modalContent;
   }
-      </div>
-    </section>
-  );
 };
