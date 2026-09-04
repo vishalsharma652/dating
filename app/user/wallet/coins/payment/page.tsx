@@ -342,7 +342,7 @@ function PaymentContent() {
               </div>
 
               {/* Account Details Box */}
-              <div className="w-full rounded-2xl bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] p-4 text-left shadow-lg border border-red-400/30 mt-2 flex items-center justify-between">
+              {/* <div className="w-full rounded-2xl bg-gradient-to-r from-[#9f1239] via-[#be123c] to-[#9f1239] p-4 text-left shadow-lg border border-red-400/30 mt-2 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-white/70 font-semibold uppercase">UPI ID</p>
                   <p className="text-xs font-mono font-bold text-white tracking-wider">9352692626@kotakbank</p>
@@ -354,7 +354,7 @@ function PaymentContent() {
                 >
                   <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy UPI'}
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </Card>
