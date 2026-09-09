@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
+import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 export default function DashboardPage() {
   const [data, setData] = useState<{
@@ -56,6 +57,7 @@ export default function DashboardPage() {
   const [idCopied, setIdCopied] = useState(false);
   const [existingChatUserIds, setExistingChatUserIds] = useState<Set<number>>(new Set());
   const [sayHiTarget, setSayHiTarget] = useState<any>(null);
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
 
   useEffect(() => {
     userApi.dashboard()
@@ -394,7 +396,10 @@ export default function DashboardPage() {
                           className="bg-[#0D1424]/90 border border-white/10 rounded-[22px] p-3.5 hover:border-[#EC4899]/50 hover:-translate-y-1 transition-all duration-300 relative group flex flex-col justify-between shadow-lg"
                         >
                           {/* Portrait Image Container */}
-                          <Link href={`/user/chat/${girl.id}`} className="relative aspect-[3/4] rounded-[16px] overflow-hidden mb-3 shadow-inner block">
+                          <div
+                            onClick={() => setSelectedUserForProfile(girl)}
+                            className="relative aspect-[3/4] rounded-[16px] overflow-hidden mb-3 shadow-inner block cursor-pointer"
+                          >
                             <img
                               src={girl.photo}
                               alt={girl.name}
@@ -421,16 +426,17 @@ export default function DashboardPage() {
                             <div className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-[#EC4899] to-[#7C3AED] text-white flex items-center justify-center shadow-lg border border-white/20 group-hover:scale-110 transition duration-300">
                               <Heart size={13} className="fill-current text-white" />
                             </div>
-                          </Link>
+                          </div>
 
                           {/* Dedicated Metadata Section Below Image */}
-                          <div className="space-y-1.5 text-left px-0.5 pb-0.5">
+                          <div
+                            onClick={() => setSelectedUserForProfile(girl)}
+                            className="space-y-1.5 text-left px-0.5 pb-0.5 cursor-pointer"
+                          >
                             {/* Full Name */}
-                            <Link href={`/user/chat/${girl.id}`}>
-                              <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
-                                {girl.name}
-                              </h3>
-                            </Link>
+                            <h3 className="font-black text-base text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={girl.name}>
+                              {girl.name}
+                            </h3>
 
                             {/* Age & Location */}
                             <p className="text-xs font-semibold text-zinc-400 truncate">
@@ -720,6 +726,12 @@ export default function DashboardPage() {
         onClose={() => setSayHiTarget(null)}
         targetUser={sayHiTarget}
         currentCoins={user?.coins}
+      />
+      <UserProfileModal
+        isOpen={Boolean(selectedUserForProfile)}
+        onClose={() => setSelectedUserForProfile(null)}
+        userId={selectedUserForProfile?.id}
+        initialUser={selectedUserForProfile}
       />
     </div>
   );

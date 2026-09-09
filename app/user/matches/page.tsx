@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle } from 'lucide-react';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
+import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 export default function MatchesPage() {
   const router = useRouter();
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
 
   useEffect(() => {
     userApi.matches()
@@ -63,14 +65,24 @@ export default function MatchesPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mutual.map((match) => (
                 <Card key={match.id} className="overflow-hidden">
-                  <div className="relative h-48 bg-cover bg-center" style={{ backgroundImage: `url(${match.photo || '/placeholder.svg'})` }}>
+                  <div
+                    onClick={() => setSelectedUserForProfile(match)}
+                    className="relative h-48 bg-cover bg-center cursor-pointer"
+                    style={{ backgroundImage: `url(${match.photo || '/placeholder.svg'})` }}
+                  >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <Badge className="absolute top-3 right-3">Matched</Badge>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold mb-1">{match.name}</h3>
+                    <h3
+                      onClick={() => setSelectedUserForProfile(match)}
+                      className="font-semibold mb-3 cursor-pointer hover:text-pink-500 transition"
+                    >
+                      {match.name}
+                    </h3>
+                    <div className="flex gap-2">
                       {(() => {
-                        const matchSlug = match.uniqueId || match.unique_id || String(match.userId || match.profileId || '').padStart(6, '0');
+                        const matchSlug = match.uniqueId || match.unique_id || String(match.userId || match.profileId || match.id || '').padStart(6, '0');
                         return (
                           <Button size="sm" className="flex-1" asChild>
                             <Link href={`/user/chat/${matchSlug}`}>
@@ -80,16 +92,29 @@ export default function MatchesPage() {
                           </Button>
                         );
                       })()}
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setSelectedUserForProfile(match)}
+                      >
                         View Profile
                       </Button>
                     </div>
+                  </div>
                 </Card>
               ))}
             </div>
           </div>
         )}
       </Container>
+
+      <UserProfileModal
+        isOpen={Boolean(selectedUserForProfile)}
+        onClose={() => setSelectedUserForProfile(null)}
+        userId={selectedUserForProfile?.id || selectedUserForProfile?.userId}
+        initialUser={selectedUserForProfile}
+      />
     </div>
   );
 }

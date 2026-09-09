@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { userApi } from '@/lib/api';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
+import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 function ActiveUsersContent() {
   const router = useRouter();
@@ -23,6 +24,7 @@ function ActiveUsersContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>(paramFilter || 'all');
   const [sayHiTarget, setSayHiTarget] = useState<any>(null);
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
 
   // Keep activeFilter in sync if searchParams change
   useEffect(() => {
@@ -222,7 +224,10 @@ function ActiveUsersContent() {
                 className="bg-[#0D1424]/90 border border-white/10 rounded-[24px] p-4 hover:border-[#EC4899]/50 hover:-translate-y-1.5 transition-all duration-300 relative group flex flex-col justify-between shadow-xl overflow-hidden"
               >
                 {/* Portrait Photo */}
-                <div className="relative aspect-[3/4] rounded-[18px] overflow-hidden mb-3.5 shadow-inner">
+                <div
+                  onClick={() => setSelectedUserForProfile(u)}
+                  className="relative aspect-[3/4] rounded-[18px] overflow-hidden mb-3.5 shadow-inner cursor-pointer"
+                >
                   <img
                     src={u.photo}
                     alt={u.name}
@@ -252,7 +257,10 @@ function ActiveUsersContent() {
                 </div>
 
                 {/* Metadata Details */}
-                <div className="space-y-2 text-left px-1 pb-1">
+                <div
+                  onClick={() => setSelectedUserForProfile(u)}
+                  className="space-y-2 text-left px-1 pb-1 cursor-pointer"
+                >
                   {/* Line 1: Full Name */}
                   <h3 className="font-black text-lg text-white truncate leading-tight group-hover:text-[#EC4899] transition-colors" title={u.name}>
                     {u.name}
@@ -311,6 +319,13 @@ function ActiveUsersContent() {
         onClose={() => setSayHiTarget(null)}
         targetUser={sayHiTarget}
         currentCoins={user?.coins}
+      />
+
+      <UserProfileModal
+        isOpen={Boolean(selectedUserForProfile)}
+        onClose={() => setSelectedUserForProfile(null)}
+        userId={selectedUserForProfile?.id}
+        initialUser={selectedUserForProfile}
       />
     </div>
   );

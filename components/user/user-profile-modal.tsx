@@ -176,7 +176,7 @@ export function UserProfileModal({
   const location = profileObj.city || profileObj.location || userObj.location || initialUser?.location || '';
   const bio = profileObj.bio || userObj.bio || initialUser?.bio || 'Looking for meaningful connections and fun conversations!';
   const isVerified = Boolean((userObj.kyc_status || userObj.kycStatus || initialUser?.kycStatus) === 'approved' || userObj.verified || initialUser?.isVerified);
-  const isOnline = Boolean(userObj.online || initialUser?.online);
+  const isOnline = Boolean(userObj.online || initialUser?.online || initialUser?.status === 'Online');
   const uniqueId = String(userObj.unique_id || initialUser?.uniqueId || userObj.id || '').replace(/^STK-/i, '').padStart(6, '0');
   const interests = Array.isArray(profileObj.interests) ? profileObj.interests : ['Music', 'Travel', 'Movies'];
   const joinedDate = userObj.created_at ? new Date(userObj.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Member';

@@ -13,6 +13,7 @@ import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCh
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
+import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 export default function UserSearchPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function UserSearchPage() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
   const [sayHiTarget, setSayHiTarget] = useState<any>(null);
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any>(null);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [existingChatUserIds, setExistingChatUserIds] = useState<Set<number>>(new Set());
@@ -120,15 +122,23 @@ export default function UserSearchPage() {
                     <div className="space-y-4">
                       {/* Header Info */}
                       <div className="flex items-start gap-4 pb-4 border-b border-white/10">
-                        <div className="relative">
-                          <Avatar src={photoVal} alt={user.name} className="w-16 h-16 rounded-2xl border-2 border-white/10" fallback={user.name?.[0] || 'U'} />
+                        <div
+                          onClick={() => setSelectedUserForProfile(user)}
+                          className="relative cursor-pointer"
+                        >
+                          <Avatar src={photoVal} alt={user.name} className="w-16 h-16 rounded-2xl border-2 border-white/10 hover:border-pink-500/50 transition" fallback={user.name?.[0] || 'U'} />
                           {Boolean(user.online_status) && (
                             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0D1120]" title="Online" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-xl font-bold truncate">{user.name}</h3>
+                            <h3
+                              onClick={() => setSelectedUserForProfile(user)}
+                              className="text-xl font-bold truncate cursor-pointer hover:text-pink-400 transition"
+                            >
+                              {user.name}
+                            </h3>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold border ${genderBadgeColor} inline-flex items-center gap-1.5`}>
                               <IconSymbol size={13} className="shrink-0" />
                               <span>{user.gender ? user.gender.toUpperCase() : 'MEMBER'}</span>
@@ -243,6 +253,13 @@ export default function UserSearchPage() {
         onClose={() => setSayHiTarget(null)}
         targetUser={sayHiTarget}
         currentCoins={currentUser?.coins}
+      />
+
+      <UserProfileModal
+        isOpen={Boolean(selectedUserForProfile)}
+        onClose={() => setSelectedUserForProfile(null)}
+        userId={selectedUserForProfile?.id}
+        initialUser={selectedUserForProfile}
       />
     </div>
   );
