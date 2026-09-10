@@ -800,7 +800,7 @@ async function bankAccounts(req, res) {
 }
 
 async function createWithdrawal(req, res) {
-  if (Number(req.body.amount) < 50) throw new AppError('Minimum withdrawal amount is ₹50 (200 Coins)', 422);
+  if (Number(req.body.amount) < 25) throw new AppError('Minimum withdrawal amount is ₹25 (250 Coins)', 422);
   return created(res, { withdrawal: await walletModel.createWithdrawal(req.user.id, req.body) }, 'Withdrawal requested');
 }
 

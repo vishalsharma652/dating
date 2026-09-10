@@ -16,7 +16,7 @@ const inputCls =
 export default function WithdrawPage() {
   const [method, setMethod] = useState<'upi' | 'bank_transfer'>('upi');
   const [formData, setFormData] = useState({
-    amount: '',
+    amount: '25',
     mobileNumber: '',
     // UPI fields
     upiId: '',
@@ -89,7 +89,7 @@ export default function WithdrawPage() {
             }),
       });
       setMessage('✅ Withdrawal request submitted successfully. We will process it within 1-3 business days.');
-      setFormData({ amount: '', mobileNumber: '', upiId: '', accountHolderName: '', bankName: '', accountNumber: '', ifscCode: '' });
+      setFormData({ amount: '25', mobileNumber: '', upiId: '', accountHolderName: '', bankName: '', accountNumber: '', ifscCode: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to request withdrawal');
     } finally {
@@ -98,8 +98,25 @@ export default function WithdrawPage() {
   };
 
   const totalCoins = Number(wallet.coins ?? wallet.earnings ?? wallet.withdrawalBalance ?? 0);
-  const availableRupees = (totalCoins * 0.25).toFixed(2);
-  const reqCoins = Number(formData.amount || 0) * 4;
+  const availableRupees = (totalCoins / 10).toFixed(2);
+
+  const getRequiredCoins = (amt: number) => {
+    if (amt <= 0) return 0;
+    if (amt === 25) return 250;
+    if (amt === 50) return 500;
+    if (amt === 110) return 1000;
+    if (amt === 220) return 2000;
+    return Math.round(amt * 10);
+  };
+
+  const reqCoins = getRequiredCoins(Number(formData.amount || 0));
+
+  const withdrawalPackages = [
+    { coins: 250, rupees: 25, label: '250 Coins', badge: '' },
+    { coins: 500, rupees: 50, label: '500 Coins', badge: '' },
+    { coins: 1000, rupees: 110, label: '1000 Coins', badge: '+₹10 Extra' },
+    { coins: 2000, rupees: 220, label: '2000 Coins', badge: '+₹20 Extra' },
+  ];
 
   return (
     <div className="p-4 md:p-8">
@@ -127,13 +144,10 @@ export default function WithdrawPage() {
             </div>
             <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200 dark:border-emerald-900/40 px-4 py-2">
               <BadgeIndianRupee size={18} className="text-emerald-500" />
-              <span className="text-sm font-medium">Available Balance (50% Rate):</span>
+              <span className="text-sm font-medium">Available Balance:</span>
               <span className="font-bold text-emerald-400">₹ {availableRupees}</span>
             </div>
           </div>
-          <p className="text-xs text-zinc-400 mt-2 font-semibold">
-            💡 Rate Condition: 200 Coins = ₹50 INR (1 Coin = ₹0.25). 50% purchase package conversion rate applied.
-          </p>
         </div>
 
         <Card className="mb-6">
@@ -143,22 +157,54 @@ export default function WithdrawPage() {
               Request Withdrawal
             </h2>
 
-            {/* Amount */}
+            {/* Withdrawal Packages */}
             <div>
-              <label className="block text-sm font-medium mb-2">Amount (₹) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium mb-3">Select Withdrawal Package <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {withdrawalPackages.map((pkg) => {
+                  const isSelected = Number(formData.amount) === pkg.rupees;
+                  const isAffordable = totalCoins >= pkg.coins;
+                  return (
+                    <button
+                      key={pkg.coins}
+                      type="button"
+                      onClick={() => set('amount', String(pkg.rupees))}
+                      className={`relative p-4 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-pink-500 bg-pink-500/10 shadow-md shadow-pink-500/10 ring-2 ring-pink-500/20'
+                          : 'border-zinc-200 dark:border-zinc-800 hover:border-pink-300 dark:hover:border-pink-800 bg-white/5'
+                      } ${!isAffordable ? 'opacity-60' : ''}`}
+                    >
+                      {pkg.badge && (
+                        <span className="absolute -top-2.5 right-2 bg-gradient-to-r from-pink-500 to-violet-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                          {pkg.badge}
+                        </span>
+                      )}
+                      <div className="font-bold text-sm text-pink-500">{pkg.label}</div>
+                      <div className="text-lg font-black text-emerald-500 mt-0.5">₹{pkg.rupees}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Amount Field (Auto-populated from Package Selection, non-editable) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Amount (₹) <span className="text-red-500">*</span>
+              </label>
               <input
-                type="number"
-                placeholder="Enter amount (Min: ₹50)"
-                value={formData.amount}
-                onChange={(e) => set('amount', e.target.value)}
-                className={inputCls}
-                min={50}
+                type="text"
+                value={formData.amount ? `₹ ${formData.amount}` : ''}
+                readOnly
+                placeholder="Select a package above"
+                className={`${inputCls} bg-zinc-100 dark:bg-zinc-800/80 cursor-not-allowed font-bold text-emerald-500 select-none`}
               />
               <div className="flex items-center justify-between text-xs text-zinc-400 mt-1.5 font-medium">
-                <span>Minimum withdrawal: ₹50 (200 Coins)</span>
+                <span>Amount is auto-selected from package</span>
                 {reqCoins > 0 && (
                   <span className="text-pink-400 font-bold">
-                    Deduction: {reqCoins} Coins
+                    Coins Deduction: {reqCoins} Coins
                   </span>
                 )}
               </div>

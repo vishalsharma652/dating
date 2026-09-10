@@ -242,10 +242,16 @@ async function bankAccounts(userId) {
 
 async function createWithdrawal(userId, data) {
   const amountRupees = Number(data.amount);
-  if (isNaN(amountRupees) || amountRupees < 50) {
-    throw new AppError('Minimum withdrawal amount is ₹50 (200 Coins)', 422);
+  if (isNaN(amountRupees) || amountRupees < 25) {
+    throw new AppError('Minimum withdrawal amount is ₹25 (250 Coins)', 422);
   }
-  const requiredCoins = amountRupees * 4; // Rate: 200 Coins = ₹50 (1 Coin = ₹0.25)
+
+  let requiredCoins;
+  if (amountRupees === 25) requiredCoins = 250;
+  else if (amountRupees === 50) requiredCoins = 500;
+  else if (amountRupees === 110) requiredCoins = 1000;
+  else if (amountRupees === 220) requiredCoins = 2000;
+  else requiredCoins = Math.round(amountRupees * 10);
 
   if (data.method === 'upi') {
     const userRows = await query('SELECT kyc_status FROM users WHERE id = :userId LIMIT 1', { userId });

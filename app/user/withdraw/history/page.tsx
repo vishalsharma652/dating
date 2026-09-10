@@ -75,7 +75,14 @@ export default function WithdrawalHistoryPage() {
           {withdrawals.map((withdrawal) => {
             const StatusIcon = withdrawal.status === 'completed' ? Check : withdrawal.status === 'pending' ? Clock : AlertCircle;
             const proofUrl = withdrawal.screenshotUrl || withdrawal.screenshot_url || null;
-            const coins = withdrawal.coins ? Number(withdrawal.coins) : Math.round(Number(withdrawal.amount || 0) * 4);
+            const getCoinsFromAmt = (amt: number) => {
+              if (amt === 25) return 250;
+              if (amt === 50) return 500;
+              if (amt === 110) return 1000;
+              if (amt === 220) return 2000;
+              return Math.round(amt * 10);
+            };
+            const coins = withdrawal.coins ? Number(withdrawal.coins) : getCoinsFromAmt(Number(withdrawal.amount || 0));
 
             return (
               <Card key={withdrawal.id} className="p-4 transition hover:border-white/20">
