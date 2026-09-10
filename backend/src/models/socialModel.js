@@ -231,6 +231,9 @@ async function initMessagesDeletionSchema() {
   try {
     await query("ALTER TABLE messages ADD COLUMN deleted_for_everyone TINYINT(1) NOT NULL DEFAULT 0");
   } catch (e) {}
+  try {
+    await query("ALTER TABLE messages ADD COLUMN reply_to_id BIGINT UNSIGNED NULL");
+  } catch (e) {}
 
   try {
     await query("UPDATE messages SET deleted_for_sender = 0 WHERE deleted_for_sender IS NULL");
@@ -254,27 +257,45 @@ async function messages(chatId, readerUserId) {
     { numericChatId, numericReaderId }
   );
 
-  return query(
+  const rows = await query(
     `SELECT 
-       id, 
-       sender_id AS senderId, 
-       IF(COALESCE(deleted_for_everyone, 0) = 1, '🚫 This message was deleted', body) AS text, 
-       type, 
-       delivery_status AS deliveryStatus,
-       COALESCE(deleted_for_everyone, 0) AS deletedForEveryone,
-       created_at,
-       created_at AS createdAt,
-       COALESCE(DATE_FORMAT(DATE_ADD(created_at, INTERVAL 330 MINUTE), "%l:%i %p"), DATE_FORMAT(created_at, "%l:%i %p")) AS timestamp 
-     FROM messages 
-     WHERE chat_id = :numericChatId
+       m.id, 
+       m.sender_id AS senderId, 
+       IF(COALESCE(m.deleted_for_everyone, 0) = 1, '🚫 This message was deleted', m.body) AS text, 
+       m.type, 
+       m.delivery_status AS deliveryStatus,
+       COALESCE(m.deleted_for_everyone, 0) AS deletedForEveryone,
+       m.reply_to_id AS replyToId,
+       rm.body AS replyToText,
+       rm.type AS replyToType,
+       ru.name AS replyToSenderName,
+       ru.id AS replyToSenderId,
+       m.created_at,
+       m.created_at AS createdAt,
+       COALESCE(DATE_FORMAT(DATE_ADD(m.created_at, INTERVAL 330 MINUTE), "%l:%i %p"), DATE_FORMAT(m.created_at, "%l:%i %p")) AS timestamp 
+     FROM messages m
+     LEFT JOIN messages rm ON rm.id = m.reply_to_id
+     LEFT JOIN users ru ON ru.id = rm.sender_id
+     WHERE m.chat_id = :numericChatId
        AND (
-         (sender_id = :numericReaderId AND COALESCE(deleted_for_sender, 0) = 0)
+         (m.sender_id = :numericReaderId AND COALESCE(m.deleted_for_sender, 0) = 0)
          OR
-         (sender_id <> :numericReaderId AND COALESCE(deleted_for_recipient, 0) = 0 AND delivery_status <> 'undelivered')
+         (m.sender_id <> :numericReaderId AND COALESCE(m.deleted_for_recipient, 0) = 0 AND m.delivery_status <> 'undelivered')
        )
-     ORDER BY created_at ASC`,
+     ORDER BY m.created_at ASC`,
     { numericChatId, numericReaderId }
   );
+
+  return rows.map((r) => ({
+    ...r,
+    replyTo: r.replyToId ? {
+      id: r.replyToId,
+      text: r.replyToText,
+      type: r.replyToType,
+      senderName: r.replyToSenderName || 'User',
+      senderId: r.replyToSenderId
+    } : null
+  }));
 }
 
 async function deleteMessage(messageId, userId, deleteType = 'me') {
@@ -316,7 +337,7 @@ async function deleteMessage(messageId, userId, deleteType = 'me') {
   return { id: numMsgId, deleteType };
 }
 
-async function sendMessage(chatId, senderId, body, type = 'text') {
+async function sendMessage(chatId, senderId, body, type = 'text', replyToId = null) {
   // Requirement 14: Block digits/numbers in chat messages
   if (type === 'text') {
     const hasDigits = /\d/.test(body);
@@ -328,6 +349,9 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
   try {
     await query("ALTER TABLE messages MODIFY COLUMN delivery_status ENUM('sent','delivered','read','undelivered') NOT NULL DEFAULT 'sent'");
   } catch (e) {}
+  try {
+    await query("ALTER TABLE messages ADD COLUMN reply_to_id BIGINT UNSIGNED NULL");
+  } catch (e) {}
 
   const chatRows = await query('SELECT user_one_id, user_two_id FROM chats WHERE id = :chatId LIMIT 1', { chatId });
   const chat = chatRows[0];
@@ -338,8 +362,7 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
   let deliveryStatus = 'sent';
   let rechargeExhausted = false;
   let remainingCoins = null;
-
-
+  const numReplyId = replyToId ? Number(replyToId) : null;
 
   await transaction(async (connection) => {
     // Check sender details
@@ -539,13 +562,33 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     }
 
     const [msgRes] = await connection.execute(
-      'INSERT INTO messages (chat_id, sender_id, body, type, delivery_status) VALUES (:chatId, :senderId, :body, :type, :deliveryStatus)',
-      { chatId, senderId, body, type, deliveryStatus }
+      'INSERT INTO messages (chat_id, sender_id, body, type, delivery_status, reply_to_id) VALUES (:chatId, :senderId, :body, :type, :deliveryStatus, :numReplyId)',
+      { chatId, senderId, body, type, deliveryStatus, numReplyId }
     );
     messageId = msgRes.insertId;
 
     await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   });
+
+  let replyTo = null;
+  if (numReplyId) {
+    const parentMsgRows = await query(
+      `SELECT m.id, m.body AS text, m.type, m.sender_id AS senderId, u.name AS senderName
+       FROM messages m
+       LEFT JOIN users u ON u.id = m.sender_id
+       WHERE m.id = :numReplyId LIMIT 1`,
+      { numReplyId }
+    );
+    if (parentMsgRows[0]) {
+      replyTo = {
+        id: parentMsgRows[0].id,
+        text: parentMsgRows[0].text,
+        type: parentMsgRows[0].type,
+        senderId: parentMsgRows[0].senderId,
+        senderName: parentMsgRows[0].senderName || 'User'
+      };
+    }
+  }
 
   const nowIso = new Date().toISOString();
   return {
@@ -554,6 +597,8 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     text: body,
     type,
     deliveryStatus,
+    replyToId: numReplyId,
+    replyTo,
     created_at: nowIso,
     createdAt: nowIso,
     timestamp: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),

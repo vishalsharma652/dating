@@ -8,7 +8,7 @@ import { formatMessageTime } from '@/lib/utils';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
-import { Check, CheckCheck, Clock, Sparkles, Trash2, ChevronDown } from 'lucide-react';
+import { Check, CheckCheck, Clock, Sparkles, Trash2, ChevronDown, Reply, CornerUpLeft } from 'lucide-react';
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,6 +21,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [chatBlocked, setChatBlocked] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [deleteModalMsg, setDeleteModalMsg] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: number | string; senderName: string; text: string; type?: string } | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const isAtBottomRef = useRef(true);
   const isInitialLoadRef = useRef(true);
@@ -149,12 +150,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }, [messages]);
 
   // ── Send message ─────────────────────────────────────────────────
-  const handleSend = async (message: string, type: 'text' | 'image' | 'gift' | 'say_hi' = 'text') => {
+  const handleSend = async (
+    message: string,
+    type: 'text' | 'image' | 'gift' | 'say_hi' = 'text',
+    replyToId: number | string | null = null
+  ) => {
     setSendError('');
     try {
-      const data = await userApi.sendMessage(id, message, type);
+      const data = await userApi.sendMessage(id, message, type, replyToId);
       const msgData = await userApi.messages(id);
       setMessages(msgData.messages || []);
+      setReplyingTo(null);
       scrollToBottom(true);
 
       if (data.remainingCoins !== undefined && data.remainingCoins !== null) {
@@ -295,17 +301,48 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               const isDeleted = msg.text === '🚫 This message was deleted' || msg.deletedForEveryone;
 
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-1 group/msg relative`}>
+                <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} my-1 group/msg relative transition-all rounded-xl`}>
                   <div className="flex items-center gap-1.5 max-w-[85%] sm:max-w-md">
-                    {isMine && !isDeleted && (
+                    {!isMine && !isDeleted && (
                       <button
                         type="button"
-                        onClick={() => setDeleteModalMsg(msg)}
-                        title="Delete Message"
-                        className="flex-shrink-0 p-1.5 rounded-full bg-white/5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition cursor-pointer"
+                        onClick={() => setReplyingTo({
+                          id: msg.id,
+                          senderName: chatUser?.name || 'User',
+                          text: msg.type === 'gift' ? '🎁 Virtual Gift' : (msg.text || ''),
+                          type: msg.type
+                        })}
+                        title="Tag / Reply to this message"
+                        className="flex-shrink-0 p-1.5 rounded-full bg-white/5 hover:bg-[#EC4899]/20 text-zinc-400 hover:text-[#EC4899] transition cursor-pointer"
                       >
-                        <Trash2 size={13} />
+                        <Reply size={13} />
                       </button>
+                    )}
+
+                    {isMine && !isDeleted && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteModalMsg(msg)}
+                          title="Delete Message"
+                          className="flex-shrink-0 p-1.5 rounded-full bg-white/5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo({
+                            id: msg.id,
+                            senderName: 'You',
+                            text: msg.type === 'gift' ? '🎁 Virtual Gift' : (msg.text || ''),
+                            type: msg.type
+                          })}
+                          title="Tag / Reply to this message"
+                          className="flex-shrink-0 p-1.5 rounded-full bg-white/5 hover:bg-[#EC4899]/20 text-zinc-400 hover:text-[#EC4899] transition cursor-pointer"
+                        >
+                          <Reply size={13} />
+                        </button>
+                      </>
                     )}
 
                     <div
@@ -317,6 +354,33 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                           : 'bg-[#1E293B] text-zinc-100 rounded-tl-none border border-white/5'
                       }`}
                     >
+                      {/* Tagged / Quoted Parent Message Snippet */}
+                      {msg.replyTo && !isDeleted && (
+                        <a
+                          href={`#msg-${msg.replyTo.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const el = document.getElementById(`msg-${msg.replyTo.id}`);
+                            if (el) {
+                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              el.classList.add('ring-2', 'ring-[#EC4899]');
+                              setTimeout(() => el.classList.remove('ring-2', 'ring-[#EC4899]'), 2000);
+                            }
+                          }}
+                          className={`block mb-1.5 p-2 rounded-lg text-xs border-l-4 transition cursor-pointer ${
+                            isMine ? 'bg-black/25 border-white/70 text-white' : 'bg-white/10 border-[#EC4899] text-zinc-200'
+                          }`}
+                        >
+                          <p className="text-[10px] font-bold text-[#EC4899] flex items-center gap-1">
+                            <CornerUpLeft size={10} />
+                            <span>{Number(msg.replyTo.senderId) === Number(currentUser?.id) ? 'You' : (msg.replyTo.senderName || 'User')}</span>
+                          </p>
+                          <p className="text-[11px] opacity-90 truncate mt-0.5">
+                            {msg.replyTo.type === 'gift' ? '🎁 Virtual Gift' : msg.replyTo.text}
+                          </p>
+                        </a>
+                      )}
+
                       {msg.type === 'image' && !isDeleted ? (
                         String(msg.text || '').match(/\.(mp4|webm|mov|avi|mkv|3gp)($|\?)/i) ? (
                           <video src={msg.text} controls className="max-w-[240px] max-h-[240px] rounded-lg my-1 border border-white/10" />
@@ -388,7 +452,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         )}
 
         {/* Bottom Input Bar */}
-        <ChatInput onSend={handleSend} />
+        <ChatInput
+          onSend={handleSend}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+        />
       </div>
 
       {/* Delete Message Modal */}

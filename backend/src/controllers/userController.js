@@ -554,7 +554,8 @@ async function messages(req, res) {
 async function sendMessage(req, res) {
   const otherUserId = await userModel.resolveUserId(req.params.userId);
   const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
-  const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
+  const replyToId = req.body.replyToId ? Number(req.body.replyToId) : null;
+  const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text', replyToId);
 
   if (global.io) {
     socialModel.chatPartner(otherUserId, req.user.id).then((sender) => {
@@ -569,6 +570,7 @@ async function sendMessage(req, res) {
         text: req.body.text,
         type: req.body.type || 'text',
         deliveryStatus: message.deliveryStatus || 'sent',
+        replyTo: message.replyTo || null,
         createdAt: message.createdAt || new Date().toISOString(),
         timestamp: message.timestamp
       };

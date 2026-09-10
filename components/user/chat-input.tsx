@@ -9,6 +9,7 @@ import {
   Paperclip,
   Camera,
   Loader2,
+  CornerUpLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect, FormEvent } from 'react';
@@ -17,10 +18,12 @@ import { CameraCaptureModal } from '@/components/user/camera-capture-modal';
 import { WhatsAppEmojiPicker } from '@/components/user/whatsapp-emoji-picker';
 
 interface ChatInputProps {
-  onSend?: (message: string, type?: 'text' | 'image' | 'gift') => void;
+  onSend?: (message: string, type?: 'text' | 'image' | 'gift', replyToId?: number | string | null) => void;
+  replyingTo?: { id: number | string; senderName: string; text: string; type?: string } | null;
+  onCancelReply?: () => void;
 }
 
-export function ChatInput({ onSend }: ChatInputProps) {
+export function ChatInput({ onSend, replyingTo, onCancelReply }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -63,8 +66,9 @@ export function ChatInput({ onSend }: ChatInputProps) {
 
     try {
       setSending(true);
-      await onSend?.(textToSend, 'text');
+      await onSend?.(textToSend, 'text', replyingTo?.id || null);
       setMessage('');
+      onCancelReply?.();
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -253,6 +257,30 @@ export function ChatInput({ onSend }: ChatInputProps) {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Quoted Message Reply Tag Banner */}
+      {replyingTo && (
+        <div className="max-w-4xl mx-auto mb-2.5 p-2.5 rounded-2xl bg-[#0D1424] border border-white/10 border-l-4 border-l-[#EC4899] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150 shadow-md">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <CornerUpLeft size={16} className="text-[#EC4899] shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold text-[#EC4899] truncate">
+                Replying to {replyingTo.senderName}
+              </p>
+              <p className="text-xs text-zinc-300 truncate font-medium">
+                {replyingTo.type === 'gift' ? '🎁 Virtual Gift' : replyingTo.text}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition shrink-0 cursor-pointer"
+          >
+            <X size={15} />
+          </button>
         </div>
       )}
 
