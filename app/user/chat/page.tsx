@@ -110,9 +110,16 @@ function ChatListContent() {
     loadChats();
     const interval = window.setInterval(loadChats, 5000);
 
+    const handleNewMessage = () => {
+      if (active) loadChats();
+    };
+
+    window.addEventListener('chat:new_message', handleNewMessage);
+
     return () => {
       active = false;
       window.clearInterval(interval);
+      window.removeEventListener('chat:new_message', handleNewMessage);
     };
   }, []);
 

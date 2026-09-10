@@ -20,6 +20,7 @@ import {
 import { authApi, clearAuthSession, getStoredUser, userApi } from '@/lib/api';
 import { Brand } from '@/components/brand';
 import { useLanguage } from '@/context/language-context';
+import { connectSocket } from '@/lib/socket';
 
 export function UserNav() {
   const { t } = useLanguage();
@@ -93,7 +94,7 @@ export function UserNav() {
 
       userApi.chats()
         .then((data) => {
-          const unreadChats = (data.chats || []).filter((c: any) => c.unreadCount > 0 || c.hasUnread).length;
+          const unreadChats = (data.chats || []).filter((c: any) => Number(c.unread || c.unreadCount || 0) > 0 || Boolean(c.hasUnread)).length;
           if (active) setChatCount(unreadChats);
         })
         .catch(() => undefined);
@@ -107,11 +108,25 @@ export function UserNav() {
       if (Number.isFinite(unread) && active) setNotificationCount(unread);
     };
 
+    const handleReloadChats = () => {
+      if (active) loadCounts();
+    };
+
     window.addEventListener('notifications:unread', handleUnreadChange);
+    window.addEventListener('chat:unread_reload', handleReloadChats);
+
+    const socket = connectSocket();
+    const onChatMessage = () => {
+      if (active) loadCounts();
+    };
+    socket.on('chat:message', onChatMessage);
+
     return () => {
       active = false;
       window.clearInterval(interval);
       window.removeEventListener('notifications:unread', handleUnreadChange);
+      window.removeEventListener('chat:unread_reload', handleReloadChats);
+      socket.off('chat:message', onChatMessage);
     };
   }, []);
 

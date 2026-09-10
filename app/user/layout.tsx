@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { UserNav } from '@/components/user-nav';
 import { RateLimitToast } from '@/components/ui/rate-limit-toast';
+import { MessageToast } from '@/components/user/message-toast';
 import { CallProvider } from '@/components/user/call-provider';
 import { authApi, getToken } from '@/lib/api';
 
@@ -35,6 +36,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <RateLimitToast />
+        <MessageToast />
       </div>
     </CallProvider>
   );

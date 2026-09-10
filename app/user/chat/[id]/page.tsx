@@ -49,7 +49,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     setShowScrollBottom(distanceFromBottom > 200);
   };
 
-  // ── Poll messages ────────────────────────────────────────────────
+  // ── Poll & Real-time messages ─────────────────────────────────────
   useEffect(() => {
     let active = true;
 
@@ -66,6 +66,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             ? (apiAssetUrl(otherUser.photo) || otherUser.photo)
             : defaultAvatar;
           setChatUser({ ...otherUser, photo: resolvedPhoto });
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('chat:unread_reload'));
+          }
         })
         .catch((err) => {
           if (active) setError(err instanceof Error ? err.message : 'Unable to load chat');
@@ -77,7 +81,18 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000);
-    return () => { active = false; clearInterval(interval); };
+
+    const handleNewMessage = () => {
+      if (active) fetchMessages();
+    };
+
+    window.addEventListener('chat:new_message', handleNewMessage);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener('chat:new_message', handleNewMessage);
+    };
   }, [id]);
 
   // ── Session + wallet ─────────────────────────────────────────────

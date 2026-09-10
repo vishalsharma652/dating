@@ -208,7 +208,7 @@ async function getOrCreateChat(userId, otherUserId) {
 
 async function chatPartner(userId, otherUserId) {
   const rows = await query(
-    `SELECT u.id, u.name, COALESCE(pp.url, '') AS photo,
+    `SELECT u.id, u.unique_id AS uniqueId, u.name, COALESCE(pp.url, '') AS photo,
       (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
       u.last_seen_at AS lastSeenAt
      FROM users u

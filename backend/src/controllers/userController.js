@@ -555,6 +555,28 @@ async function sendMessage(req, res) {
   const otherUserId = await userModel.resolveUserId(req.params.userId);
   const chat = await socialModel.getOrCreateChat(req.user.id, otherUserId);
   const message = await socialModel.sendMessage(chat.id, req.user.id, req.body.text, req.body.type || 'text');
+
+  if (global.io) {
+    socialModel.chatPartner(otherUserId, req.user.id).then((sender) => {
+      const senderUniqueId = sender?.uniqueId || String(req.user.id).padStart(6, '0');
+      const messagePayload = {
+        id: message.id,
+        chatId: chat.id,
+        senderId: req.user.id,
+        senderName: sender?.name || req.user.name || 'User',
+        senderPhoto: sender?.photo || '',
+        senderUniqueId: senderUniqueId,
+        text: req.body.text,
+        type: req.body.type || 'text',
+        deliveryStatus: message.deliveryStatus || 'sent',
+        createdAt: message.createdAt || new Date().toISOString(),
+        timestamp: message.timestamp
+      };
+      global.io.to(`user:${otherUserId}`).emit('chat:message', messagePayload);
+      global.io.to(`chat_${chat.id}`).emit('chat:message', messagePayload);
+    }).catch((err) => console.error('Socket emit message notice:', err?.message));
+  }
+
   return created(res, {
     message,
     rechargeExhausted: message.rechargeExhausted,
