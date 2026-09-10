@@ -8,7 +8,7 @@ import { formatMessageTime } from '@/lib/utils';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
-import { Check, CheckCheck, Clock, Sparkles, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, Clock, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,6 +21,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [chatBlocked, setChatBlocked] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [deleteModalMsg, setDeleteModalMsg] = useState<any>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const isAtBottomRef = useRef(true);
+  const isInitialLoadRef = useRef(true);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const call = useCall();
 
   const isBoy = String(currentUser?.gender || '').toLowerCase() === 'male';
@@ -30,8 +34,19 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     setCurrentUser(getStoredUser());
   }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+    isAtBottomRef.current = true;
+    setShowScrollBottom(false);
+  };
+
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const atBottom = distanceFromBottom < 120;
+    isAtBottomRef.current = atBottom;
+    setShowScrollBottom(distanceFromBottom > 200);
   };
 
   // ── Poll messages ────────────────────────────────────────────────
@@ -106,8 +121,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     return () => window.clearInterval(interval);
   }, []);
 
-  // ── Auto-scroll ──────────────────────────────────────────────────
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  // ── Smart Auto-scroll ────────────────────────────────────────────
+  useEffect(() => {
+    if (isInitialLoadRef.current) {
+      if (messages.length > 0) {
+        scrollToBottom(false);
+        isInitialLoadRef.current = false;
+      }
+    } else if (isAtBottomRef.current) {
+      scrollToBottom(true);
+    }
+  }, [messages]);
 
   // ── Send message ─────────────────────────────────────────────────
   const handleSend = async (message: string, type: 'text' | 'image' | 'gift' | 'say_hi' = 'text') => {
@@ -116,6 +140,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       const data = await userApi.sendMessage(id, message, type);
       const msgData = await userApi.messages(id);
       setMessages(msgData.messages || []);
+      scrollToBottom(true);
 
       if (data.remainingCoins !== undefined && data.remainingCoins !== null) {
         setWalletBalance(Number(data.remainingCoins));
@@ -181,7 +206,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         />
 
         {/* Messages area — WhatsApp style wallpaper background */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0B0F19] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px]">
+        <div
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0B0F19] bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] relative"
+        >
           <Container>
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center my-6 p-6 space-y-4 bg-white/[0.02] border border-white/10 rounded-3xl text-center shadow-xl">
@@ -330,6 +359,18 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             <div ref={messagesEndRef} />
           </Container>
         </div>
+
+        {/* Floating Scroll to Bottom Button */}
+        {showScrollBottom && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom(true)}
+            className="absolute bottom-20 right-6 z-30 p-2.5 rounded-full bg-[#1E293B] hover:bg-[#EC4899] text-white shadow-2xl border border-white/20 transition-all transform hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center animate-bounce"
+            title="Scroll to bottom"
+          >
+            <ChevronDown size={20} />
+          </button>
+        )}
 
         {/* Bottom Input Bar */}
         <ChatInput onSend={handleSend} />
