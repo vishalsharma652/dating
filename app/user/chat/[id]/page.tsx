@@ -4,6 +4,7 @@ import { Container } from '@/components/ui/container';
 import { ChatHeader } from '@/components/user/chat-header';
 import { ChatInput } from '@/components/user/chat-input';
 import { authApi, getStoredUser, userApi, apiAssetUrl } from '@/lib/api';
+import { formatMessageTime } from '@/lib/utils';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useCall } from '@/components/user/call-provider';
 import Link from 'next/link';
@@ -282,7 +283,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                         <span className="break-words font-normal">{msg.text}</span>
                       )}
                       <span className="inline-flex items-center gap-1 text-[10px] opacity-75 whitespace-nowrap ml-2.5 float-right translate-y-[2px]">
-                        <span>{msg.timestamp}</span>
+                        <span>{formatMessageTime(msg.created_at || msg.createdAt, msg.timestamp)}</span>
                         {isMine && !isDeleted && (
                           msg.deliveryStatus === 'read' ? (
                             <CheckCheck size={13} className="text-sky-300 inline" />

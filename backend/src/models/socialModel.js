@@ -128,7 +128,9 @@ async function chats(userId) {
   await ensureChatPinsTable();
   return query(
     `SELECT c.id, other_user.id AS userId, other_user.name, COALESCE(pp.url, '') AS photo,
-      COALESCE(last_msg.body, '') AS lastMessage, COALESCE(DATE_FORMAT(last_msg.created_at, '%l:%i %p'), '') AS lastMessageTime,
+      COALESCE(last_msg.body, '') AS lastMessage,
+      COALESCE(DATE_FORMAT(DATE_ADD(last_msg.created_at, INTERVAL 330 MINUTE), '%l:%i %p'), DATE_FORMAT(last_msg.created_at, '%l:%i %p'), '') AS lastMessageTime,
+      last_msg.created_at AS lastMessageCreatedAt,
       COALESCE(unread_counts.unread, 0) AS unread,
       (other_user.online_status = true AND other_user.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
       other_user.last_seen_at AS last_seen_at,
@@ -260,7 +262,9 @@ async function messages(chatId, readerUserId) {
        type, 
        delivery_status AS deliveryStatus,
        COALESCE(deleted_for_everyone, 0) AS deletedForEveryone,
-       DATE_FORMAT(created_at, "%l:%i %p") AS timestamp 
+       created_at,
+       created_at AS createdAt,
+       COALESCE(DATE_FORMAT(DATE_ADD(created_at, INTERVAL 330 MINUTE), "%l:%i %p"), DATE_FORMAT(created_at, "%l:%i %p")) AS timestamp 
      FROM messages 
      WHERE chat_id = :numericChatId
        AND (
@@ -543,12 +547,16 @@ async function sendMessage(chatId, senderId, body, type = 'text') {
     await connection.execute('UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = :chatId', { chatId });
   });
 
+  const nowIso = new Date().toISOString();
   return {
     id: messageId,
     senderId,
     text: body,
     type,
     deliveryStatus,
+    created_at: nowIso,
+    createdAt: nowIso,
+    timestamp: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
     rechargeExhausted,
     remainingCoins,
     notice: rechargeExhausted ? 'Recharge khatam ho gaya' : undefined

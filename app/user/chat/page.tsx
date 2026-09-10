@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { userApi, authApi, getStoredUser, apiAssetUrl } from '@/lib/api';
+import { formatMessageTime } from '@/lib/utils';
 import Loading from '@/app/loading';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
 
@@ -374,7 +375,9 @@ function ChatListContent() {
 
                         <div className="flex items-center gap-3 shrink-0">
                           <div className="text-right">
-                            <p className="text-[11px] text-zinc-500 font-medium mb-1">{chat.lastMessageTime}</p>
+                            <p className="text-[11px] text-zinc-500 font-medium mb-1">
+                              {formatMessageTime(chat.lastMessageCreatedAt || chat.lastMessageTime, chat.lastMessageTime)}
+                            </p>
                             {Number(chat.unread) > 0 && (
                               <Badge className="bg-[#EC4899] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
                                 {Number(chat.unread) > 99 ? '99+' : chat.unread}

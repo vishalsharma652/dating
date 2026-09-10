@@ -132,3 +132,16 @@ export function formatLastSeenShort(
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+/**
+ * Format message created_at timestamp to local 12-hour time (e.g. 10:30 AM)
+ */
+export function formatMessageTime(
+  createdAt?: string | Date | null,
+  fallbackTimestamp?: string
+): string {
+  if (!createdAt) return fallbackTimestamp || '';
+  const date = new Date(createdAt);
+  if (isNaN(date.getTime())) return fallbackTimestamp || '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
