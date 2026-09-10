@@ -28,6 +28,7 @@ import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
+import { formatLastSeenShort } from '@/lib/utils';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
@@ -160,6 +161,8 @@ export default function DashboardPage() {
       age: u.age || (22 + (Number(u.id || 0) % 8)),
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
+      last_seen_at: u.last_seen_at || u.lastSeenAt || null,
+      lastSeenAt: u.last_seen_at || u.lastSeenAt || null,
       isVerified: Boolean((u.kyc_status || u.kycStatus) === 'approved' || u.verified === true || u.verified === 1 || u.verified === '1'),
       photo: u.photo || userFallbackPhotos[idx % userFallbackPhotos.length]
     };
@@ -449,7 +452,7 @@ export default function DashboardPage() {
                               <div className="flex items-center gap-1.5 flex-shrink-0">
                                 <span className={`w-2 h-2 rounded-full ${girl.status === 'Online' ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
                                 <span className={`text-[10px] font-extrabold uppercase tracking-wider ${girl.status === 'Online' ? 'text-[#10B981]' : 'text-zinc-400'}`}>
-                                  {girl.status === 'Online' ? 'Online' : 'Offline'}
+                                  {girl.status === 'Online' ? 'Online' : formatLastSeenShort(false, girl.last_seen_at || girl.lastSeenAt)}
                                 </span>
                               </div>
 

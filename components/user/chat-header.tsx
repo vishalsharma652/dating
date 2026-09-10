@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { userApi } from '@/lib/api';
+import { formatLastSeen } from '@/lib/utils';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
 
 interface ChatHeaderProps {
@@ -114,7 +115,7 @@ export function ChatHeader({
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base leading-tight group-hover:text-pink-400 transition-colors truncate">{name}</h3>
               <p className="text-xs text-zinc-400 truncate">
-                {online ? 'Online now' : 'Offline'}
+                {formatLastSeen(online, user?.last_seen_at || user?.lastSeenAt)}
               </p>
             </div>
           </div>

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userApi, authApi, apiAssetUrl } from '@/lib/api';
+import { formatLastSeen } from '@/lib/utils';
 import { FollowersModal } from '@/components/user/followers-modal';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 import { BadgesWallCard, GiftsHonorWallCard } from '@/components/user/honor-wall';
@@ -177,6 +178,7 @@ export function UserProfileModal({
   const bio = profileObj.bio || userObj.bio || initialUser?.bio || 'Looking for meaningful connections and fun conversations!';
   const isVerified = Boolean((userObj.kyc_status || userObj.kycStatus || initialUser?.kycStatus) === 'approved' || userObj.verified || initialUser?.isVerified);
   const isOnline = Boolean(userObj.online || initialUser?.online || initialUser?.status === 'Online');
+  const lastSeenAt = userObj.last_seen_at || userObj.lastSeenAt || initialUser?.last_seen_at || initialUser?.lastSeenAt || profileObj?.last_seen_at || profileObj?.lastSeenAt;
   const uniqueId = String(userObj.unique_id || initialUser?.uniqueId || userObj.id || '').replace(/^STK-/i, '').padStart(6, '0');
   const interests = Array.isArray(profileObj.interests) ? profileObj.interests : ['Music', 'Travel', 'Movies'];
   const joinedDate = userObj.created_at ? new Date(userObj.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Member';
@@ -371,13 +373,13 @@ export function UserProfileModal({
                       </h2>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
-                        <span className={`font-bold ${isOnline ? 'text-[#10B981]' : 'text-zinc-400'}`}>
-                          {isOnline ? 'Online now' : 'Offline'}
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isOnline ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-zinc-500'}`} />
+                        <span className={`font-bold truncate ${isOnline ? 'text-[#10B981]' : 'text-zinc-400'}`}>
+                          {formatLastSeen(isOnline, lastSeenAt)}
                         </span>
                       </div>
-                      <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                      <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 shrink-0">
                         ID: {uniqueId}
                       </span>
                     </div>
@@ -416,9 +418,11 @@ export function UserProfileModal({
 
                   <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2">
                     <User size={15} className="text-blue-400 shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <span className="text-zinc-400 block text-[10px]">Status</span>
-                      <span className="font-semibold text-white truncate block">{isOnline ? 'Active' : 'Away'}</span>
+                      <span className="font-semibold text-white truncate block">
+                        {isOnline ? 'Online now' : formatLastSeen(false, lastSeenAt)}
+                      </span>
                     </div>
                   </div>
                 </div>

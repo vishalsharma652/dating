@@ -45,7 +45,9 @@ async function dashboard(req, res) {
       COALESCE((SELECT url FROM profile_photos WHERE profile_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1), '') AS photo,
       u.kyc_status, 
       (u.kyc_status = 'approved') AS verified,
-      (u.online_status = true AND u.last_seen_at IS NOT NULL AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online
+      (u.online_status = true AND u.last_seen_at IS NOT NULL AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)) AS online,
+      u.last_seen_at AS last_seen_at,
+      u.last_seen_at AS lastSeenAt
      FROM users u
      LEFT JOIN profiles p ON p.user_id = u.id
      WHERE u.id <> :userId

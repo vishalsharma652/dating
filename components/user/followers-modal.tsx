@@ -5,6 +5,7 @@ import { X, Users, Search, MessageCircle, Check, Clock, UserCheck, UserPlus } fr
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { userApi, authApi, apiAssetUrl } from '@/lib/api';
+import { formatLastSeenShort } from '@/lib/utils';
 import Link from 'next/link';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
 
@@ -200,7 +201,9 @@ export function FollowersModal({
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] font-semibold text-zinc-400 truncate">ID: {uniqueId}</p>
+                        <p className="text-[10px] font-semibold text-zinc-400 truncate">
+                          ID: {uniqueId} &bull; <span className={u.online ? 'text-emerald-400 font-bold' : 'text-zinc-400'}>{u.online ? 'Online' : formatLastSeenShort(false, u.last_seen_at || u.lastSeenAt)}</span>
+                        </p>
                       </div>
                     </div>
 

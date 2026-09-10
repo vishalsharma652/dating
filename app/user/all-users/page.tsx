@@ -89,6 +89,8 @@ function AllUsersContent() {
       age: u.age || (22 + (Number(u.id || 0) % 8)),
       location: u.location || u.city || '',
       status: isOnline ? 'Online' : 'Offline',
+      last_seen_at: u.last_seen_at || u.lastSeenAt || null,
+      lastSeenAt: u.last_seen_at || u.lastSeenAt || null,
       kycStatus: u.kyc_status || (u.verified ? 'approved' : 'pending'),
       isVerified: Boolean((u.kyc_status || u.kycStatus) === 'approved' || u.verified === true || u.verified === 1 || u.verified === '1'),
       photo: photoUrl,

@@ -131,6 +131,8 @@ async function chats(userId) {
       COALESCE(last_msg.body, '') AS lastMessage, COALESCE(DATE_FORMAT(last_msg.created_at, '%l:%i %p'), '') AS lastMessageTime,
       COALESCE(unread_counts.unread, 0) AS unread,
       (other_user.online_status = true AND other_user.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+      other_user.last_seen_at AS last_seen_at,
+      other_user.last_seen_at AS lastSeenAt,
       (cp.id IS NOT NULL) AS isPinned
      FROM chats c
      JOIN users other_user ON other_user.id = IF(c.user_one_id = :userId, c.user_two_id, c.user_one_id)
@@ -948,6 +950,7 @@ async function getFollowingList(userId, viewerId) {
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
             (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            u.last_seen_at AS last_seen_at, u.last_seen_at AS lastSeenAt,
             COALESCE(my_f.status, uf.status, 'accepted') AS myFollowStatus,
             (uf2.id IS NOT NULL) AS isFriend
      FROM user_follows uf
@@ -970,6 +973,7 @@ async function getFollowersList(userId, viewerId) {
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
             (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            u.last_seen_at AS last_seen_at, u.last_seen_at AS lastSeenAt,
             COALESCE(my_f.status, 'none') AS myFollowStatus,
             (uf2.id IS NOT NULL) AS isFriend
      FROM user_follows uf
@@ -992,6 +996,7 @@ async function getFriendsList(userId, viewerId) {
     `SELECT u.id, u.name, u.unique_id AS uniqueId, COALESCE(pp.url, '') AS photo,
             uf.id AS requestId, uf.status, uf.created_at AS createdAt,
             (u.online_status = true AND u.last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)) AS online,
+            u.last_seen_at AS last_seen_at, u.last_seen_at AS lastSeenAt,
             'accepted' AS myFollowStatus,
             true AS isFriend
      FROM user_follows uf

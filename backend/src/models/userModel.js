@@ -228,7 +228,7 @@ async function markOnline(id) {
 }
 
 async function markOffline(id) {
-  await query('UPDATE users SET online_status = false WHERE id = :id', { id });
+  await query('UPDATE users SET online_status = false, last_seen_at = CURRENT_TIMESTAMP WHERE id = :id', { id });
   return findPublicById(id);
 }
 

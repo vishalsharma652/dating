@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageSquare, ShieldCheck, MapPin, Briefcase, Calendar, UserCheck, Gem, Coins, Sparkles } from 'lucide-react';
 import { userApi, getStoredUser, apiAssetUrl } from '@/lib/api';
+import { formatLastSeen } from '@/lib/utils';
 import Loading from '@/app/loading';
 import { SayHiModal } from '@/components/user/say-hi-modal';
 import { UserProfileModal } from '@/components/user/user-profile-modal';
@@ -167,8 +168,8 @@ export default function UserSearchPage() {
                         </div>
                         <div className="p-3 bg-white/5 rounded-xl">
                           <span className="text-zinc-400 text-xs block">Activity Status</span>
-                          <span className={`font-semibold ${user.online_status ? 'text-green-400' : 'text-zinc-400'}`}>
-                            {user.online_status ? '🟢 Online Now' : '🔴 Offline'}
+                          <span className={`font-semibold text-xs ${user.online_status ? 'text-green-400' : 'text-zinc-400'}`}>
+                            {user.online_status ? '🟢 Online Now' : formatLastSeen(false, user.last_seen_at || user.lastSeenAt)}
                           </span>
                         </div>
 

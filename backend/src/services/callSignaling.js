@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
+const userModel = require('../models/userModel');
 
 // userId (string) → Set<socketId>
 const userSockets = new Map();
@@ -29,6 +30,9 @@ function setupCallSignaling(io) {
     // Track sockets per user (multi-tab support)
     if (!userSockets.has(userId)) userSockets.set(userId, new Set());
     userSockets.get(userId).add(socket.id);
+
+    // Mark online in DB
+    userModel.markOnline(userId).catch(() => undefined);
 
     // Each user joins their own room
     socket.join(`user:${userId}`);
@@ -87,7 +91,10 @@ function setupCallSignaling(io) {
     socket.on('disconnect', () => {
       console.log(`[Socket] ❌ User ${userId} disconnected → ${socket.id}`);
       userSockets.get(userId)?.delete(socket.id);
-      if (userSockets.get(userId)?.size === 0) userSockets.delete(userId);
+      if (userSockets.get(userId)?.size === 0) {
+        userSockets.delete(userId);
+        userModel.markOffline(userId).catch(() => undefined);
+      }
     });
   });
 }
